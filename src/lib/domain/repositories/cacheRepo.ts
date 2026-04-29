@@ -1,0 +1,96 @@
+/**
+ * Generic cache repository with TTL support.
+ * Wraps the raw storage with typed get/set/expiration logic.
+ */
+import { LIMITS } from "../../config/limits";
+
+interface CacheEntry<T> {
+  payload: T;
+  expiration: number;
+}
+
+export interface ICacheRepo {
+  get<T>(key: string): Promise<T | null>;
+  set<T>(key: string, value: T, ttlMs: number): Promise<void>;
+  remove(key: string): Promise<void>;
+  clearWithPrefix(prefix: string): Promise<void>;
+}
+
+export class CacheRepo implements ICacheRepo {
+  private static instance: CacheRepo | null = null;
+  private storage: {
+    get: <T>(key: string) => Promise<T | null>;
+    set: <T>(key: string, value: T) => Promise<void>;
+    remove: (key: string) => Promise<void>;
+    getAllKeys: () => Promise<string[]>;
+  };
+
+  // Cache limits to prevent excessive memory usage
+  private readonly MAX_ENTRY_SIZE = LIMITS.CACHE_MAX_ENTRY_SIZE;
+  private readonly MAX_ENTRIES = LIMITS.CACHE_MAX_ENTRIES;
+
+  private constructor(storage: CacheRepo['storage']) {
+    this.storage = storage;
+  }
+
+  static getInstance(storage?: CacheRepo['storage']): CacheRepo {
+    if (!CacheRepo.instance) {
+      if (!storage) {
+        throw new Error('CacheRepo: storage is required on first initialization');
+      }
+      CacheRepo.instance = new CacheRepo(storage);
+    }
+    return CacheRepo.instance;
+  }
+
+  static resetInstance(): void {
+    CacheRepo.instance = null;
+  }
+
+  async get<T>(key: string): Promise<T | null> {
+    const entry = await this.storage.get<CacheEntry<T>>(key);
+    if (!entry) return null;
+    if (Date.now() >= entry.expiration) {
+      await this.storage.remove(key);
+      return null;
+    }
+    return entry.payload;
+  }
+
+  async set<T>(key: string, value: T, ttlMs: number): Promise<void> {
+    // Check entry size to prevent caching excessively large items
+    try {
+      const size = JSON.stringify(value).length;
+      if (size > this.MAX_ENTRY_SIZE) {
+        console.warn(`[Cache] Entry "${key}" too large (${(size / 1024).toFixed(1)}KB), skipping cache`);
+        return;
+      }
+    } catch {
+      // If can't stringify, skip size check and continue
+    }
+
+    // Check total entries limit and cleanup if needed
+    const allKeys = await this.storage.getAllKeys();
+    if (allKeys.length >= this.MAX_ENTRIES) {
+      // Remove oldest entries (first percentage)
+      const toRemove = allKeys.slice(0, Math.floor(this.MAX_ENTRIES * LIMITS.CACHE_CLEANUP_PERCENTAGE));
+      await Promise.all(toRemove.map((k) => this.storage.remove(k)));
+    }
+
+    const entry: CacheEntry<T> = {
+      payload: value,
+      expiration: Date.now() + ttlMs,
+    };
+    await this.storage.set(key, entry);
+  }
+
+  async remove(key: string): Promise<void> {
+    await this.storage.remove(key);
+  }
+
+  async clearWithPrefix(prefix: string): Promise<void> {
+    const allKeys = await this.storage.getAllKeys();
+    const matchingKeys = allKeys.filter((k) => k.startsWith(prefix));
+    await Promise.all(matchingKeys.map((k) => this.storage.remove(k)));
+  }
+}
