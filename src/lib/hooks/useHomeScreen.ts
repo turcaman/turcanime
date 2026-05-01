@@ -14,24 +14,29 @@ const SECTION_LABELS = {
   topViewed: "Más vistos",
 };
 
+function buildSections(
+  homeData: { popular?: Anime[]; recent?: Anime[]; topViewed?: Anime[] },
+  continueWatchingItems: HistoryItem[]
+): SectionItem[] {
+  const heroSource = homeData.popular?.[0];
+
+  return [
+    ...(heroSource ? [{ type: "HERO" as const, data: heroSource }] : []),
+    ...(continueWatchingItems.length > 0 ? [{ type: "CONTINUE" as const, items: continueWatchingItems }] : []),
+    ...(homeData.recent && homeData.recent.length > 0 ? [{ type: "SECTION" as const, label: SECTION_LABELS.recent, items: homeData.recent }] : []),
+    ...(homeData.popular && homeData.popular.length > 0 ? [{ type: "SECTION" as const, label: SECTION_LABELS.popular, items: homeData.popular }] : []),
+    ...(homeData.topViewed && homeData.topViewed.length > 0 ? [{ type: "SECTION" as const, label: SECTION_LABELS.topViewed, items: homeData.topViewed }] : []),
+  ];
+}
+
 export function useHomeScreen() {
-  const { fetchHome, homeData, isHomeLoading: isHomeLoading, error } = useAnimeStore();
-  const { getContinueWatching, isInitialized, lastViewed } = useUserStore();
+  const { fetchHome, homeData, isHomeLoading, error } = useAnimeStore();
+  const { getContinueWatching, isInitialized } = useUserStore();
 
   const sections = useMemo(() => {
-    const heroSource = homeData.popular?.[0];
     const continueWatchingItems = getContinueWatching();
-
-    const data: SectionItem[] = [
-      ...(heroSource ? [{ type: "HERO" as const, data: heroSource }] : []),
-      ...(continueWatchingItems.length > 0 ? [{ type: "CONTINUE" as const, items: continueWatchingItems }] : []),
-      ...(homeData.recent && homeData.recent.length > 0 ? [{ type: "SECTION" as const, label: SECTION_LABELS.recent, items: homeData.recent }] : []),
-      ...(homeData.popular && homeData.popular.length > 0 ? [{ type: "SECTION" as const, label: SECTION_LABELS.popular, items: homeData.popular }] : []),
-      ...(homeData.topViewed && homeData.topViewed.length > 0 ? [{ type: "SECTION" as const, label: SECTION_LABELS.topViewed, items: homeData.topViewed }] : []),
-    ];
-
-    return data;
-  }, [homeData, getContinueWatching, lastViewed]); // eslint-disable-line react-hooks/exhaustive-deps
+    return buildSections(homeData, continueWatchingItems);
+  }, [homeData, getContinueWatching])
 
   const isLoading = isHomeLoading || !isInitialized;
 
