@@ -101,5 +101,5 @@ export async function clearPlayerCache(): Promise<void> {
 }
 
 export async function clearAllCache(): Promise<void> {
-  await cache.clearAll();
+  await cache.clearAll(["scraper_session"]);
 }

@@ -14,7 +14,7 @@ export interface ICacheRepo {
   set<T>(key: string, value: T, ttlMs: number): Promise<void>;
   remove(key: string): Promise<void>;
   clearWithPrefix(prefix: string): Promise<void>;
-  clearAll(): Promise<void>;
+  clearAll(excludeKeys?: string[]): Promise<void>;
 }
 
 export class CacheRepo implements ICacheRepo {
@@ -95,8 +95,9 @@ export class CacheRepo implements ICacheRepo {
     await Promise.all(matchingKeys.map((k) => this.storage.remove(k)));
   }
 
-  async clearAll(): Promise<void> {
+  async clearAll(excludeKeys: string[] = []): Promise<void> {
     const allKeys = await this.storage.getAllKeys();
-    await Promise.all(allKeys.map((k) => this.storage.remove(k)));
+    const keysToRemove = allKeys.filter((k) => !excludeKeys.includes(k));
+    await Promise.all(keysToRemove.map((k) => this.storage.remove(k)));
   }
 }
