@@ -1,6 +1,7 @@
 import { Anime } from "../../domain/entities";
 import { log } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";
+import { ParserUtils } from "./ParserUtils";
 
 export interface ParseResult {
   cards: Anime[];
@@ -11,63 +12,60 @@ export interface ParseResult {
 interface CardStrategy {
   name: string;
   regex: RegExp;
+  extractCard: (match: RegExpMatchArray) => Anime | null;
 }
 
 export class HtmlParser {
-  private sanitizeTitle(title: string): string {
-    return title.replace(/&amp;/g, "&").replace(/<[^>]*>/g, "").trim();
+  private createAnimeCard(url: string, image: string, title: string): Anime {
+    return {
+      title: cleanTitle(ParserUtils.sanitizeTitle(title)),
+      image,
+      url: ParserUtils.cleanUrl(url),
+      status: "",
+    };
   }
 
-  private extractCardsWithRegex(html: string, regex: RegExp, seen: Set<string>): Anime[] {
-    const cards: Anime[] = [];
-    let match;
-
-    while ((match = regex.exec(html)) !== null) {
+  private extractCardsWithStrategy(html: string, strategy: CardStrategy, seen: Set<string>): Anime[] {
+    const results = ParserUtils.extractWithRegex(html, strategy.regex, (match) => {
       const url = match[1];
-      if (seen.has(url)) continue;
+      if (!ParserUtils.isValidUrl(url) || seen.has(url)) return null;
+
       seen.add(url);
+      return strategy.extractCard(match);
+    });
 
-      cards.push({
-        title: cleanTitle(this.sanitizeTitle(match[3])),
-        image: match[2],
-        url: url,
-        status: "",
-      });
-    }
-
-    return cards;
+    return results
+      .filter((card): card is Anime => card !== null);
   }
 
   private strategyContextSearch(html: string, seen: Set<string>): Anime[] {
     const linkRegex = /href="\/anime\/([^"]+)"/g;
     const links = [...html.matchAll(linkRegex)].map((m) => m[1]);
     const uniqueLinks = [...new Set(links)];
-    const cards: Anime[] = [];
 
-    for (const url of uniqueLinks) {
-      if (seen.has(url)) continue;
+    return uniqueLinks
+      .filter(url => !seen.has(url))
+      .map(url => {
+        const linkIndex = html.indexOf(`href="/anime/${url}"`);
+        if (linkIndex === -1) return null;
 
-      const linkIndex = html.indexOf(`href="/anime/${url}"`);
-      if (linkIndex === -1) continue;
+        const context = html.substring(
+          Math.max(0, linkIndex - 500),
+          Math.min(html.length, linkIndex + 500)
+        );
+        const imageUrl = ParserUtils.extractImageUrl(context);
 
-      const context = html.substring(
-        Math.max(0, linkIndex - 500),
-        Math.min(html.length, linkIndex + 500)
-      );
-      const imgMatch = context.match(/(?:src|data-src)="([^"]+\.(?:jpg|jpeg|png|webp))"/i);
+        if (imageUrl) {
+          seen.add(url);
+          const title = url
+            .replace(/-/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase());
 
-      if (imgMatch) {
-        seen.add(url);
-        cards.push({
-          title: url.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-          image: imgMatch[1],
-          url: url,
-          status: "",
-        });
-      }
-    }
-
-    return cards;
+          return this.createAnimeCard(url, imageUrl, title);
+        }
+        return null;
+      })
+      .filter((card): card is Anime => card !== null);
   }
 
   parseCards(html: string): ParseResult {
@@ -78,16 +76,32 @@ export class HtmlParser {
     log("HtmlParser", `Contains /anime/ links: ${html.includes("/anime/")}`);
 
     const strategies: CardStrategy[] = [
-      { name: "primary_src", regex: /<a[^>]*class="[^"]*animeCard[^"]*"[^>]*href="\/anime\/([^"]+)"[^>]*>.*?<img[^>]*src="([^"]+)"[^>]*>.*?<h2[^>]*>(.*?)<\/h2>.*?<\/a>/gs },
-      { name: "fallback_data-src", regex: /<a[^>]*class="[^"]*animeCard[^"]*"[^>]*href="\/anime\/([^"]+)"[^>]*>.*?<img[^>]*data-src="([^"]+)"[^>]*>.*?<h2[^>]*>(.*?)<\/h2>.*?<\/a>/gs },
-      { name: "fallback_nextjs_link", regex: /<Link[^>]*href="\/anime\/([^"]+)"[^>]*>.*?<img[^>]*(?:src|data-src)="([^"]+)"[^>]*>.*?<[^>]*>(.*?)<\/[^>]*>.*?<\/Link>/gs },
-      { name: "fallback_generic", regex: /<a[^>]*href="\/anime\/([^"]+)"[^>]*>.*?<img[^>]*(?:src|data-src)="([^"]+)"[^>]*>.*?<(?:h2|h3|span|div|p)[^>]*>(.*?)<\/(?:h2|h3|span|div|p)>.*?<\/a>/gs },
+      {
+        name: "primary_src",
+        regex: /<a[^>]*class="[^"]*animeCard[^"]*"[^>]*href="\/anime\/([^"]+)"[^>]*>.*?<img[^>]*src="([^"]+)"[^>]*>.*?<h2[^>]*>(.*?)<\/h2>.*?<\/a>/gs,
+        extractCard: (match) => this.createAnimeCard(match[1], match[2], match[3]),
+      },
+      {
+        name: "fallback_data-src",
+        regex: /<a[^>]*class="[^"]*animeCard[^"]*"[^>]*href="\/anime\/([^"]+)"[^>]*>.*?<img[^>]*data-src="([^"]+)"[^>]*>.*?<h2[^>]*>(.*?)<\/h2>.*?<\/a>/gs,
+        extractCard: (match) => this.createAnimeCard(match[1], match[2], match[3]),
+      },
+      {
+        name: "fallback_nextjs_link",
+        regex: /<Link[^>]*href="\/anime\/([^"]+)"[^>]*>.*?<img[^>]*(?:src|data-src)="([^"]+)"[^>]*>.*?<[^>]*>(.*?)<\/[^>]*>.*?<\/Link>/gs,
+        extractCard: (match) => this.createAnimeCard(match[1], match[2], match[3]),
+      },
+      {
+        name: "fallback_generic",
+        regex: /<a[^>]*href="\/anime\/([^"]+)"[^>]*>.*?<img[^>]*(?:src|data-src)="([^"]+)"[^>]*>.*?<(?:h2|h3|span|div|p)[^>]*>(.*?)<\/(?:h2|h3|span|div|p)>.*?<\/a>/gs,
+        extractCard: (match) => this.createAnimeCard(match[1], match[2], match[3]),
+      },
     ];
 
     let cards: Anime[] = [];
 
     for (const strategy of strategies) {
-      cards = this.extractCardsWithRegex(html, strategy.regex, seen);
+      cards = this.extractCardsWithStrategy(html, strategy, seen);
       if (cards.length > 0) {
         strategyUsed = strategy.name;
         break;
