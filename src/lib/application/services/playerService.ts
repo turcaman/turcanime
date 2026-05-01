@@ -1,8 +1,8 @@
-import { CacheRepo } from "../../domain/repositories/cacheRepo";
-import { VideoServer } from "../../domain/entities";
-import { getDeps } from "../../di";
 import { PLAYER_CACHE } from "../../config/cacheTTLs";
 import { getRequiredReferer } from "../../config/embedServers";
+import { getDeps } from "../../di";
+import { VideoServer } from "../../domain/entities";
+import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import { logger } from "../../utils/logger";
 
 const cache = CacheRepo.getInstance(getDeps().storage);
@@ -98,4 +98,8 @@ export async function clearPlayerCache(): Promise<void> {
     cache.clearWithPrefix("ep_"),
     cache.clearWithPrefix("stream_"),
   ]);
+}
+
+export async function clearAllCache(): Promise<void> {
+  await cache.clearAll();
 }

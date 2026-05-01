@@ -1,7 +1,7 @@
 import { ThemedText } from "@/components/ui/ThemedText";
 import { ThemedView } from "@/components/ui/ThemedView";
 import { Theme } from "@/constants/Theme";
-import { clearPlayerCache } from "@/lib/application/services/playerService";
+import { clearAllCache } from "@/lib/application/services/playerService";
 import { useUserStore } from "@/lib/store/userStore";
 import { Feather } from "@expo/vector-icons";
 import React, { useState } from "react";
@@ -29,7 +29,7 @@ export default function Settings() {
           text: "Limpiar",
           style: "destructive",
           onPress: async () => {
-            await clearPlayerCache();
+            await clearAllCache();
             setCacheCleared(true);
             setTimeout(() => setCacheCleared(false), 2000);
           },
