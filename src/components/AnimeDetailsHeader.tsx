@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     paddingHorizontal: Theme.edge.horizontal,
-    paddingBottom: Theme.space.generous,
+    paddingBottom: Theme.spacing.xl,
   },
   backButton: {
     position: "absolute",
@@ -172,8 +172,8 @@ const styles = StyleSheet.create({
   statusBadge: {
     position: "absolute",
     right: Theme.edge.horizontal,
-    paddingHorizontal: Theme.component.innerMd,
-    paddingVertical: Theme.space.micro,
+    paddingHorizontal: Theme.spacing.sm,
+    paddingVertical: Theme.spacing.xs,
     borderRadius: Theme.radius.m,
   },
   statusText: {
@@ -188,22 +188,22 @@ const styles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: Theme.edge.horizontal,
-    paddingTop: Theme.space.base,
-    paddingBottom: Theme.space.generous,
+    paddingTop: Theme.spacing.md,
+    paddingBottom: Theme.spacing.xl,
   },
   sectionLabel: {
     color: Theme.colors.text.dark,
-    marginBottom: Theme.space.base,
+    marginBottom: Theme.spacing.md,
   },
   readMore: {
-    marginTop: Theme.component.gapSm,
+    marginTop: Theme.spacing.sm,
   },
   episodesHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: Theme.edge.horizontal,
-    paddingTop: Theme.space.base,
-    marginBottom: Theme.space.base,
+    paddingTop: Theme.spacing.md,
+    marginBottom: Theme.spacing.md,
   },
 });

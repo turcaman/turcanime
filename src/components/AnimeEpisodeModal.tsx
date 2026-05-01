@@ -90,9 +90,9 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.surface,
     borderTopLeftRadius: Theme.radius.l,
     borderTopRightRadius: Theme.radius.l,
-    paddingHorizontal: Theme.space.generous,
-    paddingTop: Theme.component.gapSm,
-    paddingBottom: Theme.space.section + Theme.space.generous,  // 24 + 20 = 44, safe area for system nav bar
+    paddingHorizontal: Theme.spacing.xl,
+    paddingTop: Theme.spacing.sm,
+    paddingBottom: Theme.spacing.xxl + Theme.spacing.xl,
   },
   handle: {
     width: Theme.dimensions.modalHandle.width,
@@ -100,21 +100,21 @@ const styles = StyleSheet.create({
     borderRadius: Theme.dimensions.modalHandle.radius,
     backgroundColor: Theme.colors.border,
     alignSelf: "center",
-    marginBottom: Theme.component.gapSm,
+    marginBottom: Theme.spacing.sm,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Theme.component.gapSm,
+    marginBottom: Theme.spacing.sm,
   },
-  subtitle: { marginBottom: Theme.component.gapSm },
-  serverList: { gap: Theme.component.gapSm },
+  subtitle: { marginBottom: Theme.spacing.sm },
+  serverList: { gap: Theme.spacing.sm },
   serverCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Theme.colors.background,
-    padding: Theme.space.comfortable,
+    padding: Theme.spacing.lg,
     borderRadius: Theme.radius.m,
   },
   playIcon: {
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.primaryMuted,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: Theme.component.gapSm,
+    marginRight: Theme.spacing.sm,
   },
   langText: {
     flex: 1,

@@ -85,7 +85,7 @@ EpisodeRangeSelector.displayName = "EpisodeRangeSelector";
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: Theme.space.base,
+    marginBottom: Theme.spacing.md,
   },
   scroll: {
     gap: Theme.dimensions.episodeRangeBadge.gap,
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.surface,
     width: Theme.dimensions.episodeRangeBadge.width,
     alignItems: "center",
-    paddingVertical: Theme.component.innerMd,
+    paddingVertical: Theme.spacing.sm,
     borderRadius: Theme.radius.m,
   },
   badgeActive: {

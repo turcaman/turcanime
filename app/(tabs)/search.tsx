@@ -58,7 +58,7 @@ export default function SearchScreen() {
       <ThemedView
         style={[
           styles.searchBarContainer,
-          { paddingTop: insets.top + Theme.space.comfortable },
+          { paddingTop: insets.top + Theme.spacing.lg },
         ]}
       >
         <ThemedView style={styles.searchBar}>
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: Theme.edge.horizontal },
   searchBarContainer: {
     paddingHorizontal: Theme.edge.horizontal,
-    paddingBottom: Theme.space.comfortable,
+    paddingBottom: Theme.spacing.lg,
     backgroundColor: Theme.colors.background,
   },
   searchBar: {
@@ -162,10 +162,10 @@ const styles = StyleSheet.create({
     height: Theme.dimensions.inputHeight,
     backgroundColor: Theme.colors.surface,
     borderRadius: Theme.radius.m,
-    paddingHorizontal: Theme.space.comfortable,
+    paddingHorizontal: Theme.spacing.lg,
   },
-  searchIcon: { marginRight: Theme.space.compact },
-  clearIcon: { padding: Theme.space.compact },
+  searchIcon: { marginRight: Theme.spacing.sm },
+  clearIcon: { padding: Theme.spacing.sm },
   input: {
     flex: 1,
     color: Theme.colors.text.primary,
@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: TAB_BAR_BOTTOM_OFFSET,
-    paddingTop: Theme.space.comfortable,
+    paddingTop: Theme.spacing.lg,
     paddingHorizontal: 0,
   },
   columnWrapper: {
@@ -196,11 +196,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-start",
     alignItems: "center",
-    paddingHorizontal: Theme.space.generous,
-    paddingTop: Theme.spacing.xxl + Theme.spacing.l, // 48 + 24 = 72px debajo del search bar
+    paddingHorizontal: Theme.spacing.xl,
+    paddingTop: Theme.spacing.xxxxl + Theme.spacing.xxl,
   },
   emptyTitle: {
-    marginTop: Theme.component.gapSm,
+    marginTop: Theme.spacing.sm,
   },
 });
 

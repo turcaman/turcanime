@@ -101,19 +101,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: Theme.space.generous,
+    paddingHorizontal: Theme.spacing.xl,
   },
   errorTitle: {
-    marginTop: Theme.component.gapSm,
+    marginTop: Theme.spacing.sm,
   },
   retryButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: Theme.component.gapSm,
-    paddingHorizontal: Theme.space.comfortable,
-    paddingVertical: Theme.component.innerMd,
+    marginTop: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.sm,
   },
   retryText: {
-    marginLeft: Theme.component.gapSm,
+    marginLeft: Theme.spacing.sm,
   },
 });

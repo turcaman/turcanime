@@ -58,25 +58,25 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Theme.space.generous,
+    padding: Theme.spacing.xl,
   },
   container: {
     alignItems: 'center',
   },
   title: {
-    marginTop: Theme.component.gapSm,
+    marginTop: Theme.spacing.sm,
   },
   subtitle: {
-    marginTop: Theme.component.gapSm,
+    marginTop: Theme.spacing.sm,
     textAlign: 'center',
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Theme.space.generous,
-    padding: Theme.space.comfortable,
+    marginTop: Theme.spacing.xl,
+    padding: Theme.spacing.lg,
   },
   buttonText: {
-    marginLeft: Theme.component.gapSm,
+    marginLeft: Theme.spacing.sm,
   },
 });

@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Theme.space.comfortable,
+    paddingVertical: Theme.spacing.lg,
     borderBottomWidth: Theme.borders.thin,
     borderBottomColor: Theme.colors.border,
   },
@@ -87,6 +87,6 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.surface,
   },
   poster: { flex: 1 },
-  info: { marginLeft: Theme.component.gapSm, flex: 1 },
+  info: { marginLeft: Theme.spacing.sm, flex: 1 },
   title: { fontSize: Theme.fontSize.m, fontWeight: Theme.fontWeight.medium as "500" },
 });

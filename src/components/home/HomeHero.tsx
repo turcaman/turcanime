@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   hero: {
     width: "100%",
     overflow: "hidden",
-    marginBottom: Theme.component.heroBottom,
+    marginBottom: Theme.spacing.xl,
   },
   image: {
     ...StyleSheet.absoluteFillObject,
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: "flex-end",
     paddingHorizontal: Theme.edge.horizontal,
-    paddingBottom: Theme.screen.hero.bottomPadding,
+    paddingBottom: Theme.spacing.xl,
   },
   title: {
     color: Theme.colors.text.primary,

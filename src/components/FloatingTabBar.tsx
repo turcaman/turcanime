@@ -50,7 +50,7 @@ export function FloatingTabBar({
       style={[
         styles.container,
         {
-          bottom: insets.bottom + Theme.space.comfortable,
+          bottom: insets.bottom + Theme.spacing.lg,
         },
         animatedStyle,
       ]}
@@ -109,9 +109,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: Theme.colors.surfaceElevated,
     borderRadius: Theme.radius.l,
-    paddingHorizontal: Theme.space.comfortable,
-    paddingVertical: Theme.space.compact,
-    gap: Theme.space.comfortable,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.sm,
+    gap: Theme.spacing.lg,
     elevation: 8, // Native Android shadow for accessibility/differentiation
   },
   tabButton: {

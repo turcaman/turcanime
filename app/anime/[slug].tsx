@@ -116,7 +116,7 @@ function AnimeDetailsContent() {
             >
               <ThemedView
                 variant="surface"
-                padding="base"
+                padding="md"
                 radius="m"
                 border
                 style={styles.episodeCardInner}
@@ -169,32 +169,32 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: Theme.space.generous,
+    paddingHorizontal: Theme.spacing.xl,
   },
   errorTitle: {
-    marginTop: Theme.component.gapSm,
+    marginTop: Theme.spacing.sm,
   },
   retryButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: Theme.component.gapSm,
-    paddingHorizontal: Theme.space.comfortable,
-    paddingVertical: Theme.component.innerMd,
+    marginTop: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.sm,
   },
   retryText: {
-    marginLeft: Theme.component.gapSm,
+    marginLeft: Theme.spacing.sm,
   },
   episodeList: {
     paddingHorizontal: Theme.edge.horizontal,
-    marginTop: Theme.component.gapSm,
-    gap: Theme.component.gapSm,
+    marginTop: Theme.spacing.sm,
+    gap: Theme.spacing.sm,
   },
   episodeCardInner: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: Theme.space.comfortable,
-    paddingHorizontal: Theme.space.base,
+    paddingVertical: Theme.spacing.lg,
+    paddingHorizontal: Theme.spacing.md,
   },
   episodeText: {
     fontWeight: Theme.fontWeight.semibold,

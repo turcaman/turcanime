@@ -15,7 +15,7 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
   if (!items || items.length === 0) return null;
 
   const cardWidth = Theme.dimensions.cardPosterMd.width;
-  const gap = Theme.component.gapMd;
+  const gap = Theme.spacing.md;
 
   const renderItem = ({ item }: { item: HistoryItem }) => (
     <AnimatedPressable
@@ -67,17 +67,17 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
 });
 
 const styles = StyleSheet.create({
-  sectionContainer: { marginTop: Theme.component.sectionGap },
+  sectionContainer: { marginTop: Theme.spacing.xl },
   sectionHeading: {
     paddingHorizontal: Theme.edge.horizontal,
-    marginBottom: Theme.space.compact,
+    marginBottom: Theme.spacing.sm,
     fontWeight: Theme.fontWeight.bold as "700",
   },
   sectionPadding: { paddingHorizontal: Theme.edge.horizontal },
   card: {
     width: Theme.dimensions.cardPosterMd.width,
     height: Theme.dimensions.cardPosterMd.height,
-    marginRight: Theme.component.gapMd,
+    marginRight: Theme.spacing.md,
     borderRadius: Theme.radius.l,
     overflow: "hidden",
     backgroundColor: Theme.colors.surface,
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: Theme.colors.overlay.dark,
-    padding: Theme.component.innerMd,
+    padding: Theme.spacing.sm,
   },
   episodeLabel: {
     color: Theme.colors.primary,

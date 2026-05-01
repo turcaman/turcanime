@@ -32,6 +32,6 @@ const styles = StyleSheet.create({
   smallContainer: {
     justifyContent: "center",
     alignItems: "center",
-    padding: Theme.space.comfortable,
+    padding: Theme.spacing.lg,
   },
 });

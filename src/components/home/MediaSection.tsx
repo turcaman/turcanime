@@ -34,7 +34,7 @@ export const MediaSection = memo(<T extends Anime | HistoryItem>({ label, items,
         renderItem={({ item }) => (
           isHistory
             ? (
-               <View style={{ width: dimensions.continue, marginRight: Theme.component.gapMd }}>
+               <View style={{ width: dimensions.continue, marginRight: Theme.spacing.md }}>
                 <AnimeCard
                   anime={item}
                   width={dimensions.continue}
@@ -44,7 +44,7 @@ export const MediaSection = memo(<T extends Anime | HistoryItem>({ label, items,
                </View>
             )
             : (
-               <View style={{ width: dimensions.carousel, marginRight: Theme.component.gapMd }}>
+               <View style={{ width: dimensions.carousel, marginRight: Theme.spacing.md }}>
                 <AnimeCard anime={item} width={dimensions.carousel} />
                </View>
             )
@@ -58,7 +58,7 @@ export const MediaSection = memo(<T extends Anime | HistoryItem>({ label, items,
         windowSize={5}
         getItemLayout={(data, index) => ({
           length: isHistory ? dimensions.continue : dimensions.carousel,
-          offset: ((isHistory ? dimensions.continue : dimensions.carousel) + Theme.component.gapMd) * index,
+          offset: ((isHistory ? dimensions.continue : dimensions.carousel) + Theme.spacing.md) * index,
           index,
         })}
       />
@@ -67,10 +67,10 @@ export const MediaSection = memo(<T extends Anime | HistoryItem>({ label, items,
 });
 
 const styles = StyleSheet.create({
-  sectionContainer: { marginTop: Theme.component.sectionGap },
+  sectionContainer: { marginTop: Theme.spacing.xl },
   sectionHeading: {
     paddingHorizontal: Theme.edge.horizontal,
-    marginBottom: Theme.space.compact,
+    marginBottom: Theme.spacing.sm,
     fontWeight: Theme.fontWeight.bold,
   },
   sectionPadding: { paddingHorizontal: Theme.edge.horizontal },

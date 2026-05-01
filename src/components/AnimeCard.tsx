@@ -92,11 +92,11 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.surface,
   },
   title: {
-    marginTop: Theme.component.gapSm,
+    marginTop: Theme.spacing.sm,
     lineHeight: Theme.lineHeight.s,
   },
   subtitle: {
-    marginTop: Theme.space.micro,
+    marginTop: Theme.spacing.xs,
     lineHeight: Theme.lineHeight.xs,
   },
   imageLoading: {
@@ -117,11 +117,11 @@ const styles = StyleSheet.create({
   },
   episodeBadge: {
     position: 'absolute',
-    bottom: Theme.component.innerMd,
-    right: Theme.component.innerMd,
+    bottom: Theme.spacing.sm,
+    right: Theme.spacing.sm,
     backgroundColor: Theme.colors.overlay.dark,
-    paddingHorizontal: Theme.component.innerMd,
-    paddingVertical: Theme.space.micro,
+    paddingHorizontal: Theme.spacing.sm,
+    paddingVertical: Theme.spacing.xs,
     borderRadius: Theme.radius.s,
   },
 });

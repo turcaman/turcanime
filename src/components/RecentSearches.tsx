@@ -40,15 +40,15 @@ export const RecentSearches = memo(({ searches, onSelect, onRemove }: RecentSear
 RecentSearches.displayName = "RecentSearches";
 
 const styles = StyleSheet.create({
-  container: { marginTop: Theme.space.base },  // Reduced from sectionGap for tighter spacing
-  header: { marginBottom: Theme.component.gapSm },
+  container: { marginTop: Theme.spacing.md },
+  header: { marginBottom: Theme.spacing.sm },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: Theme.component.gapSm,
+    marginBottom: Theme.spacing.sm,
   },
   clickable: { flexDirection: "row", alignItems: "center", flex: 1 },
-  text: { marginLeft: Theme.component.gapSm, fontSize: Theme.fontSize.m },
-  remove: { padding: Theme.component.innerMd }
+  text: { marginLeft: Theme.spacing.sm, fontSize: Theme.fontSize.m },
+  remove: { padding: Theme.spacing.sm }
 });

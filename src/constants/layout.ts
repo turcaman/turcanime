@@ -2,7 +2,7 @@ import { Dimensions } from "react-native";
 import { Theme } from "./Theme";
 
 /** Bottom offset so the last list item clears the floating tab bar. */
-export const TAB_BAR_BOTTOM_OFFSET = Theme.space.comfortable + 100; // 16 + 60 for the floating island
+export const TAB_BAR_BOTTOM_OFFSET = Theme.spacing.lg + 100; // 16 + 60 for the floating island
 
 /** Layout constants for search grid and card sizing. */
 const SEARCH_COLUMNS = 3;
