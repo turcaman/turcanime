@@ -53,6 +53,8 @@ export const usePlayerStore = create<PlayerState>((set) => ({
     } else {
       set({
         isLoading: false,
+        streamUrl: null,
+        streamHeaders: null,
         error: result.error?.message || "Failed to resolve stream",
       });
     }

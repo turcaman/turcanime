@@ -154,20 +154,16 @@ export async function fetchSuggestionsData(query: string, signal?: AbortSignal):
     return [];
   }
 
-  const controller = signal ? undefined : new AbortController();
-  try {
-    return await fetchWithCache(
-      {
-        cacheKey: suggestKey(query),
-        cacheTtl: ANIME_CACHE.SUGGESTIONS,
-        errorMessage: "Error loading suggestions",
-        fetchFn: (sig: AbortSignal) => getDeps().getProvider().getSuggestions(query),
-      },
-      signal || controller!.signal
-    ).then(result => result.data || []);
-  } finally {
-    controller?.abort();
-  }
+  const result = await fetchWithCache(
+    {
+      cacheKey: suggestKey(query),
+      cacheTtl: ANIME_CACHE.SUGGESTIONS,
+      errorMessage: "Error loading suggestions",
+      fetchFn: (sig: AbortSignal) => getDeps().getProvider().getSuggestions(query, { signal: sig }),
+    },
+    signal ?? new AbortController().signal
+  );
+  return result.data || [];
 }
 
 export async function fetchDetailsData(slug: string, signal: AbortSignal, force: boolean): Promise<FetchResult<AnimeDetail | null>> {

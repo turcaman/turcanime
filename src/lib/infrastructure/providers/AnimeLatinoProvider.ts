@@ -9,6 +9,7 @@ import {
 } from "../../domain/entities";
 import { IContentProvider, ISessionManager } from "../../domain/interfaces";
 import { log } from "../../utils/logger";
+import { cleanTitle } from "../../utils/text";
 import { MetricsTracker } from "../metrics/MetricsTracker";
 import { HtmlParser } from "../parsers/HtmlParser";
 import { RscParser } from "../parsers/RscParser";
@@ -89,10 +90,11 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     return cards;
   }
 
-  async getSuggestions(query: string): Promise<AutocompleteAnime[]> {
+  async getSuggestions(query: string, options?: { signal?: AbortSignal }): Promise<AutocompleteAnime[]> {
     try {
       const res = await this.fetchWithSession(
-        `/api/search?query=${encodeURIComponent(query)}`
+        `/api/search?query=${encodeURIComponent(query)}`,
+        options || {}
       );
       return await res.json();
     } catch (e: unknown) {

@@ -1,5 +1,6 @@
 import { Anime } from "../../domain/entities";
 import { log } from "../../utils/logger";
+import { cleanTitle } from "../../utils/text";
 
 export interface ParseResult {
   cards: Anime[];
