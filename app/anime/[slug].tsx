@@ -4,6 +4,7 @@ import { AnimeEpisodeModal } from "@/components/AnimeEpisodeModal";
 import { EpisodeRangeSelector } from "@/components/EpisodeRangeSelector";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppLoader } from "@/components/ui/AppLoader";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { ThemedText } from "@/components/ui/ThemedText";
 import { ThemedView } from "@/components/ui/ThemedView";
 import { TAB_BAR_BOTTOM_OFFSET } from "@/constants/layout";
@@ -58,21 +59,7 @@ function AnimeDetailsContent() {
   if (!anime && error) {
     return (
       <ThemedView style={styles.root}>
-        <ThemedView style={styles.errorContainer}>
-          <Feather name="alert-circle" size={48} color={Theme.colors.text.muted} />
-          <ThemedText variant="h3" color="muted" style={styles.errorTitle}>
-            Error al cargar
-          </ThemedText>
-          <AnimatedPressable
-            style={styles.retryButton}
-            onPress={refresh}
-          >
-            <Feather name="refresh-cw" size={16} color={Theme.colors.primary} />
-            <ThemedText variant="caption" color="accent" style={styles.retryText}>
-              Reintentar
-            </ThemedText>
-          </AnimatedPressable>
-        </ThemedView>
+        <ErrorState onRetry={refresh} />
       </ThemedView>
     );
   }
@@ -158,31 +145,6 @@ function AnimeDetailsContent() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scrollContent: { paddingBottom: TAB_BAR_BOTTOM_OFFSET },
-  loadingContainer: {
-    flex: 1,
-    minHeight: Theme.dimensions.minHeight,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: Theme.spacing.xl,
-  },
-  errorTitle: {
-    marginTop: Theme.spacing.sm,
-  },
-  retryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: Theme.spacing.sm,
-    paddingHorizontal: Theme.spacing.lg,
-    paddingVertical: Theme.spacing.sm,
-  },
-  retryText: {
-    marginLeft: Theme.spacing.sm,
-  },
   episodeList: {
     paddingHorizontal: Theme.edge.horizontal,
     marginTop: Theme.spacing.sm,

@@ -1,15 +1,13 @@
-import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { ContinueWatching } from "@/components/home/ContinueWatching";
 import { HomeHero } from "@/components/home/HomeHero";
 import { MediaSection } from "@/components/home/MediaSection";
 import { AppLoader } from "@/components/ui/AppLoader";
-import { ThemedText } from "@/components/ui/ThemedText";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { ThemedView } from "@/components/ui/ThemedView";
 import { TAB_BAR_BOTTOM_OFFSET } from "@/constants/layout";
 import { Theme } from "@/constants/Theme";
 import { SectionItem, useHomeScreen } from "@/lib/hooks/useHomeScreen";
 import { useTabBarVisibility } from "@/lib/hooks/useTabBarVisibility";
-import { Feather } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import { FlatList, RefreshControl, StyleSheet } from "react-native";
 
@@ -48,21 +46,7 @@ export default function Home() {
   if (!hasContent && error) {
     return (
       <ThemedView style={styles.root}>
-        <ThemedView style={styles.errorContainer}>
-          <Feather name="alert-circle" size={48} color={Theme.colors.text.muted} />
-          <ThemedText variant="h3" color="muted" style={styles.errorTitle}>
-            Error al cargar
-          </ThemedText>
-          <AnimatedPressable
-            style={styles.retryButton}
-            onPress={() => fetchHome(true)}
-          >
-            <Feather name="refresh-cw" size={16} color={Theme.colors.primary} />
-            <ThemedText variant="caption" color="accent" style={styles.retryText}>
-              Reintentar
-            </ThemedText>
-          </AnimatedPressable>
-        </ThemedView>
+        <ErrorState onRetry={() => fetchHome(true)} />
       </ThemedView>
     );
   }
@@ -96,24 +80,5 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   mainScroll: {
     paddingBottom: TAB_BAR_BOTTOM_OFFSET,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: Theme.spacing.xl,
-  },
-  errorTitle: {
-    marginTop: Theme.spacing.sm,
-  },
-  retryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: Theme.spacing.sm,
-    paddingHorizontal: Theme.spacing.lg,
-    paddingVertical: Theme.spacing.sm,
-  },
-  retryText: {
-    marginLeft: Theme.spacing.sm,
   },
 });
