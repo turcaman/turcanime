@@ -17,13 +17,11 @@ type FloatingTabBarProps = BottomTabBarProps;
 const ICONS: Record<string, keyof typeof Feather.glyphMap> = {
   index: "home",
   search: "search",
-  settings: "settings",
 };
 
 const LABELS: Record<string, string> = {
   index: "Inicio",
   search: "Buscar",
-  settings: "Ajustes",
 };
 
 export function FloatingTabBar({
