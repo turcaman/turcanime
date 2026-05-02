@@ -2,26 +2,22 @@ import { ANIME_CACHE } from "../../config/cacheTTLs";
 import { TIMEOUTS } from "../../config/timeouts";
 import { getDeps } from "../../di";
 import { Anime, AnimeDetail, AppError, AutocompleteAnime, HomeData } from "../../domain/entities";
-import { CacheRepo } from "../../domain/repositories/cacheRepo";
+import { createCacheKey } from "../../utils/CacheUtils";
 
-const cache = CacheRepo.getInstance(getDeps().storage);
+const cache = getDeps().cacheRepo;
 
+// Cache key constants
 const HOME_CACHE_KEY = "ch_home";
-const searchKey = (q: string) => `search_${encodeCacheKey(q)}`;
-const suggestKey = (q: string) => `suggestions_${encodeCacheKey(q)}`;
-const detailsKey = (s: string) => `anime_${s}`;
+const SEARCH_CACHE_PREFIX = "search";
+const SUGGESTIONS_CACHE_PREFIX = "suggestions";
+const DETAILS_CACHE_PREFIX = "anime";
 
 /**
- * Encode a string to be safe for use as a cache key.
- * Replaces special characters that could cause collisions or storage issues.
+ * Prefetch images to warm up the cache.
  */
-function encodeCacheKey(str: string): string {
-  return str
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]/g, '_') // Replace non-alphanumeric with underscore
-    .replace(/_+/g, '_') // Collapse multiple underscores
-    .slice(0, 50); // Limit length to prevent excessively long keys
+function prefetchImages(items: { image?: string }[]): void {
+  const { imageService } = getDeps();
+  imageService.prefetchImages(items);
 }
 
 interface FetchResult<T> {
@@ -30,18 +26,25 @@ interface FetchResult<T> {
   fromCache: boolean;
 }
 
-interface FetchOptions<T> {
+interface CacheOptions<T> {
   cacheKey: string;
   cacheTtl: number;
   errorMessage: string;
   fetchFn: (signal: AbortSignal) => Promise<T>;
   force?: boolean;
+}
+
+interface AnimeFetchOptions<T> extends CacheOptions<T> {
   onSuccess?: (data: T) => void;
 }
 
-async function checkCache<T>(cacheKey: string, force: boolean): Promise<T | null> {
+async function getCachedData<T>(cacheKey: string, force: boolean): Promise<T | null> {
   if (force) return null;
-  return await cache.get<T>(cacheKey);
+  try {
+    return await cache.get<T>(cacheKey);
+  } catch {
+    return null;
+  }
 }
 
 async function handleAuthError<T>(
@@ -50,16 +53,26 @@ async function handleAuthError<T>(
   cacheTtl: number,
   onSuccess?: (data: T) => void
 ): Promise<FetchResult<T>> {
-  await cache.clearWithPrefix(cacheKey);
-  await getDeps().sessionManager.invalidateCookies();
-
-  const retryController = new AbortController();
   try {
-    const data = await fetchFn(retryController.signal);
-    await cache.set(cacheKey, data, cacheTtl);
-    onSuccess?.(data);
-    return { data, error: null, fromCache: false };
-  } catch {
+    await cache.clearWithPrefix(cacheKey);
+    await getDeps().sessionManager.invalidateCookies();
+
+    const retryController = new AbortController();
+    try {
+      const data = await fetchFn(retryController.signal);
+      await cache.set(cacheKey, data, cacheTtl);
+      onSuccess?.(data);
+      return { data, error: null, fromCache: false };
+    } catch (error) {
+      console.error(`Error handling authentication error for key ${cacheKey}:`, error);
+      return {
+        data: null,
+        error: createGenericError(error as any, "Error handling authentication error"),
+        fromCache: false,
+      };
+    }
+  } catch (authError) {
+    console.error(`Authentication error handling failed for key ${cacheKey}:`, authError);
     return {
       data: null,
       error: { type: "AUTH_ERROR", message: "Error al recuperar sesión. Intenta recargar." },
@@ -72,17 +85,14 @@ function createNetworkError(message?: string): AppError {
   return { type: "NETWORK_ERROR", message: message || "Sin conexión a internet" };
 }
 
-function createGenericError(err: { type?: string; message?: string }, defaultMessage: string): AppError {
-  return {
-    type: err.type === "SERVER_ERROR" || err.type === "NOT_FOUND" ? err.type : "UNKNOWN",
-    message: err.message || defaultMessage,
-  };
+function createGenericError(error: any, fallbackMessage: string): AppError {
+  return { type: "UNKNOWN", message: error?.message || fallbackMessage };
 }
 
-async function fetchWithCache<T>(options: FetchOptions<T>, signal: AbortSignal): Promise<FetchResult<T>> {
+async function fetchWithCache<T>(options: AnimeFetchOptions<T>, signal: AbortSignal): Promise<FetchResult<T>> {
   const { cacheKey, cacheTtl, errorMessage, fetchFn, force, onSuccess } = options;
 
-  const cached = await checkCache<T>(cacheKey, force || false);
+  const cached = await getCachedData<T>(cacheKey, force || false);
   if (cached) {
     return { data: cached, error: null, fromCache: true };
   }
@@ -119,6 +129,7 @@ export async function fetchHomeData(signal: AbortSignal, force: boolean): Promis
       errorMessage: "Error al cargar la pantalla de inicio",
       fetchFn: (sig: AbortSignal) => getDeps().getProvider().getHomeData({ signal: sig }),
       force,
+      onSuccess: (data: HomeData) => (data.sections || []).forEach((s: { items: Anime[] }) => prefetchImages(s.items))
     },
     signal
   );
@@ -133,7 +144,7 @@ export async function fetchSearchData(query: string, signal: AbortSignal, force:
 
   return await fetchWithCache(
     {
-      cacheKey: searchKey(query),
+      cacheKey: createCacheKey(SEARCH_CACHE_PREFIX, query),
       cacheTtl: ANIME_CACHE.SEARCH,
       errorMessage: "Error searching anime",
       fetchFn: async (sig: AbortSignal) => {
@@ -144,6 +155,7 @@ export async function fetchSearchData(query: string, signal: AbortSignal, force:
         return await Promise.race([searchPromise, timeoutPromise]);
       },
       force,
+      onSuccess: (data) => prefetchImages(data)
     },
     signal
   );
@@ -156,10 +168,11 @@ export async function fetchSuggestionsData(query: string, signal?: AbortSignal):
 
   const result = await fetchWithCache(
     {
-      cacheKey: suggestKey(query),
+      cacheKey: createCacheKey(SUGGESTIONS_CACHE_PREFIX, query),
       cacheTtl: ANIME_CACHE.SUGGESTIONS,
       errorMessage: "Error loading suggestions",
       fetchFn: (sig: AbortSignal) => getDeps().getProvider().getSuggestions(query, { signal: sig }),
+      onSuccess: (data: AutocompleteAnime[]) => prefetchImages(data.map(item => ({ image: item.poster })))
     },
     signal ?? new AbortController().signal
   );
@@ -169,7 +182,7 @@ export async function fetchSuggestionsData(query: string, signal?: AbortSignal):
 export async function fetchDetailsData(slug: string, signal: AbortSignal, force: boolean): Promise<FetchResult<AnimeDetail | null>> {
   return await fetchWithCache(
     {
-      cacheKey: detailsKey(slug),
+      cacheKey: createCacheKey(DETAILS_CACHE_PREFIX, slug),
       cacheTtl: ANIME_CACHE.DETAILS,
       errorMessage: "Error al cargar los detalles",
       fetchFn: (sig: AbortSignal) => getDeps().getProvider().getDetails(slug, { signal: sig }),
@@ -182,8 +195,8 @@ export async function fetchDetailsData(slug: string, signal: AbortSignal, force:
 export async function clearAnimeCache(): Promise<void> {
   await Promise.all([
     cache.clearWithPrefix("ch_home"),
-    cache.clearWithPrefix("anime_"),
-    cache.clearWithPrefix("search_"),
-    cache.clearWithPrefix("suggestions_"),
+    cache.clearWithPrefix(`${DETAILS_CACHE_PREFIX}_`),
+    cache.clearWithPrefix(`${SEARCH_CACHE_PREFIX}_`),
+    cache.clearWithPrefix(`${SUGGESTIONS_CACHE_PREFIX}_`),
   ]);
 }
