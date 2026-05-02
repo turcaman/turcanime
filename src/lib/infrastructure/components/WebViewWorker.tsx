@@ -4,9 +4,9 @@ import { WebView, WebViewMessageEvent } from "react-native-webview";
 import { sessionManager, webViewBridge } from "../../core/infrastructure";
 import { ISession } from "../../domain/interfaces";
 import { GLOBAL_BOOTSTRAP } from "../webview/bootstrap";
+import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 
-// TODO: Make this provider-agnostic - inject worker URL from provider config
-const WORKER_URL = "https://www.animelatinohd.com/";
+const WORKER_URL = ANIMELATINO_CONFIG.sessionWashUrl;
 
 /**
  * Headless component that runs in the background to handle:

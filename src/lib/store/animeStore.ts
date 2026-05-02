@@ -14,17 +14,17 @@ import {
     HomeData,
 } from "../domain/entities";
 
-// Controllers for cancelling stale requests
-const controllers = {
+// Request abort controllers for preventing stale requests
+const requestControllers = {
   home: new AbortController(),
   search: new AbortController(),
   details: new AbortController(),
 };
 
-const createAbort = (key: keyof typeof controllers) => {
-  controllers[key].abort();
-  controllers[key] = new AbortController();
-  return controllers[key];
+const createNewAbortController = (key: keyof typeof requestControllers) => {
+  requestControllers[key].abort();
+  requestControllers[key] = new AbortController();
+  return requestControllers[key];
 };
 
 interface AnimeState {
@@ -66,7 +66,7 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
   isSuggestionsLoading: false,
 
   fetchHome: async (force = false) => {
-    const controller = createAbort("home");
+    const controller = createNewAbortController("home");
     set({ isHomeLoading: true, error: null });
 
     const result = await fetchHomeData(controller.signal, force);
@@ -78,7 +78,11 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
     } else if (result.data) {
       set({ homeData: result.data, isHomeLoading: false, error: null });
     } else {
-      set({ isHomeLoading: false });
+      // Force an error state if no data is returned to prevent UI hanging
+      set({
+        isHomeLoading: false,
+        error: { type: "UNKNOWN", message: "No se pudieron obtener datos del servidor" }
+      });
     }
   },
 
@@ -89,7 +93,7 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
     }
     set({ suggestions: [], isSearchLoading: true, error: null });
 
-    const controller = createAbort("search");
+    const controller = createNewAbortController("search");
     const result = await fetchSearchData(query, controller.signal, force);
 
     if (result.error) {
@@ -100,7 +104,7 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
   },
 
   cancelSearch: () => {
-    controllers.search.abort();
+    requestControllers.search.abort();
     set({ isSearchLoading: false });
   },
 
@@ -119,7 +123,7 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
     if (force) {
       set({ activeAnime: null });
     }
-    const controller = createAbort("details");
+    const controller = createNewAbortController("details");
     set({ isDetailsLoading: true, error: null });
 
     const result = await fetchDetailsData(slug, controller.signal, force);
@@ -132,7 +136,7 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
   },
 
   resetSearch: () => {
-    controllers.search.abort();
+    requestControllers.search.abort();
     set({ searchAnimes: [], suggestions: [], error: null, isSearchLoading: false });
   },
 

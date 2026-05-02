@@ -2,6 +2,7 @@ import { TIMEOUTS } from "../../config/timeouts";
 import { ISession, IWebViewBridge, WebViewMessageData } from "../../domain/interfaces";
 import { logger } from "../../utils/logger";
 import { JWPLAYER_EXTRACT_JS } from "../webview/injectionScripts";
+import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 
 // ─── Internal types ────────────────────────────────────────────────────
 
@@ -48,7 +49,6 @@ export class WebViewBridge implements IWebViewBridge {
 
       // Handle legacy format (without type field) for backward compatibility
       if (!parsed.type && typeof parsed === "object") {
-        // Legacy format: { id, data, error } or string or ISession
         return this.handleLegacyMessage(parsed);
       }
 
@@ -57,7 +57,6 @@ export class WebViewBridge implements IWebViewBridge {
       if (type === "DECRYPTION_RESULT") {
         let { id, data: url, error } = data;
 
-        // Compatibility: if the bootstrap sends 'stream_auto', map it to the most recent pending request
         if (id === "stream_auto") {
           const lastRequestId = Array.from(this.activeDecryptions.keys()).pop();
           if (lastRequestId) {
@@ -73,9 +72,7 @@ export class WebViewBridge implements IWebViewBridge {
         }
       }
 
-      // Generic embed video URL interception — resolve the most recent pending request
       if (type === "EMBED_VIDEO_URL") {
-        // Resolve the most recent active request (last one in the map)
         const lastRequestId = Array.from(this.activeDecryptions.keys()).pop();
         if (lastRequestId) {
           const autoResolve = this.activeDecryptions.get(lastRequestId);
@@ -94,7 +91,6 @@ export class WebViewBridge implements IWebViewBridge {
   }
 
   private handleLegacyMessage(parsed: unknown): { type: string; data: WebViewMessageData } | null {
-    // Handle legacy format for backward compatibility
     if (typeof parsed === "string") {
       const data: WebViewMessageData = { type: "RAW", data: parsed };
       return { type: "RAW", data };
@@ -103,7 +99,6 @@ export class WebViewBridge implements IWebViewBridge {
     if (typeof parsed === "object" && parsed !== null) {
       const obj = parsed as Record<string, unknown>;
 
-      // Legacy DECRYPTION_RESULT format
       if ("id" in obj && "data" in obj) {
         const data: WebViewMessageData = {
           type: "DECRYPTION_RESULT",
@@ -114,7 +109,6 @@ export class WebViewBridge implements IWebViewBridge {
         return { type: "DECRYPTION_RESULT", data };
       }
 
-      // Legacy SESSION format
       if ("cookies" in obj && "userAgent" in obj) {
         const data: WebViewMessageData = {
           type: "SESSION",
@@ -127,24 +121,15 @@ export class WebViewBridge implements IWebViewBridge {
     return null;
   }
 
-  /**
-   * Navigates to the video URL and waits for the bootstrap to auto-decrypt
-   * or intercept. Also injects JS extraction scripts for JWPlayer embeds.
-   */
   async resolveStreamUrl(videoUrl: string): Promise<string | null> {
     if (!this.navigateFn) throw new Error("WebView navigation not registered");
 
-    // Generate unique ID for this request
     const requestId = `stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Cancel any existing pending requests to prevent cross-contamination
     this.clearPendingRequests();
 
-    // --- SESSION WASH STEP ---
-    // Navigate to Home first to reset session/cookies and obtain a clean Referer
-    // TODO: Make this provider-agnostic - inject session wash URL from provider config
     logger.debug("WebViewBridge", "Starting session wash: navigating to Home...");
-    this.navigateFn("https://www.animelatinohd.com/");
+    this.navigateFn(ANIMELATINO_CONFIG.sessionWashUrl);
 
     try {
       await this.waitForPageLoad(TIMEOUTS.PAGE_LOAD);
@@ -152,24 +137,18 @@ export class WebViewBridge implements IWebViewBridge {
     } catch {
       logger.debug("WebViewBridge", "Session wash timed out or failed, proceeding anyway.");
     }
-    // -------------------------
 
     const promise = this.timeoutPromise(requestId, TIMEOUTS.DECRYPTION);
 
-    // Now navigate to the actual video URL
     logger.debug("WebViewBridge", `Navigating to video URL: ${videoUrl}`);
     this.navigateFn(videoUrl);
 
-    // Inject JWPlayer extraction scripts at staggered delays
     this.scheduleJwplayerExtraction(requestId);
 
     const result = await promise;
     return result;
   }
 
-  /**
-   * Clears all pending decryption requests.
-   */
   private clearPendingRequests(): void {
     for (const [id, resolve] of this.activeDecryptions) {
       resolve(null);
@@ -177,11 +156,6 @@ export class WebViewBridge implements IWebViewBridge {
     }
   }
 
-  // ─── Private helpers ─────────────────────────────────────────────────
-  /**
-   * Returns a promise that resolves when a matching message arrives,
-   * or rejects after the given timeout.
-   */
   private timeoutPromise(requestId: string, timeoutMs: number): Promise<string | null> {
     return new Promise<string | null>((resolve) => {
       this.activeDecryptions.set(requestId, resolve);
@@ -194,9 +168,6 @@ export class WebViewBridge implements IWebViewBridge {
     });
   }
 
-  /**
-   * Waits for the notifyPageLoaded event to be triggered.
-   */
   private waitForPageLoad(timeoutMs: number): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -211,9 +182,6 @@ export class WebViewBridge implements IWebViewBridge {
     });
   }
 
-  /**
-   * Schedules JWPlayer extraction script injections at staggered delays.
-   */
   private scheduleJwplayerExtraction(requestId: string) {
     for (const delay of TIMEOUTS.JWPLAYER_DELAYS) {
       setTimeout(() => {
