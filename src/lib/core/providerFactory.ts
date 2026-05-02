@@ -3,8 +3,9 @@
  * Follows the Open/Closed Principle: add new providers without modifying this file.
  */
 import { IContentProvider, ISessionManager } from "../domain/interfaces";
+import { CacheRepo } from "../domain/repositories/cacheRepo";
 
-type ProviderConstructor = new (sessionManager: ISessionManager) => IContentProvider;
+type ProviderConstructor = new (sessionManager: ISessionManager, cacheRepo: CacheRepo) => IContentProvider;
 
 const registry = new Map<string, ProviderConstructor>();
 
@@ -20,7 +21,7 @@ export function registerProvider(id: string, ctor: ProviderConstructor): void {
  * Create a provider instance.
  * Throws if no provider is registered for that id.
  */
-export function createProvider(id: string, sessionManager: ISessionManager): IContentProvider {
+export function createProvider(id: string, sessionManager: ISessionManager, cacheRepo: CacheRepo): IContentProvider {
   const ctor = registry.get(id);
   if (!ctor) {
     const available = Array.from(registry.keys()).join(", ");
@@ -28,7 +29,7 @@ export function createProvider(id: string, sessionManager: ISessionManager): ICo
       `No provider registered for id "${id}". Available providers: ${available || "(none)"}`
     );
   }
-  return new ctor(sessionManager);
+  return new ctor(sessionManager, cacheRepo);
 }
 
 /**

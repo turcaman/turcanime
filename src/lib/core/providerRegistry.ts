@@ -7,19 +7,22 @@
  * 2. Update createProvider to instantiate the new provider
  */
 import { IContentProvider } from "../domain/interfaces";
+import { CacheRepo } from "../domain/repositories/cacheRepo";
 import "../infrastructure/providers/AnimeLatinoProvider";
-import { sessionManager } from "./infrastructure";
+import { sessionManager, storage } from "./infrastructure";
 import { createProvider } from "./providerFactory";
 
 let currentProvider: IContentProvider | null = null;
 
 export const getProvider = (): IContentProvider => {
   if (!currentProvider) {
-    currentProvider = createProvider("safe", sessionManager);
+    const cacheRepo = new CacheRepo(storage);
+    currentProvider = createProvider("safe", sessionManager, cacheRepo);
   }
   return currentProvider;
 };
 
 export const initProvider = () => {
-  currentProvider = createProvider("safe", sessionManager);
+  const cacheRepo = new CacheRepo(storage);
+  currentProvider = createProvider("safe", sessionManager, cacheRepo);
 };

@@ -1,39 +1,29 @@
-import { useUIStore } from "../../store/uiStore";
-import { useUserStore } from "../../store/userStore";
+import { HistoryItem } from "../../domain/entities";
 import { HistoryParams } from "./PlayerUIService";
 
 export class NavigationService {
-  private static instance: NavigationService;
-
-  static getInstance(): NavigationService {
-    if (!NavigationService.instance) {
-      NavigationService.instance = new NavigationService();
-    }
-    return NavigationService.instance;
-  }
-
-  saveToHistory(params: HistoryParams): void {
-    const userStore = useUserStore.getState();
-    if (!userStore) return;
-
-    const { addToHistory } = userStore;
+  async saveToHistory(
+    params: HistoryParams,
+    addToHistory: (item: HistoryItem) => Promise<void>
+  ): Promise<void> {
     if (params.title && params.image && params.url && params.number) {
-      addToHistory({
+      await addToHistory({
         ...params,
         timestamp: Date.now(),
       });
     }
   }
 
-  setTabBarVisible(visible: boolean): void {
-    const uiStore = useUIStore.getState();
-    if (!uiStore) return;
-
-    const setTabBarVisible = uiStore.setTabBarVisible;
+  setTabBarVisible(
+    visible: boolean,
+    setTabBarVisible: (visible: boolean) => void
+  ): void {
     setTabBarVisible(visible);
   }
 
-  resetTabBar(): void {
-    this.setTabBarVisible(true);
+  resetTabBar(
+    setTabBarVisible: (visible: boolean) => void
+  ): void {
+    this.setTabBarVisible(true, setTabBarVisible);
   }
 }

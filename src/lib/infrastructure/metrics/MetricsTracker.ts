@@ -14,29 +14,16 @@ export interface MetricsSnapshot {
 export class MetricsTracker {
   private readonly METRICS_KEY = "parsing_metrics";
   private metrics: Map<string, MetricData> = new Map();
-  private cache: CacheRepo | null = null;
+  private cache: CacheRepo;
 
-  constructor() {
+  constructor(cache: CacheRepo) {
+    this.cache = cache;
     this.loadMetrics();
-  }
-
-  private getCache(): CacheRepo | null {
-    if (!this.cache) {
-      try {
-        this.cache = CacheRepo.getInstance();
-      } catch {
-        return null;
-      }
-    }
-    return this.cache;
   }
 
   private async loadMetrics(): Promise<void> {
     try {
-      const cache = this.getCache();
-      if (!cache) return;
-
-      const stored = await cache.get<MetricsSnapshot>(this.METRICS_KEY);
+      const stored = await this.cache.get<MetricsSnapshot>(this.METRICS_KEY);
       if (stored) {
         this.metrics = new Map(Object.entries(stored));
       }
@@ -47,11 +34,8 @@ export class MetricsTracker {
 
   private async saveMetrics(): Promise<void> {
     try {
-      const cache = this.getCache();
-      if (!cache) return;
-
       const obj = Object.fromEntries(this.metrics);
-      await cache.set(this.METRICS_KEY, obj, 86400000); // 24 hours TTL
+      await this.cache.set(this.METRICS_KEY, obj, 86400000); // 24 hours TTL
     } catch (e: unknown) {
       log("MetricsTracker", "Failed to save metrics", e);
     }

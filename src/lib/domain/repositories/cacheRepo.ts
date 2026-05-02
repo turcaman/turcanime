@@ -18,7 +18,6 @@ export interface ICacheRepo {
 }
 
 export class CacheRepo implements ICacheRepo {
-  private static instance: CacheRepo | null = null;
   private storage: {
     get: <T>(key: string) => Promise<T | null>;
     set: <T>(key: string, value: T) => Promise<void>;
@@ -30,23 +29,10 @@ export class CacheRepo implements ICacheRepo {
   private readonly MAX_ENTRY_SIZE = LIMITS.CACHE_MAX_ENTRY_SIZE;
   private readonly MAX_ENTRIES = LIMITS.CACHE_MAX_ENTRIES;
 
-  private constructor(storage: CacheRepo['storage']) {
+  constructor(storage: CacheRepo['storage']) {
     this.storage = storage;
   }
 
-  static getInstance(storage?: CacheRepo['storage']): CacheRepo {
-    if (!CacheRepo.instance) {
-      if (!storage) {
-        throw new Error('CacheRepo: storage is required on first initialization');
-      }
-      CacheRepo.instance = new CacheRepo(storage);
-    }
-    return CacheRepo.instance;
-  }
-
-  static resetInstance(): void {
-    CacheRepo.instance = null;
-  }
 
   async get<T>(key: string): Promise<T | null> {
     const entry = await this.storage.get<CacheEntry<T>>(key);

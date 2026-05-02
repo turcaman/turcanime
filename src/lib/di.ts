@@ -5,10 +5,13 @@
  * Stores and use-cases import `getDeps()` instead of reaching into
  * infrastructure modules directly, enabling testability via mock injection.
  */
+import { NavigationService } from "./application/services/NavigationService";
+import { PlayerUIService } from "./application/services/PlayerUIService";
 import { sessionManager, storage, webViewBridge } from "./core/infrastructure";
 import { getProvider, initProvider } from "./core/providerRegistry";
 import { ISessionManager, IStorage, IWebViewBridge } from "./domain/interfaces";
 import { CacheRepo } from "./domain/repositories/cacheRepo";
+import { ImageService } from "./infrastructure/services/ImageService";
 import { logger } from "./utils/logger";
 
 // ─── Dependencies interface ────────────────────────────────────────────
@@ -18,6 +21,10 @@ export interface AppDependencies {
   webViewBridge: IWebViewBridge;
   sessionManager: ISessionManager;
   getProvider: typeof getProvider;
+  navigationService: NavigationService;
+  playerUIService: PlayerUIService;
+  imageService: ImageService;
+  cacheRepo: CacheRepo;
 }
 
 // ─── Singleton instance ────────────────────────────────────────────────
@@ -46,13 +53,15 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
     webViewBridge,
     sessionManager,
     getProvider,
+    navigationService: new NavigationService(),
+    playerUIService: new PlayerUIService(),
+    imageService: new ImageService(),
+    cacheRepo: new CacheRepo(storage),
   };
 
   initPromise = Promise.resolve().then(async () => {
     // Initialize logger with storage before anything else
     logger.setStorage(storage);
-    // Initialize CacheRepo singleton before creating providers
-    CacheRepo.getInstance(storage);
     await sessionManager.initialize();
     initProvider();
   }).catch(e => {
@@ -76,11 +85,4 @@ export function getDeps(): AppDependencies {
     initializeDeps();
   }
   return deps!;
-}
-
-/**
- * Replace dependencies with mocks (for testing).
- */
-export function setDepsForTesting(mockDeps: AppDependencies): void {
-  deps = mockDeps;
 }

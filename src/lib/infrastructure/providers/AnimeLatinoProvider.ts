@@ -8,6 +8,7 @@ import {
     VideoServer
 } from "../../domain/entities";
 import { IContentProvider, ISessionManager } from "../../domain/interfaces";
+import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import { log } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";
 import { MetricsTracker } from "../metrics/MetricsTracker";
@@ -41,13 +42,14 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
 
   constructor(
     sessionManager: ISessionManager,
+    cacheRepo: CacheRepo,
     baseUrl: string = "https://www.animelatinohd.com"
   ) {
     super(sessionManager, baseUrl);
     this.htmlParser = new HtmlParser();
     this.rscParser = new RscParser();
-    this.versionManager = new SiteVersionManager(sessionManager);
-    this.metrics = new MetricsTracker();
+    this.versionManager = new SiteVersionManager(sessionManager, cacheRepo);
+    this.metrics = new MetricsTracker(cacheRepo);
   }
 
   // ——— Public API ———

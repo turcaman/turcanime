@@ -6,21 +6,11 @@ import { log } from "../../utils/logger";
 export class SiteVersionManager {
   private readonly SITE_VERSION_KEY = "site_version";
   private sessionManager: ISessionManager;
-  private cache: CacheRepo | null = null;
+  private cache: CacheRepo;
 
-  constructor(sessionManager: ISessionManager) {
+  constructor(sessionManager: ISessionManager, cache: CacheRepo) {
     this.sessionManager = sessionManager;
-  }
-
-  private getCache(): CacheRepo | null {
-    if (!this.cache) {
-      try {
-        this.cache = CacheRepo.getInstance();
-      } catch {
-        return null;
-      }
-    }
-    return this.cache;
+    this.cache = cache;
   }
 
   /**
@@ -83,18 +73,12 @@ export class SiteVersionManager {
    * Invalidate cache when site structure changes
    */
   async invalidateCache(): Promise<void> {
-    const cache = this.getCache();
-    if (!cache) {
-      log("SiteVersionManager", "Cache not available for invalidation");
-      return;
-    }
-
     try {
       await Promise.all([
-        cache.clearWithPrefix("ch_home"),
-        cache.clearWithPrefix("anime_"),
-        cache.clearWithPrefix("search_"),
-        cache.clearWithPrefix("suggestions_"),
+        this.cache.clearWithPrefix("ch_home"),
+        this.cache.clearWithPrefix("anime_"),
+        this.cache.clearWithPrefix("search_"),
+        this.cache.clearWithPrefix("suggestions_"),
       ]);
       log("SiteVersionManager", "Cache invalidated successfully");
     } catch (e: unknown) {
