@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useCallback } from "react";
 import { StyleSheet, View } from "react-native";
 import { Theme } from "../constants/Theme";
 import { Anime, HistoryItem } from "../lib/domain/entities";
@@ -19,13 +19,13 @@ const AnimeCard = ({ anime, width, onPress, variant = "default", episodeNumber }
   const isContinue = variant === "continue";
   const cardHeight = isContinue ? width * Theme.dimensions.ratios.continue : width * Theme.dimensions.ratios.default;
 
-  const handlePress = () => {
+  const handlePress = useCallback(() => {
     if (onPress) {
       onPress();
     } else {
       navigateToAnime(anime.url);
     }
-  };
+  }, [onPress, anime.url]);
 
   return (
     <AnimatedPressable

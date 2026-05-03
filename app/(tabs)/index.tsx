@@ -11,7 +11,7 @@ import { useTabBarManager } from "@/lib/hooks/useTabBarManager";
 import React, { useEffect } from "react";
 import { FlatList, RefreshControl, StyleSheet } from "react-native";
 
-function HomeContent() {
+const HomeContent = React.memo(function HomeContent() {
   const { sections, isLoading, error, fetchHome, hasContent } = useHomeScreen();
   const { handleScroll, reset } = useTabBarManager({ threshold: 8 });
 
@@ -65,7 +65,7 @@ function HomeContent() {
       </ThemedView>
     </ScreenWrapper>
   );
-}
+});
 
 export default function Home() {
   return (
