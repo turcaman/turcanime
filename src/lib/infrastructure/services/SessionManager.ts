@@ -19,7 +19,7 @@ export class SessionManager implements ISessionManager {
         logger.info("SessionManager", "No existing session, creating initial session");
         // Create initial session to avoid 403 on first requests
         const initialSession: ISession = {
-          userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          userAgent: "",
           cookies: ""
         };
         await this.setSession(initialSession);
@@ -62,7 +62,7 @@ export class SessionManager implements ISessionManager {
       if (session.cookies && session.cookies.length > 0 && this.sessionReadyResolver) {
         logger.info("SessionManager", `Session updated with ${session.cookies.length} cookies`);
         this.sessionReadyResolver();
-        // Don't nullify resolver - allow multiple session updates
+        this.sessionReadyResolver = null; // Prevent memory leaks
       }
     } catch (error) {
       logger.error("SessionManager", "Failed to set session", error);

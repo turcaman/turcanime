@@ -113,7 +113,7 @@ export class SiteVersionManager {
 
       const updatedSession: ISession = {
         cookies: JSON.stringify(cookieData),
-        userAgent: session.userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        userAgent: session.userAgent || "",
       };
 
       await this.sessionManager.setSession(updatedSession);

@@ -65,7 +65,7 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
     await sessionManager.initialize();
     initProvider();
   }).catch(e => {
-    console.error("[DI] Initialization failed:", e);
+    logger.error("DI", "Initialization failed", e);
   }).finally(() => {
     isInitializing = false;
   });

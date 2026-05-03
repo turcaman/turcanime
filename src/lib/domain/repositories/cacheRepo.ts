@@ -1,8 +1,9 @@
 /**
  * Generic cache repository with TTL support.
- * Wraps the raw storage with typed get/set/expiration logic.
+ * Wraps raw storage with typed get/set/expiration logic.
  */
 import { LIMITS } from "../../config/limits";
+import { logger } from "../../utils/logger";
 
 interface CacheEntry<T> {
   payload: T;
@@ -49,7 +50,7 @@ export class CacheRepo implements ICacheRepo {
     try {
       const size = JSON.stringify(value).length;
       if (size > this.MAX_ENTRY_SIZE) {
-        console.warn(`[Cache] Entry "${key}" too large (${(size / 1024).toFixed(1)}KB), skipping cache`);
+        logger.warn("CacheRepo", `Entry "${key}" too large (${(size / 1024).toFixed(1)}KB), skipping cache`);
         return;
       }
     } catch {

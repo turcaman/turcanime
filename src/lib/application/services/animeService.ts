@@ -3,6 +3,7 @@ import { TIMEOUTS } from "../../config/timeouts";
 import { getDeps } from "../../di";
 import { Anime, AnimeDetail, AppError, AutocompleteAnime, HomeData } from "../../domain/entities";
 import { createCacheKey } from "../../utils/CacheUtils";
+import { logger } from "../../utils/logger";
 
 const cache = getDeps().cacheRepo;
 
@@ -64,7 +65,7 @@ async function handleAuthError<T>(
       onSuccess?.(data);
       return { data, error: null, fromCache: false };
     } catch (error) {
-      console.error(`Error handling authentication error for key ${cacheKey}:`, error);
+      logger.error("animeService", `Error handling authentication error for key ${cacheKey}`, error);
       return {
         data: null,
         error: createGenericError(error as any, "Error handling authentication error"),
@@ -72,7 +73,7 @@ async function handleAuthError<T>(
       };
     }
   } catch (authError) {
-    console.error(`Authentication error handling failed for key ${cacheKey}:`, authError);
+    logger.error("animeService", `Authentication error handling failed for key ${cacheKey}`, authError);
     return {
       data: null,
       error: { type: "AUTH_ERROR", message: "Error al recuperar sesión. Intenta recargar." },

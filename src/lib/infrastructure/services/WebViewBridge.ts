@@ -1,8 +1,8 @@
+import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 import { TIMEOUTS } from "../../config/timeouts";
 import { ISession, IWebViewBridge, WebViewMessageData } from "../../domain/interfaces";
 import { logger } from "../../utils/logger";
 import { JWPLAYER_EXTRACT_JS } from "../webview/injectionScripts";
-import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 
 // ─── Internal types ────────────────────────────────────────────────────
 
@@ -58,7 +58,8 @@ export class WebViewBridge implements IWebViewBridge {
         let { id, data: url, error } = data;
 
         if (id === "stream_auto") {
-          const lastRequestId = Array.from(this.activeDecryptions.keys()).pop();
+          const keys = Array.from(this.activeDecryptions.keys());
+          const lastRequestId = keys[keys.length - 1];
           if (lastRequestId) {
             id = lastRequestId;
           }

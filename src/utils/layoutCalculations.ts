@@ -2,6 +2,7 @@ import { Dimensions } from "react-native";
 import { SpacingTokens } from "../constants/design/SpacingTokens";
 import { GridConfig } from "../constants/layout/GridConfig";
 import { BreakpointKey, getBreakpoint } from "../constants/layout/Responsive";
+import { logger } from "../lib/utils/logger";
 
 export interface ScreenInfo {
   width: number;
@@ -42,11 +43,11 @@ export const calculateSearchCardWidth = (screenWidth?: number): number => {
   const maxCardWidth = 400;
 
   if (cardWidth < minCardWidth) {
-    console.warn(`Calculated card width (${cardWidth}px) is below minimum (${minCardWidth}px)`);
+    logger.warn("layoutCalculations", `Calculated card width (${cardWidth}px) is below minimum (${minCardWidth}px)`);
   }
 
   if (cardWidth > maxCardWidth) {
-    console.warn(`Calculated card width (${cardWidth}px) exceeds maximum (${maxCardWidth}px)`);
+    logger.warn("layoutCalculations", `Calculated card width (${cardWidth}px) exceeds maximum (${maxCardWidth}px)`);
   }
 
   return Math.max(minCardWidth, Math.min(cardWidth, maxCardWidth));

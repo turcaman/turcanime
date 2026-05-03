@@ -1,5 +1,6 @@
 import { initializeDeps } from "../../di";
 import { useUserStore } from "../../store/userStore";
+import { logger } from "../../utils/logger";
 
 export class AppInitializationService {
   private static instance: AppInitializationService;
@@ -37,7 +38,7 @@ export class AppInitializationService {
 
       this.isInitialized = true;
     } catch (error) {
-      console.error('[AppInitializationService] Initialization failed:', error);
+      logger.error('AppInitializationService', 'Initialization failed', error);
       // Don't set isInitialized to true on error to allow retry
       throw error;
     }
