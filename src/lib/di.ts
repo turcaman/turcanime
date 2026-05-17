@@ -11,6 +11,10 @@ import { getProvider, setProvider } from "./core/providerRegistry";
 import { ISessionManager, IStorage, IWebViewBridge } from "./domain/interfaces";
 import { CacheRepo } from "./domain/repositories/cacheRepo";
 import { AnimeLatinoProvider } from "./infrastructure/providers/AnimeLatinoProvider";
+import { HtmlParser } from "./infrastructure/parsers/HtmlParser";
+import { RscParser } from "./infrastructure/parsers/RscParser";
+import { SiteVersionManager } from "./infrastructure/version/SiteVersionManager";
+import { MetricsTracker } from "./infrastructure/metrics/MetricsTracker";
 import { ImageService } from "./infrastructure/services/ImageService";
 import { ANIMELATINO_CONFIG } from "./config/providerConfigs";
 import { logger } from "./utils/logger";
@@ -49,6 +53,11 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
   isInitializing = true;
 
   const cacheRepo = new CacheRepo(storage);
+  const htmlParser = new HtmlParser();
+  const rscParser = new RscParser();
+  const versionManager = new SiteVersionManager(sessionManager, cacheRepo);
+  const metrics = new MetricsTracker(cacheRepo);
+
   deps = {
     storage,
     webViewBridge,
@@ -63,6 +72,10 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
     sessionManager,
     cacheRepo,
     ANIMELATINO_CONFIG.baseUrl,
+    htmlParser,
+    rscParser,
+    versionManager,
+    metrics,
   );
   setProvider(provider);
 

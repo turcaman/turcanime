@@ -6,15 +6,11 @@ import {
     HomeData,
     VideoServer
 } from "../../domain/entities";
-import { IContentProvider, ISessionManager } from "../../domain/interfaces";
+import { IContentProvider, IHtmlParser, IMetricsTracker, IRscParser, ISessionManager, ISiteVersionManager } from "../../domain/interfaces";
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import { log } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";
 import { TMDB_IMAGE_BASE } from "../../config/images";
-import { MetricsTracker } from "../metrics/MetricsTracker";
-import { HtmlParser } from "../parsers/HtmlParser";
-import { RscParser } from "../parsers/RscParser";
-import { SiteVersionManager } from "../version/SiteVersionManager";
 
 /**
  * AnimeLatinoProvider - Content provider for AnimeLatinoHD
@@ -28,21 +24,25 @@ import { SiteVersionManager } from "../version/SiteVersionManager";
 export class AnimeLatinoProvider extends AbstractProvider implements IContentProvider {
   readonly name = "AnimeLatinoHD";
 
-  private htmlParser: HtmlParser;
-  private rscParser: RscParser;
-  private versionManager: SiteVersionManager;
-  private metrics: MetricsTracker;
+  private htmlParser: IHtmlParser;
+  private rscParser: IRscParser;
+  private versionManager: ISiteVersionManager;
+  private metrics: IMetricsTracker;
 
   constructor(
     sessionManager: ISessionManager,
     cacheRepo: CacheRepo,
-    baseUrl: string = "https://www.animelatinohd.com"
+    baseUrl: string,
+    htmlParser: IHtmlParser,
+    rscParser: IRscParser,
+    versionManager: ISiteVersionManager,
+    metrics: IMetricsTracker,
   ) {
     super(sessionManager, baseUrl);
-    this.htmlParser = new HtmlParser();
-    this.rscParser = new RscParser();
-    this.versionManager = new SiteVersionManager(sessionManager, cacheRepo);
-    this.metrics = new MetricsTracker(cacheRepo);
+    this.htmlParser = htmlParser;
+    this.rscParser = rscParser;
+    this.versionManager = versionManager;
+    this.metrics = metrics;
   }
 
   // ——— Public API ———
