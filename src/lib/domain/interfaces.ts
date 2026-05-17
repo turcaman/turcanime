@@ -7,6 +7,7 @@ export interface IContentProvider {
   getSuggestions(query: string, options?: { signal?: AbortSignal }): Promise<AutocompleteAnime[]>;
   getDetails(slug: string, options?: { signal?: AbortSignal }): Promise<AnimeDetail | null>;
   getEpisodeServers(slug: string, number: string, options?: { signal?: AbortSignal }): Promise<VideoServer[]>;
+  resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<string | null>;
 }
 
 export interface IStorage {
@@ -38,7 +39,7 @@ export type WebViewMessageData =
   | { type: "RAW"; data: string };
 
 export interface IWebViewBridge {
-  resolveStreamUrl(videoUrl: string, episodeUrl?: string): Promise<string | null>;
+  resolveStreamUrl(videoUrl: string): Promise<string | null>;
   handleMessage(message: string): { type: string; data: WebViewMessageData } | null;
   registerNavigation(fn: (uri: string) => void): void;
   registerInjection(fn: (code: string) => void): void;

@@ -170,6 +170,30 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     return [];
   }
 
+  async resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<string | null> {
+    try {
+      const res = await this.fetchWithSession(videoUrl, options || {});
+      if (!res.ok) {
+        log("resolveStreamUrl", `HTTP ${res.status} for ${videoUrl}`);
+        return null;
+      }
+
+      const html = await res.text();
+
+      const iframeMatch = html.match(/<iframe[^>]*src="([^"]+)"[^>]*>/);
+      if (!iframeMatch) {
+        log("resolveStreamUrl", "No iframe found in bridge page");
+        return null;
+      }
+
+      log("resolveStreamUrl", `Extracted iframe URL: ${iframeMatch[1]}`);
+      return iframeMatch[1];
+    } catch (error) {
+      log("resolveStreamUrl", `Failed to resolve ${videoUrl}`, error);
+      return null;
+    }
+  }
+
   // ——— Helpers ———
 
   private parseCardsWithMetrics(html: string): Anime[] {
