@@ -29,9 +29,6 @@ export const TIMEOUTS = {
   /** Max polling attempts for iframe extraction */
   IFRAME_POLL_MAX_ATTEMPTS: 20,
 
-  /** Delays for JWPlayer extraction script injections (staggered) */
-  JWPLAYER_DELAYS: [1500, 3000, 5000] as const,
-
   /** Max time to wait for stream decryption */
   DECRYPTION: 30000,
 } as const;

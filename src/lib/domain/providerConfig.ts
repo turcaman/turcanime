@@ -16,12 +16,6 @@ export interface ProviderConfig {
   /** URL to navigate to for session wash (reset cookies/referer) */
   sessionWashUrl: string;
 
-  /** Whether this provider uses JWPlayer for video extraction */
-  usesJwPlayer: boolean;
-
-  /** Delays (ms) for JWPlayer script injection attempts */
-  jwPlayerDelays?: number[];
-
   /** Optional: Custom endpoints for this provider */
   endpoints?: {
     home?: string;

@@ -1,5 +1,4 @@
 import { ProviderConfig } from "../domain/providerConfig";
-import { TIMEOUTS } from "./timeouts";
 
 /**
  * AnimeLatinoHD provider configuration
@@ -9,8 +8,6 @@ export const ANIMELATINO_CONFIG: ProviderConfig = {
   name: "AnimeLatinoHD",
   baseUrl: "https://www.animelatinohd.com",
   sessionWashUrl: "https://www.animelatinohd.com/",
-  usesJwPlayer: true,
-  jwPlayerDelays: [...TIMEOUTS.JWPLAYER_DELAYS],
   endpoints: {
     home: "/",
     search: "/animes",
