@@ -70,22 +70,28 @@ export async function resolveStreamUrl(server: VideoServer, episodeUrl?: string)
     return { stream: cached, error: null, fromCache: true };
   }
 
-  // Resolve via provider (fetch bridge_url HTML and extract iframe src)
+  // Step 1: Extract iframe URL from bridge page via provider
   logger.debug("playerService", `resolving stream for ${server.url}`);
   try {
-    const result = await getDeps().getProvider().resolveStreamUrl(server.url);
-    logger.debug("playerService", `resolved stream: ${result ? "OK" : "null"}`);
-
-    if (!result) {
-      return { stream: null, error: new Error("Failed to resolve stream"), fromCache: false };
+    const iframeUrl = await getDeps().getProvider().resolveStreamUrl(server.url);
+    if (!iframeUrl) {
+      return { stream: null, error: new Error("Failed to extract iframe URL"), fromCache: false };
     }
+    logger.debug("playerService", `extracted iframe URL: ${iframeUrl}`);
 
-    const referer = getRequiredReferer(result);
+    // Step 2: Navigate to embed page and extract HLS URL via WebView
+    const hlsUrl = await getDeps().webViewBridge.resolveEmbedStreamUrl(iframeUrl);
+    if (!hlsUrl) {
+      return { stream: null, error: new Error("Failed to resolve HLS stream"), fromCache: false };
+    }
+    logger.debug("playerService", `resolved HLS stream: OK`);
+
+    const referer = getRequiredReferer(hlsUrl);
     const headers: Record<string, string> = {};
     if (referer) headers["Referer"] = referer;
 
     const resolved: ResolvedStream = {
-      url: result,
+      url: hlsUrl,
       headers: Object.keys(headers).length > 0 ? headers : undefined,
     };
 
