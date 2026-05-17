@@ -10,6 +10,8 @@ import { IContentProvider, IHtmlParser, IMetricsTracker, IRscParser, ISessionMan
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import { log } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";
+import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
+import { ParserUtils } from "../parsers/ParserUtils";
 import { TMDB_IMAGE_BASE } from "../../config/images";
 
 /**
@@ -48,7 +50,8 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
   // ——— Public API ———
 
   async getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData> {
-    const res = await this.fetchWithSession("/", options || {});
+    const homeEndpoint = ANIMELATINO_CONFIG.endpoints?.home || "/";
+    const res = await this.fetchWithSession(homeEndpoint, options || {});
     const html = await res.text();
 
     // Check for site structure changes
@@ -121,9 +124,10 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
 
     const title = this.htmlParser.extractTitleFromHtml(html);
     const status = this.htmlParser.extractStatusFromHtml(html);
-    const episodes = this.htmlParser.parseEpisodesFromHtml(html, slug);
+    const episodes = this.htmlParser.parseEpisodes(html, slug);
 
     const domSynopsis = this.htmlParser.extractSynopsisFromDom(html);
+
     const jsonLdSynopsis = this.htmlParser.extractSynopsisFromJsonLd(html);
     const jsonLdImage = this.htmlParser.extractImageFromJsonLd(html);
     const synopsis = rscData.synopsis || jsonLdSynopsis || domSynopsis || meta.description || "";
@@ -163,7 +167,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
       const p = this.rscParser.parseRscPayload(text);
       if (!p || !p.includes('"players":')) continue;
 
-      const j = this.rscParser.extractJson(p, '"players":', "[", "]");
+      const j = ParserUtils.extractJson(p, '"players":', "[", "]");
       if (!j) continue;
 
       try {

@@ -9,7 +9,7 @@ export const ANIMELATINO_CONFIG: ProviderConfig = {
   baseUrl: "https://www.animelatinohd.com",
   sessionWashUrl: "https://www.animelatinohd.com/",
   endpoints: {
-    home: "/",
+    home: "/directorio",
     search: "/animes",
     suggestions: "/api/search",
   },

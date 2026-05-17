@@ -18,7 +18,7 @@ const MIN_TITLE_LENGTH = 20;
 const CARD_STRATEGIES: CardStrategy[] = [
   {
     name: "recent_animes",
-    regex: /<a[^>]*class="group block"[^>]*href="\/anime\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"[\s\S]*?alt="([^"]+)"[\s\S]*?<h3[^>]*>([\s\S]*?)<\/h3>[\s\S]*?<\/a\s*>/g,
+    regex: /<a[^>]*class="group block"[^>]*href="\/anime\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*(?:src|data-src)="([^"]+)"[\s\S]*?alt="([^"]+)"/g,
     extractCard: (match) => null,
   },
   {
@@ -168,33 +168,41 @@ export class HtmlParser implements IHtmlParser {
     }
   }
 
-  parseEpisodes(html: string, slug: string): { id: string; number: string; url: string }[] {
-    const epMatch = html.match(
-      /(?:"|\\")episodes(?:"|\\")\s*:\s*(\[.*?\])\s*,\s*(?:"|\\")animeName(?:"|\\")/
-    );
-    if (!epMatch) return [];
+  parseEpisodes(html: string, slug: string): Episode[] {
+    const parse = (json: string): Episode[] => {
+      try {
+        const episodes = JSON.parse(json);
+        if (!Array.isArray(episodes)) return [];
+        return episodes
+          .filter((ep: any) => ep && ep.id != null && ep.number != null)
+          .map((ep: any) => ({
+            id: String(ep.id),
+            number: String(ep.number),
+            url: `/ver/${slug}/${ep.number}`,
+          }));
+      } catch {
+        return [];
+      }
+    };
 
-    interface RawEpisode {
-      id: string | number;
-      number: string | number;
+    const rawJsonMatch = ParserUtils.extractJson(html, '"episodes":', "[", "]");
+    if (rawJsonMatch) {
+      log("HtmlParser", `Extracted episodes via raw HTML for ${slug}`);
+      return parse(rawJsonMatch);
     }
 
-    try {
-      const raw = epMatch[1].replace(/\\"/g, '"');
-      const episodes = JSON.parse(raw);
-      if (!Array.isArray(episodes)) return [];
-
-      return episodes
-        .filter((ep: RawEpisode) => ep && ep.id != null && ep.number != null)
-        .map((ep: RawEpisode) => ({
-          id: String(ep.id),
-          number: String(ep.number),
-          url: `/ver/${slug}/${ep.number}`,
-        }));
-    } catch (e: unknown) {
-      log("HtmlParser", "JSON parse failed for episodes", e);
-      return [];
+    const scripts = html.matchAll(/<script[^>]*>(.*?)<\/script>/gs);
+    for (const match of scripts) {
+      const text = match[1].replace(/\\"/g, '"');
+      const scriptJsonMatch = ParserUtils.extractJson(text, '"episodes":', "[", "]");
+      if (scriptJsonMatch) {
+        log("HtmlParser", `Extracted episodes via script JSON for ${slug}`);
+        return parse(scriptJsonMatch);
+      }
     }
+
+    log("HtmlParser", `Falling back to HTML parsing for ${slug}`);
+    return this.parseEpisodesFromHtml(html, slug);
   }
 
   extractMetaTags(html: string): {

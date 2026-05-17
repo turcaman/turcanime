@@ -10,6 +10,7 @@ export interface ParseResult {
 
 export interface IHtmlParser {
   parseCards(html: string): ParseResult;
+  parseEpisodes(html: string, slug: string): Episode[];
   parseEpisodesFromHtml(html: string, slug: string): Episode[];
   extractMetaTags(html: string): { title: string | null; banner: string | null; description: string | null };
   extractSynopsisFromDom(html: string): string | null;
@@ -23,7 +24,6 @@ export interface IRscParser {
   parseRscPayload(text: string): string;
   extractPosterUrl(rsc: string): string;
   extractSynopsis(rsc: string, fullHtml: string): string | null;
-  extractJson(text: string, key: string, sChar: string, eChar: string): string;
   parseAllFromScripts(html: string): { poster: string; synopsis: string | null };
 }
 
