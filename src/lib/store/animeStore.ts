@@ -102,9 +102,6 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
   },
 
   fetchDetails: async (slug: string, force = false) => {
-    if (force) {
-      set({ activeAnime: null });
-    }
     const controller = abortManager.getController("details");
     set({ isDetailsLoading: true, error: null });
 

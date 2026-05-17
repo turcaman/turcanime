@@ -50,7 +50,7 @@ function AnimeDetailsContent() {
     resolveStream,
   } = useAnimeDetailScreen(slug as string);
 
-  if (isAnimeLoading) {
+  if (isAnimeLoading && !anime) {
     return (
       <ThemedView style={styles.root}>
         <AppLoader variant="full" />
