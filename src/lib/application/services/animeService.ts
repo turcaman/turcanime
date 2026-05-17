@@ -190,6 +190,7 @@ export class AnimeService {
       this.cache.clearWithPrefix(`${CACHE_PREFIXES.DETAILS}_`),
       this.cache.clearWithPrefix(`${CACHE_PREFIXES.SEARCH}_`),
       this.cache.clearWithPrefix(`${CACHE_PREFIXES.SUGGESTIONS}_`),
+      this.cache.clearWithPrefix(`${CACHE_PREFIXES.STREAM}_`),
     ]);
   }
 }
