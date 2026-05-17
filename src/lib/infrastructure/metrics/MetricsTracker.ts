@@ -1,4 +1,5 @@
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
+import { IMetricsTracker } from "../../domain/interfaces";
 import { log } from "../../utils/logger";
 
 export interface MetricData {
@@ -11,7 +12,7 @@ export interface MetricsSnapshot {
   [key: string]: MetricData;
 }
 
-export class MetricsTracker {
+export class MetricsTracker implements IMetricsTracker {
   private readonly METRICS_KEY = "parsing_metrics";
   private metrics: Map<string, MetricData> = new Map();
   private cache: CacheRepo;

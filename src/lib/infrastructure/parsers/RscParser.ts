@@ -1,12 +1,13 @@
 import { log } from "../../utils/logger";
 import { TMDB_IMAGE_BASE } from "../../config/images";
+import { IRscParser } from "../../domain/interfaces";
 
 export interface RscExtractionResult {
   poster: string;
   synopsis: string | null;
 }
 
-export class RscParser {
+export class RscParser implements IRscParser {
   parseRscPayload(text: string): string {
     const s = text.indexOf("([");
     const e = text.lastIndexOf("])");

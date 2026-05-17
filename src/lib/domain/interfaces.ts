@@ -1,4 +1,39 @@
-import { Anime, AnimeDetail, AutocompleteAnime, HomeData, VideoServer } from "./entities";
+import { Anime, AnimeDetail, AutocompleteAnime, Episode, HomeData, VideoServer } from "./entities";
+
+// ─── Parser interfaces ─────────────────────────────────────────────────
+
+export interface ParseResult {
+  cards: Anime[];
+  strategyUsed: string;
+  success: boolean;
+}
+
+export interface IHtmlParser {
+  parseCards(html: string): ParseResult;
+  parseEpisodesFromHtml(html: string, slug: string): Episode[];
+  extractMetaTags(html: string): { title: string | null; banner: string | null; description: string | null };
+  extractSynopsisFromDom(html: string): string | null;
+  extractTitleFromHtml(html: string): string;
+  extractStatusFromHtml(html: string): string;
+  extractSynopsisFromJsonLd(html: string): string | null;
+  extractImageFromJsonLd(html: string): string | null;
+}
+
+export interface IRscParser {
+  parseRscPayload(text: string): string;
+  extractPosterUrl(rsc: string): string;
+  extractSynopsis(rsc: string, fullHtml: string): string | null;
+  extractJson(text: string, key: string, sChar: string, eChar: string): string;
+  parseAllFromScripts(html: string): { poster: string; synopsis: string | null };
+}
+
+export interface ISiteVersionManager {
+  checkAndInvalidateIfNeeded(html: string): Promise<boolean>;
+}
+
+export interface IMetricsTracker {
+  record(strategy: string, success: boolean): void;
+}
 
 export interface IContentProvider {
   name: string;

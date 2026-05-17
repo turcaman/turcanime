@@ -1,10 +1,10 @@
 import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { PERF_LIMITS } from "../../config/limits";
-import { ISession, ISessionManager } from "../../domain/interfaces";
+import { ISession, ISessionManager, ISiteVersionManager } from "../../domain/interfaces";
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import { log } from "../../utils/logger";
 
-export class SiteVersionManager {
+export class SiteVersionManager implements ISiteVersionManager {
   private readonly SITE_VERSION_KEY = "site_version";
   private sessionManager: ISessionManager;
   private cache: CacheRepo;

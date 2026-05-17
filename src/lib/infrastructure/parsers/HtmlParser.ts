@@ -1,13 +1,8 @@
 import { Anime, Episode } from "../../domain/entities";
+import { IHtmlParser, ParseResult } from "../../domain/interfaces";
 import { log } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";
 import { ParserUtils } from "./ParserUtils";
-
-export interface ParseResult {
-  cards: Anime[];
-  strategyUsed: string;
-  success: boolean;
-}
 
 interface CardStrategy {
   name: string;
@@ -48,7 +43,7 @@ const CARD_STRATEGIES: CardStrategy[] = [
   },
 ];
 
-export class HtmlParser {
+export class HtmlParser implements IHtmlParser {
   constructor() {
     // Initialize strategy extractCard functions with bound method
     CARD_STRATEGIES.forEach(strategy => {
