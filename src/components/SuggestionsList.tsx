@@ -4,6 +4,7 @@ import { FlashList } from "@shopify/flash-list";
 import { TAB_BAR_BOTTOM_OFFSET } from "../constants/layout";
 import { Theme } from "../constants/Theme";
 import { AutocompleteAnime } from "../lib/domain/entities";
+import { TMDB_POSTER_W92 } from "../lib/config/images";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ImageWithLoader } from "./ui/ImageWithLoader";
 import { ThemedText } from "./ui/ThemedText";
@@ -15,12 +16,10 @@ interface SuggestionsListProps {
   tabBarOffset?: number;
 }
 
-const TMDB_POSTER_BASE = "https://media.themoviedb.org/t/p/w92";
-
 function resolvePoster(poster: string): string {
   if (!poster) return "";
   if (poster.startsWith("http")) return poster;
-  return `${TMDB_POSTER_BASE}${poster}`;
+  return `${TMDB_POSTER_W92}${poster}`;
 }
 
 export const SuggestionsList = memo(({ suggestions, onSelect, onScroll, tabBarOffset }: SuggestionsListProps) => {

@@ -1,11 +1,10 @@
 import { log } from "../../utils/logger";
+import { TMDB_IMAGE_BASE } from "../../config/images";
 
 export interface RscExtractionResult {
   poster: string;
   synopsis: string | null;
 }
-
-const TMDB_POSTER_BASE = "https://image.tmdb.org/t/p/w300";
 
 export class RscParser {
   parseRscPayload(text: string): string {
@@ -31,10 +30,10 @@ export class RscParser {
     if (posterMatch) {
       const path = posterMatch[1];
       if (path.startsWith("http")) return path;
-      if (path.startsWith("/")) return `${TMDB_POSTER_BASE}${path}`;
+      if (path.startsWith("/")) return `${TMDB_IMAGE_BASE}${path}`;
     }
 
-    const tmdbPattern = "https://image.tmdb.org/t/p/w300/";
+    const tmdbPattern = `${TMDB_IMAGE_BASE}/`;
     const idx = rsc.indexOf(tmdbPattern);
     if (idx !== -1) {
       const end = rsc.indexOf('"', idx + tmdbPattern.length);

@@ -11,12 +11,11 @@ import { IContentProvider, ISessionManager } from "../../domain/interfaces";
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import { log } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";
+import { TMDB_IMAGE_BASE } from "../../config/images";
 import { MetricsTracker } from "../metrics/MetricsTracker";
 import { HtmlParser } from "../parsers/HtmlParser";
 import { RscParser } from "../parsers/RscParser";
 import { SiteVersionManager } from "../version/SiteVersionManager";
-
-const TMDB_POSTER_BASE = "https://image.tmdb.org/t/p/w300";
 
 /**
  * AnimeLatinoProvider - Content provider for AnimeLatinoHD
@@ -81,7 +80,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
 
       return items.map((item: { name: string; slug: string; poster: string }) => ({
         title: cleanTitle(item.name),
-        image: item.poster ? (item.poster.startsWith("http") ? item.poster : `${TMDB_POSTER_BASE}${item.poster}`) : "",
+        image: item.poster ? (item.poster.startsWith("http") ? item.poster : `${TMDB_IMAGE_BASE}${item.poster}`) : "",
         url: item.slug,
         status: "",
       }));
