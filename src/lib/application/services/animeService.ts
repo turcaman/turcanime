@@ -1,4 +1,5 @@
 import { ANIME_CACHE } from "../../config/cacheTTLs";
+import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { TIMEOUTS } from "../../config/timeouts";
 import { getDeps } from "../../di";
 import { Anime, AnimeDetail, AppError, AutocompleteAnime, HomeData } from "../../domain/entities";
@@ -6,12 +7,6 @@ import { createCacheKey } from "../../utils/CacheUtils";
 import { logger } from "../../utils/logger";
 
 const cache = getDeps().cacheRepo;
-
-// Cache key constants
-const HOME_CACHE_KEY = "ch_home";
-const SEARCH_CACHE_PREFIX = "search";
-const SUGGESTIONS_CACHE_PREFIX = "suggestions";
-const DETAILS_CACHE_PREFIX = "anime";
 
 /**
  * Prefetch images to warm up the cache.
@@ -125,7 +120,7 @@ async function fetchWithCache<T>(options: AnimeFetchOptions<T>, signal: AbortSig
 export async function fetchHomeData(signal: AbortSignal, force: boolean): Promise<FetchResult<HomeData>> {
   return await fetchWithCache(
     {
-      cacheKey: HOME_CACHE_KEY,
+      cacheKey: CACHE_PREFIXES.HOME,
       cacheTtl: ANIME_CACHE.HOME,
       errorMessage: "Error al cargar la pantalla de inicio",
       fetchFn: (sig: AbortSignal) => getDeps().getProvider().getHomeData({ signal: sig }),
@@ -145,7 +140,7 @@ export async function fetchSearchData(query: string, signal: AbortSignal, force:
 
   return await fetchWithCache(
     {
-      cacheKey: createCacheKey(SEARCH_CACHE_PREFIX, query),
+      cacheKey: createCacheKey(CACHE_PREFIXES.SEARCH, query),
       cacheTtl: ANIME_CACHE.SEARCH,
       errorMessage: "Error searching anime",
       fetchFn: async (sig: AbortSignal) => {
@@ -169,7 +164,7 @@ export async function fetchSuggestionsData(query: string, signal?: AbortSignal):
 
   const result = await fetchWithCache(
     {
-      cacheKey: createCacheKey(SUGGESTIONS_CACHE_PREFIX, query),
+      cacheKey: createCacheKey(CACHE_PREFIXES.SUGGESTIONS, query),
       cacheTtl: ANIME_CACHE.SUGGESTIONS,
       errorMessage: "Error loading suggestions",
       fetchFn: (sig: AbortSignal) => getDeps().getProvider().getSuggestions(query, { signal: sig }),
@@ -183,7 +178,7 @@ export async function fetchSuggestionsData(query: string, signal?: AbortSignal):
 export async function fetchDetailsData(slug: string, signal: AbortSignal, force: boolean): Promise<FetchResult<AnimeDetail | null>> {
   return await fetchWithCache(
     {
-      cacheKey: createCacheKey(DETAILS_CACHE_PREFIX, slug),
+      cacheKey: createCacheKey(CACHE_PREFIXES.DETAILS, slug),
       cacheTtl: ANIME_CACHE.DETAILS,
       errorMessage: "Error al cargar los detalles",
       fetchFn: (sig: AbortSignal) => getDeps().getProvider().getDetails(slug, { signal: sig }),
@@ -195,9 +190,9 @@ export async function fetchDetailsData(slug: string, signal: AbortSignal, force:
 
 export async function clearAnimeCache(): Promise<void> {
   await Promise.all([
-    cache.clearWithPrefix("ch_home"),
-    cache.clearWithPrefix(`${DETAILS_CACHE_PREFIX}_`),
-    cache.clearWithPrefix(`${SEARCH_CACHE_PREFIX}_`),
-    cache.clearWithPrefix(`${SUGGESTIONS_CACHE_PREFIX}_`),
+    cache.clearWithPrefix(CACHE_PREFIXES.HOME),
+    cache.clearWithPrefix(`${CACHE_PREFIXES.DETAILS}_`),
+    cache.clearWithPrefix(`${CACHE_PREFIXES.SEARCH}_`),
+    cache.clearWithPrefix(`${CACHE_PREFIXES.SUGGESTIONS}_`),
   ]);
 }

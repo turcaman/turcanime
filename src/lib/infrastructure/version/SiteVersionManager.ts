@@ -1,3 +1,4 @@
+import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { PERF_LIMITS } from "../../config/limits";
 import { ISession, ISessionManager } from "../../domain/interfaces";
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
@@ -75,10 +76,10 @@ export class SiteVersionManager {
   async invalidateCache(): Promise<void> {
     try {
       await Promise.all([
-        this.cache.clearWithPrefix("ch_home"),
-        this.cache.clearWithPrefix("anime_"),
-        this.cache.clearWithPrefix("search_"),
-        this.cache.clearWithPrefix("suggestions_"),
+        this.cache.clearWithPrefix(CACHE_PREFIXES.HOME),
+        this.cache.clearWithPrefix(`${CACHE_PREFIXES.DETAILS}_`),
+        this.cache.clearWithPrefix(`${CACHE_PREFIXES.SEARCH}_`),
+        this.cache.clearWithPrefix(`${CACHE_PREFIXES.SUGGESTIONS}_`),
       ]);
       log("SiteVersionManager", "Cache invalidated successfully");
     } catch (e: unknown) {
