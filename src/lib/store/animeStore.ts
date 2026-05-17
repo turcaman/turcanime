@@ -40,7 +40,7 @@ interface AnimeState {
 }
 
 export const useAnimeStore = create<AnimeState>((set, get) => ({
-  homeData: { recent: [], popular: [], topViewed: [] },
+      homeData: { recent: [] },
   searchAnimes: [],
   suggestions: [],
   activeAnime: null,
@@ -133,7 +133,7 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
   clearCache: async () => {
     await clearAnimeCache();
     set({
-      homeData: { recent: [], popular: [], topViewed: [] },
+  homeData: { recent: [] },
       activeAnime: null,
     });
   },
