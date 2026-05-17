@@ -13,8 +13,6 @@ export const ANIMELATINO_CONFIG: ProviderConfig = {
   jwPlayerDelays: [...TIMEOUTS.JWPLAYER_DELAYS],
   endpoints: {
     home: "/",
-    popular: "/animes/populares",
-    topViewed: "/animes/mas-vistos",
     search: "/animes",
     suggestions: "/api/search",
   },
