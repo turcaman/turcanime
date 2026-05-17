@@ -5,6 +5,8 @@
  * Stores and use-cases import `getDeps()` instead of reaching into
  * infrastructure modules directly, enabling testability via mock injection.
  */
+import { AnimeService } from "./application/services/animeService";
+import { PlayerService } from "./application/services/playerService";
 import { PlayerUIService } from "./application/services/PlayerUIService";
 import { sessionManager, storage, webViewBridge } from "./core/infrastructure";
 import { getProvider, setProvider } from "./core/providerRegistry";
@@ -26,6 +28,8 @@ export interface AppDependencies {
   webViewBridge: IWebViewBridge;
   sessionManager: ISessionManager;
   getProvider: typeof getProvider;
+  animeService: AnimeService;
+  playerService: PlayerService;
   playerUIService: PlayerUIService;
   imageService: ImageService;
   cacheRepo: CacheRepo;
@@ -63,6 +67,8 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
     webViewBridge,
     sessionManager,
     getProvider,
+    animeService: new AnimeService(cacheRepo),
+    playerService: new PlayerService(cacheRepo),
     playerUIService: new PlayerUIService(),
     imageService: new ImageService(),
     cacheRepo,

@@ -1,11 +1,5 @@
 import { create } from "zustand";
-import {
-    clearAnimeCache,
-    fetchDetailsData,
-    fetchHomeData,
-    fetchSearchData,
-    fetchSuggestionsData,
-} from "../application/services/animeService";
+import { getDeps } from "../di";
 import {
     Anime,
     AnimeDetail,
@@ -57,7 +51,7 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
     const controller = abortManager.getController("home");
     set({ isHomeLoading: true, error: null });
 
-    const result = await fetchHomeData(controller.signal, force);
+    const result = await getDeps().animeService.fetchHomeData(controller.signal, force);
 
     if (result.fromCache) {
       set({ homeData: result.data!, isHomeLoading: false, error: null });
@@ -82,7 +76,7 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
     set({ suggestions: [], isSearchLoading: true, error: null });
 
     const controller = abortManager.getController("search");
-    const result = await fetchSearchData(query, controller.signal, force);
+    const result = await getDeps().animeService.fetchSearchData(query, controller.signal, force);
 
     if (result.error) {
       set({ error: result.error, isSearchLoading: false });
@@ -100,7 +94,7 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
     set({ isSuggestionsLoading: true });
     const controller = abortManager.getController("suggestions");
     try {
-      const data = await fetchSuggestionsData(query, controller.signal);
+      const data = await getDeps().animeService.fetchSuggestionsData(query, controller.signal);
       set({ suggestions: data, isSuggestionsLoading: false });
     } finally {
       abortManager.remove("suggestions");
@@ -114,7 +108,7 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
     const controller = abortManager.getController("details");
     set({ isDetailsLoading: true, error: null });
 
-    const result = await fetchDetailsData(slug, controller.signal, force);
+    const result = await getDeps().animeService.fetchDetailsData(slug, controller.signal, force);
 
     if (result.error) {
       set({ error: result.error, isDetailsLoading: false });
@@ -131,7 +125,7 @@ export const useAnimeStore = create<AnimeState>((set, get) => ({
   setSearchTerm: (term: string) => set({ lastSearchTerm: term }),
 
   clearCache: async () => {
-    await clearAnimeCache();
+    await getDeps().animeService.clearAnimeCache();
     set({
   homeData: { recent: [] },
       activeAnime: null,

@@ -1,8 +1,5 @@
 import { create } from "zustand";
-import {
-    fetchEpisodeServers,
-    resolveStreamUrl
-} from "../application/services/playerService";
+import { getDeps } from "../di";
 import { VideoServer } from "../domain/entities";
 
 interface PlayerState {
@@ -32,7 +29,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
 
   fetchServers: async (slug: string, number: string, force = false, signal?: AbortSignal) => {
     set({ isLoading: true, servers: [], error: null });
-    const result = await fetchEpisodeServers(slug, number, force, signal);
+    const result = await getDeps().playerService.fetchEpisodeServers(slug, number, force, signal);
     set({
       servers: result.servers,
       isLoading: false,
@@ -42,7 +39,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
 
   resolveStream: async (server: VideoServer) => {
     set({ isLoading: true, streamUrl: null, streamHeaders: null, error: null });
-    const result = await resolveStreamUrl(server);
+    const result = await getDeps().playerService.resolveStreamUrl(server);
     if (result.stream) {
       set({
         streamUrl: result.stream.url,
