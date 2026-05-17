@@ -1,171 +1,23 @@
-import { Anime, Episode } from "../../domain/entities";
+import { Episode } from "../../domain/entities";
 import { IHtmlParser, ParseResult } from "../../domain/interfaces";
 import { log } from "../../utils/logger";
-import { cleanTitle } from "../../utils/text";
 import { ParserUtils } from "./ParserUtils";
-
-interface CardStrategy {
-  name: string;
-  regex: RegExp;
-  extractCard: (match: RegExpMatchArray) => Anime | null;
-}
-
-// Constants for context search
-const CONTEXT_SEARCH_RADIUS = 500;
-const MIN_TITLE_LENGTH = 20;
-
-// Card extraction strategies ordered by priority
-const CARD_STRATEGIES: CardStrategy[] = [
-  {
-    name: "recent_animes",
-    regex: /<a[^>]*class="group block"[^>]*href="\/anime\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*(?:src|data-src)="([^"]+)"[\s\S]*?alt="([^"]+)"/g,
-    extractCard: (match) => null,
-  },
-  {
-    name: "primary_src",
-    regex: /<a[^>]*class="[^"]*animeCard[^"]*"[^>]*href="\/anime\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"[\s\S]*?>[\s\S]*?<h2[^>]*>([\s\S]*?)<\/h2>[\s\S]*?<\/a\s*>/g,
-    extractCard: (match) => null,
-  },
-  {
-    name: "fallback_data-src",
-    regex: /<a[^>]*class="[^"]*animeCard[^"]*"[^>]*href="\/anime\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*data-src="([^"]+)"[\s\S]*?>[\s\S]*?<h2[^>]*>([\s\S]*?)<\/h2>[\s\S]*?<\/a\s*>/g,
-    extractCard: (match) => null,
-  },
-  {
-    name: "fallback_nextjs_link",
-    regex: /<Link[^>]*href="\/anime\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*(?:src|data-src)="([^"]+)"[\s\S]*?>[\s\S]*?<[^>]*>([\s\S]*?)<\/[^>]*>[\s\S]*?<\/Link\s*>/g,
-    extractCard: (match) => null,
-  },
-  {
-    name: "fallback_generic",
-    regex: /<a[^>]*href="\/anime\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*(?:src|data-src)="([^"]+)"[\s\S]*?>[\s\S]*?<(?:h2|h3|span|div|p)[^>]*>([\s\S]*?)<\/(?:h2|h3|span|div|p)>[\s\S]*?<\/a\s*>/g,
-    extractCard: (match) => null,
-  },
-];
+import { HomeParser } from "./strategies/HomeParser";
 
 export class HtmlParser implements IHtmlParser {
+  private homeParser: HomeParser;
+
   constructor() {
-    // Initialize strategy extractCard functions with bound method
-    CARD_STRATEGIES.forEach(strategy => {
-      strategy.extractCard = (match: RegExpMatchArray) =>
-        this.createAnimeCard(match[1], match[2], match[3]);
-    });
-  }
-
-  private createAnimeCard(url: string, image: string, title: string): Anime {
-    return {
-      title: cleanTitle(ParserUtils.sanitizeTitle(title)),
-      image,
-      url: ParserUtils.cleanUrl(url),
-      status: "",
-    };
-  }
-
-  private extractCardsWithStrategy(html: string, strategy: CardStrategy, seen: Set<string>): Anime[] {
-    const results = ParserUtils.extractWithRegex(html, strategy.regex, (match) => {
-      const url = match[1];
-      if (!ParserUtils.isValidUrl(url) || seen.has(url)) return null;
-
-      seen.add(url);
-      return strategy.extractCard(match);
-    });
-
-    return results
-      .filter((card): card is Anime => card !== null);
-  }
-
-  private strategyContextSearch(html: string, seen: Set<string>): Anime[] {
-    const linkRegex = /href="\/anime\/([^"]+)"/g;
-    const links = [...html.matchAll(linkRegex)].map((m) => m[1]);
-    const uniqueLinks = [...new Set(links)];
-
-    return uniqueLinks
-      .filter(url => !seen.has(url))
-      .map(url => {
-        const linkIndex = html.indexOf(`href="/anime/${url}"`);
-        if (linkIndex === -1) return null;
-
-        const context = this.extractContextAroundLink(html, linkIndex);
-        const imageUrl = ParserUtils.extractImageUrl(context);
-        const altTitle = this.extractTitleFromAltAttribute(context);
-
-        if (imageUrl) {
-          seen.add(url);
-          const title = altTitle || this.formatTitleFromUrl(url);
-          return this.createAnimeCard(url, imageUrl, title);
-        }
-        return null;
-      })
-      .filter((card): card is Anime => card !== null);
-  }
-
-  private extractContextAroundLink(html: string, linkIndex: number): string {
-    return html.substring(
-      Math.max(0, linkIndex - CONTEXT_SEARCH_RADIUS),
-      Math.min(html.length, linkIndex + CONTEXT_SEARCH_RADIUS)
-    );
-  }
-
-  private formatTitleFromUrl(url: string): string {
-    return url
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, (l) => l.toUpperCase());
-  }
-
-  private extractTitleFromAltAttribute(context: string): string | null {
-    const altMatch = context.match(/alt="([^"]+)"/);
-    return altMatch ? altMatch[1].trim() : null;
+    this.homeParser = new HomeParser();
   }
 
   parseCards(html: string): ParseResult {
-    const seen = new Set<string>();
-    let strategyUsed = "none";
-
-    this.logParsingInfo(html);
-
-    let cards: Anime[] = [];
-
-    const strategyResult = this.tryStrategies(html, seen);
-    if (strategyResult) {
-      cards = strategyResult.cards;
-      strategyUsed = strategyResult.strategyName;
-    } else {
-      cards = this.strategyContextSearch(html, seen);
-      if (cards.length > 0) {
-        strategyUsed = "fallback_context_search";
-      }
-    }
-
-    this.logResults(strategyUsed, cards.length);
-
+    const result = this.homeParser.parse(html);
     return {
-      cards,
-      strategyUsed,
-      success: cards.length > 0,
+      cards: result.data,
+      strategyUsed: result.strategyUsed,
+      success: result.success,
     };
-  }
-
-  private logParsingInfo(html: string): void {
-    log("HtmlParser", `HTML length: ${html.length}, contains "group block": ${html.includes("group block")}, contains animeCard: ${html.includes("animeCard")}`);
-    log("HtmlParser", `Contains /anime/ links: ${html.includes("/anime/")}`);
-  }
-
-  private tryStrategies(html: string, seen: Set<string>): { cards: Anime[]; strategyName: string } | null {
-    for (const strategy of CARD_STRATEGIES) {
-      const cards = this.extractCardsWithStrategy(html, strategy, seen);
-      if (cards.length > 0) {
-        return { cards, strategyName: strategy.name };
-      }
-    }
-    return null;
-  }
-
-  private logResults(strategyUsed: string, cardCount: number): void {
-    log("HtmlParser", `Strategy used: ${strategyUsed}, found ${cardCount} cards`);
-
-    if (cardCount === 0) {
-      log("HtmlParser", "WARNING: All strategies failed, site structure may have changed");
-    }
   }
 
   parseEpisodes(html: string, slug: string): Episode[] {
@@ -225,7 +77,7 @@ export class HtmlParser implements IHtmlParser {
     const domOverview = html.match(/page_overview__[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
     if (domOverview) {
       const cleaned = domOverview[1].replace(/<[^>]*>/g, "").trim();
-      if (cleaned.length > MIN_TITLE_LENGTH) return cleaned;
+      if (cleaned.length > 20) return cleaned;
     }
     return null;
   }
