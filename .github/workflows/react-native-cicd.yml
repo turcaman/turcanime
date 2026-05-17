@@ -10,9 +10,13 @@ on:
           - prod-apk
           - all
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-  NODE_OPTIONS: --openssl-legacy-provider --max_old_space_size=4096
+  NODE_OPTIONS: --max_old_space_size=4096
 
 jobs:
   validate:
@@ -28,7 +32,7 @@ jobs:
           cache: "npm"
 
       - name: 📦 Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: 🔍 Run ESLint
         run: npm run lint
@@ -39,6 +43,7 @@ jobs:
   build-android:
     needs: validate
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: 🏗 Checkout repository
         uses: actions/checkout@v4
@@ -77,7 +82,7 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
-          npm install
+          npm ci
           npm install -g eas-cli@latest
 
       - name: 🔄 Verify EAS CLI installation
@@ -86,7 +91,7 @@ jobs:
       - name: 📱 Build Production APK
         run: eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk
 
-      - name: � Upload build artifacts
+      - name: 📤 Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: app-prod-apk
@@ -118,7 +123,7 @@ jobs:
           name: app-prod-apk
 
       - name: 📝 Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           draft: true
           name: "Release v${{ steps.build-info.outputs.version }}-${{ steps.build-info.outputs.build_number }}"
