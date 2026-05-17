@@ -13,6 +13,7 @@ import { log } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";
 import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 import { ParserUtils } from "../parsers/ParserUtils";
+import { AnimeOrchestrator } from "../parsers/AnimeOrchestrator";
 import { TMDB_IMAGE_BASE } from "../../config/images";
 
 /**
@@ -27,6 +28,7 @@ import { TMDB_IMAGE_BASE } from "../../config/images";
 export class AnimeLatinoProvider extends AbstractProvider implements IContentProvider {
   readonly name = "AnimeLatinoHD";
 
+  private orchestrator: AnimeOrchestrator;
   private htmlParser: IHtmlParser;
   private rscParser: IRscParser;
   private versionManager: ISiteVersionManager;
@@ -36,12 +38,14 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     sessionManager: ISessionManager,
     cacheRepo: CacheRepo,
     baseUrl: string,
+    orchestrator: AnimeOrchestrator,
     htmlParser: IHtmlParser,
     rscParser: IRscParser,
     versionManager: ISiteVersionManager,
     metrics: IMetricsTracker,
   ) {
     super(sessionManager, baseUrl);
+    this.orchestrator = orchestrator;
     this.htmlParser = htmlParser;
     this.rscParser = rscParser;
     this.versionManager = versionManager;
@@ -127,39 +131,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     }
 
     const html = await res.text();
-
-    const meta = this.htmlParser.extractMetaTags(html);
-    const rscData = this.rscParser.parseAllFromScripts(html);
-
-    const title = this.htmlParser.extractTitleFromHtml(html);
-    const status = this.htmlParser.extractStatusFromHtml(html);
-    const episodes = this.htmlParser.parseEpisodes(html, slug);
-
-    const domSynopsis = this.htmlParser.extractSynopsisFromDom(html);
-
-    const jsonLdSynopsis = this.htmlParser.extractSynopsisFromJsonLd(html);
-    const jsonLdImage = this.htmlParser.extractImageFromJsonLd(html);
-    const synopsis = rscData.synopsis || jsonLdSynopsis || domSynopsis || meta.description || "";
-
-    const image = rscData.poster || jsonLdImage || meta.banner || "";
-
-    const result: AnimeDetail = {
-      title: cleanTitle(title || meta.title || ""),
-      image,
-      synopsis,
-      banner: meta.banner || image,
-      poster: image,
-      status,
-      genres: [],
-      episodes,
-      url: slug,
-    };
-
-    if (!result.title && episodes.length === 0) {
-      throw new ProviderError(`Failed to parse details for: ${slug}`, "UNKNOWN");
-    }
-
-    return result;
+    return this.orchestrator.parseAnimeDetail(html, slug);
   }
 
   async getEpisodeServers(slug: string, number: string, options?: { signal?: AbortSignal }): Promise<VideoServer[]> {
@@ -203,7 +175,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
           });
         }
 
-        return servers; // Return successfully even if empty? Or should we throw?
+        return servers;
       } catch (e: unknown) {
         log("getEpisodeServers", `JSON parse failed for ${slug} ep ${number}`, e);
       }
@@ -238,5 +210,4 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     }
     return result.cards;
   }
-
 }

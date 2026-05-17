@@ -15,6 +15,7 @@ import { CacheRepo } from "./domain/repositories/cacheRepo";
 import { AnimeLatinoProvider } from "./infrastructure/providers/AnimeLatinoProvider";
 import { HtmlParser } from "./infrastructure/parsers/HtmlParser";
 import { RscParser } from "./infrastructure/parsers/RscParser";
+import { AnimeOrchestrator } from "./infrastructure/parsers/AnimeOrchestrator";
 import { SiteVersionManager } from "./infrastructure/version/SiteVersionManager";
 import { MetricsTracker } from "./infrastructure/metrics/MetricsTracker";
 import { ImageService } from "./infrastructure/services/ImageService";
@@ -59,6 +60,7 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
   const cacheRepo = new CacheRepo(storage);
   const htmlParser = new HtmlParser();
   const rscParser = new RscParser();
+  const orchestrator = new AnimeOrchestrator(htmlParser, rscParser);
   const versionManager = new SiteVersionManager(sessionManager, cacheRepo);
   const metrics = new MetricsTracker(cacheRepo);
   const imageService = new ImageService();
@@ -79,6 +81,7 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
     sessionManager,
     cacheRepo,
     ANIMELATINO_CONFIG.baseUrl,
+    orchestrator,
     htmlParser,
     rscParser,
     versionManager,
