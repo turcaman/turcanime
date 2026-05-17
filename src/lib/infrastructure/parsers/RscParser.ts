@@ -5,6 +5,8 @@ export interface RscExtractionResult {
   synopsis: string | null;
 }
 
+const TMDB_POSTER_BASE = "https://image.tmdb.org/t/p/w300";
+
 export class RscParser {
   parseRscPayload(text: string): string {
     const s = text.indexOf("([");
@@ -25,11 +27,21 @@ export class RscParser {
   }
 
   extractPosterUrl(rsc: string): string {
-    const tmdbPattern = "https://media.themoviedb.org/t/p/w300/";
+    const posterMatch = rsc.match(/"poster"\s*:\s*"([^"]+)"/);
+    if (posterMatch) {
+      const path = posterMatch[1];
+      if (path.startsWith("http")) return path;
+      if (path.startsWith("/")) return `${TMDB_POSTER_BASE}${path}`;
+    }
+
+    const tmdbPattern = "https://image.tmdb.org/t/p/w300/";
     const idx = rsc.indexOf(tmdbPattern);
-    if (idx === -1) return "";
-    const end = rsc.indexOf('"', idx + tmdbPattern.length);
-    return end !== -1 ? rsc.slice(idx, end) : "";
+    if (idx !== -1) {
+      const end = rsc.indexOf('"', idx + tmdbPattern.length);
+      return end !== -1 ? rsc.slice(idx, end) : "";
+    }
+
+    return "";
   }
 
   extractSynopsis(rsc: string, fullHtml: string): string | null {
@@ -129,18 +141,19 @@ export class RscParser {
     for (const match of scripts) {
       const text = match[1];
       if (!text.includes("self.__next_f.push")) continue;
-      const p = this.parseRscPayload(text);
-      if (!p) continue;
 
       if (!poster) {
-        poster = this.extractPosterUrl(p);
+        poster = this.extractPosterUrl(text);
       }
 
       if (!synopsisLocked) {
-        const result = this.extractSynopsis(p, html);
-        if (result) {
-          synopsis = result;
-          synopsisLocked = true;
+        const p = this.parseRscPayload(text);
+        if (p) {
+          const result = this.extractSynopsis(p, html);
+          if (result) {
+            synopsis = result;
+            synopsisLocked = true;
+          }
         }
       }
     }
