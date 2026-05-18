@@ -117,10 +117,12 @@ function AnimeDetailsContent() {
           episode={selectedEpisode}
           servers={servers}
           isLoading={serverLoading}
-          onServerSelect={(server) => {
-            resolveStream(server);
-            setSelectedEpisode(null);
-            if (selectedEpisode && anime) {
+        onServerSelect={(server) => {
+          if (selectedEpisode) {
+            resolveStream(server, selectedEpisode.url);
+          }
+          setSelectedEpisode(null);
+          if (selectedEpisode && anime) {
               addToHistory({
                 title: anime.title,
                 image: anime.image,
