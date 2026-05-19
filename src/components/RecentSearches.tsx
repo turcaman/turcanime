@@ -43,14 +43,15 @@ RecentSearches.displayName = "RecentSearches";
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: Theme.spacing.xl,
+    marginTop: Theme.spacing.md,
     paddingBottom: TAB_BAR_BOTTOM_OFFSET,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.sm,
+    marginBottom: Theme.spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Theme.colors.border,
   },
