@@ -73,10 +73,6 @@ const styles = StyleSheet.create({
     fontSize: Theme.fontSize.m,
     fontWeight: Theme.fontWeight.medium as "500",
   },
-  subtitle: {
-    marginTop: Theme.spacing.xs,
-    lineHeight: Theme.lineHeight.xs,
-  },
   episodeBadge: {
     position: 'absolute',
     bottom: Theme.spacing.sm,
