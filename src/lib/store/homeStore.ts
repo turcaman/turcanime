@@ -8,6 +8,7 @@ interface HomeState {
   isHomeLoading: boolean;
   error: AppError | null;
   fetchHome: (force?: boolean) => Promise<void>;
+  setIsHomeLoading: (loading: boolean) => void;
   setError: (error: AppError | null) => void;
   reset: () => void;
 }
@@ -30,13 +31,12 @@ export const useHomeStore = create<HomeState>((set) => ({
     } else if (result.data) {
       set({ homeData: result.data, isHomeLoading: false, error: null });
     } else {
-      set({
-        isHomeLoading: false,
-        error: { type: "UNKNOWN", message: "No se pudieron obtener datos del servidor" }
-      });
+      // Aborted or empty result — don't show error, next fetch will populate
+      set({ isHomeLoading: false });
     }
   },
 
+  setIsHomeLoading: (loading) => set({ isHomeLoading: loading }),
   setError: (error) => set({ error }),
   reset: () => set({ homeData: { recent: [] }, error: null, isHomeLoading: false }),
 }));

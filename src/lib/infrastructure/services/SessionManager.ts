@@ -107,5 +107,10 @@ export class SessionManager implements ISessionManager {
       await this.setSession(cleanedSession);
       logger.info("SessionManager", "Cookies invalidated due to auth errors");
     }
+
+    // Reset promise so waitForCookies() actually waits for fresh cookies
+    this.sessionReadyPromise = new Promise(resolve => {
+      this.sessionReadyResolver = resolve;
+    });
   }
 }

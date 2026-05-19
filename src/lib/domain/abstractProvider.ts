@@ -8,9 +8,6 @@ import { log } from "../utils/logger";
 import { ISessionManager } from "./interfaces";
 
 export abstract class AbstractProvider {
-  private authErrorCount = 0;
-  private authErrorTimestamp = 0;
-
   constructor(
     protected sessionManager: ISessionManager,
     protected baseUrl: string
@@ -58,25 +55,17 @@ export abstract class AbstractProvider {
       if (!res.ok) {
         log("fetch", `HTTP ${res.status} for ${url}`);
 
-        // Track auth errors for session invalidation
+        // Single auth error → immediate invalidation
         if (this.isAuthError(res.status)) {
-          if (this.authErrorCount === 0) {
-            this.authErrorTimestamp = Date.now();
-          }
-          this.authErrorCount++;
-
-          if (this.shouldInvalidateSession()) {
-            log("fetch", `Session invalidation triggered after ${this.authErrorCount} auth errors`);
-            const error = new Error("Authentication failed - session invalid") as Error & { type: string };
-            error.type = "AUTH_ERROR";
-            throw error;
-          }
+          log("fetch", "Auth error detected, triggering session invalidation");
+          const error = new Error("Authentication failed - session invalid") as Error & { type: string };
+          error.type = "AUTH_ERROR";
+          throw error;
         }
 
-        // Smart retry: only for 403 (blocked), not for 500 (server errors)
-        // Only retry critical paths (homepage, main listings)
-        if (res.status === 403 && retryCount < 1 && this.isCriticalPath(path)) {
-          log("fetch", `Smart retry (1/1) for 403 on critical path: ${url}`);
+        // Retry 403/network errors once on any path (not just critical)
+        if ((res.status === 403 || !res.ok) && retryCount < 1) {
+          log("fetch", `Smart retry (1/1) for HTTP ${res.status}: ${url}`);
           await new Promise(resolve => setTimeout(resolve, TIMEOUTS.RETRY_DELAY));
           return this.fetchWithSession(path, options, retryCount + 1);
         }
@@ -89,9 +78,8 @@ export abstract class AbstractProvider {
       }
 
       log("fetch", `Network error for ${url}`, error);
-      // Retry network errors on critical paths
-      if (retryCount < 1 && this.isCriticalPath(path)) {
-        log("fetch", `Smart retry (1/1) for network error on critical path: ${url}`);
+      if (retryCount < 1) {
+        log("fetch", `Smart retry (1/1) for network error: ${url}`);
         await new Promise(resolve => setTimeout(resolve, TIMEOUTS.RETRY_DELAY));
         return this.fetchWithSession(path, options, retryCount + 1);
       }
@@ -99,27 +87,7 @@ export abstract class AbstractProvider {
     }
   }
 
-  private isCriticalPath(path: string): boolean {
-    // Only retry on critical paths that users see immediately
-    const criticalPaths = ['/', '/animes/populares', '/animes/mas-vistos'];
-    return criticalPaths.some(criticalPath => path.includes(criticalPath));
-  }
-
   private isAuthError(status: number): boolean {
     return status === 403 || status === 401;
-  }
-
-  private shouldInvalidateSession(): boolean {
-    const now = Date.now();
-    const timeSinceFirstError = now - this.authErrorTimestamp;
-
-    // Reset counter if more than 30s passed
-    if (timeSinceFirstError > 30000) {
-      this.authErrorCount = 0;
-      return false;
-    }
-
-    // Invalidate if 3+ errors in 30s
-    return this.authErrorCount >= 3;
   }
 }
