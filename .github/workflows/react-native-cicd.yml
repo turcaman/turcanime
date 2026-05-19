@@ -8,6 +8,7 @@ on:
         description: "Build type to run"
         options:
           - prod-apk
+          - preview-apk
           - all
 
 concurrency:
@@ -97,6 +98,65 @@ jobs:
           name: app-prod-apk
           path: ./app-prod.apk
           retention-days: 30
+
+  build-android-preview:
+    needs: validate
+    if: ${{ github.event.inputs.buildType == 'preview-apk' || github.event.inputs.buildType == 'all' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 🏗 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: 🤖 Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          build-tools: 34.0.0
+
+      - name: 📦 Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: 📦 Cache Expo/EAS
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.eas
+            ~/Library/Caches/eas
+          key: ${{ runner.os }}-eas-${{ hashFiles('**/eas.json') }}
+          restore-keys: |
+            ${{ runner.os }}-eas-
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npm install -g eas-cli@latest
+
+      - name: 🔄 Verify EAS CLI installation
+        run: eas --version
+
+      - name: 📱 Build Preview APK
+        run: eas build --platform android --profile preview-apk --local --non-interactive --output=./app-preview.apk
+
+      - name: 📤 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-preview-apk
+          path: ./app-preview.apk
+          retention-days: 7
 
   create-release:
     needs: build-android
