@@ -21,6 +21,7 @@ function RootInner() {
   const prevConnectionType = useRef<ConnectionType>(null);
   const prevReachable = useRef<boolean | null>(null);
   const lastRefreshTime = useRef(0);
+  const hasBeenActive = useRef(false);
 
   // Detect network type change (wifi ↔ cellular) → auto session refresh
   useEffect(() => {
@@ -57,6 +58,10 @@ function RootInner() {
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
       if (state !== "active") return;
+      if (!hasBeenActive.current) {
+        hasBeenActive.current = true;
+        return;
+      }
       const elapsed = Date.now() - lastRefreshTime.current;
       if (elapsed < 5 * 60 * 1000) return;
       triggerSessionRefresh();
