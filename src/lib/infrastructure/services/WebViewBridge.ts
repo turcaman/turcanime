@@ -34,6 +34,12 @@ export class WebViewBridge implements IWebViewBridge {
   registerNavigation(fn: NavigateFn) { this.navigateFn = fn; }
   registerInjection(fn: (code: string) => void) { this._injectFn = fn; }
 
+  navigateTo(uri: string): void {
+    if (this.navigateFn) {
+      this.navigateFn(uri);
+    }
+  }
+
   notifyPageLoaded() {
     if (this.pageLoadResolver) {
       this.pageLoadResolver();

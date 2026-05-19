@@ -3,10 +3,7 @@ import { SectionTitle } from "@/components/ui/SectionTitle";
 import { ThemedText } from "@/components/ui/ThemedText";
 import { ThemedView } from "@/components/ui/ThemedView";
 import { Theme } from "@/constants/Theme";
-import { getDeps } from "@/lib/di";
-import { useDetailsStore } from "@/lib/store/detailsStore";
-import { useHomeStore } from "@/lib/store/homeStore";
-import { useSettingsStore } from "@/lib/store/user";
+import { useUIStore } from "@/lib/store/uiStore";
 import * as Haptics from "expo-haptics";
 import React from "react";
 import { Alert, StyleSheet, View } from "react-native";
@@ -16,16 +13,13 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
 
   const handleClearCache = () => {
-    Alert.alert("Actualizar datos", "¿Seguro? Esto refrescará la conexión con el servidor.", [
+    Alert.alert("Actualizar datos", "Si el contenido no carga o ves errores, esto renueva la conexión con el servidor para intentar solucionarlo.", [
       { text: "Cancelar", style: "cancel" },
       { 
         text: "Actualizar", 
         style: "default", 
-        onPress: async () => {
-          await getDeps().animeService.clearAnimeCache();
-          useHomeStore.getState().reset();
-          useDetailsStore.getState().reset();
-          useSettingsStore.getState().invalidateCache();
+        onPress: () => {
+          useUIStore.getState().triggerSessionRefresh();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
       }
@@ -42,7 +36,6 @@ export default function SettingsScreen() {
           <ActionRow
             icon="refresh-cw"
             label="Actualizar datos de la app"
-            description="Si notas errores al cargar, esta opción refresca la conexión de forma segura."
             onPress={handleClearCache}
             noBorder
           />

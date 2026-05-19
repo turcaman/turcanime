@@ -79,5 +79,6 @@ export interface IWebViewBridge {
   handleMessage(message: string): { type: string; data: WebViewMessageData } | null;
   registerNavigation(fn: (uri: string) => void): void;
   registerInjection(fn: (code: string) => void): void;
+  navigateTo(uri: string): void;
   notifyPageLoaded(): void;
 }
