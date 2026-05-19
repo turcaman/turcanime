@@ -26,8 +26,8 @@ export class HtmlParser implements IHtmlParser {
         const episodes = JSON.parse(json);
         if (!Array.isArray(episodes)) return [];
         return episodes
-          .filter((ep: any) => ep && ep.id != null && ep.number != null)
-          .map((ep: any) => ({
+          .filter((ep: { id: unknown; number: unknown }) => ep && ep.id != null && ep.number != null)
+          .map((ep: { id: unknown; number: unknown }) => ({
             id: String(ep.id),
             number: String(ep.number),
             url: `/ver/${slug}/${ep.number}`,
