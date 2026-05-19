@@ -37,14 +37,9 @@ export const useTabBarManager = (options: TabBarOptions = {}) => {
     setTabBarVisible(true);
   }, [setTabBarVisible]);
 
-  const hideTabBar = useCallback(() => {
-    setTabBarVisible(false);
-  }, [setTabBarVisible]);
-
   return {
     handleScroll,
     reset,
     showTabBar,
-    hideTabBar,
   };
 };
