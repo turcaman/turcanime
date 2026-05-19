@@ -3,7 +3,7 @@ import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { TIMEOUTS } from "../../config/timeouts";
 import { IContentProvider, ISessionManager } from "../../domain/interfaces";
 import { Anime, AnimeDetail, AppError, AutocompleteAnime, HomeData } from "../../domain/entities";
-import { CacheRepo } from "../../domain/repositories/cacheRepo";
+import { CacheEntry, CacheRepo } from "../../domain/repositories/cacheRepo";
 import { ImageService } from "../../infrastructure/services/ImageService";
 import { createCacheKey } from "../../utils/CacheUtils";
 import { logger } from "../../utils/logger";
@@ -38,7 +38,7 @@ export class AnimeService {
     this.imageService.prefetchImages(items);
   }
 
-  private async getCachedData<T>(cacheKey: string, force: boolean): Promise<T | null> {
+  private async getCachedData<T>(cacheKey: string, force: boolean): Promise<CacheEntry<T> | null> {
     if (force) return null;
     try {
       return await this.cache.get<T>(cacheKey);
@@ -84,7 +84,12 @@ export class AnimeService {
   async peekHomeCache(): Promise<HomeData | null> {
     const cacheKey = createCacheKey(CACHE_PREFIXES.HOME, '/');
     try {
-      return await this.cache.get<HomeData>(cacheKey);
+      const entry = await this.cache.get<HomeData>(cacheKey);
+      if (!entry) return null;
+      // Check freshness: if less than 30% of TTL remains, it's stale
+      const isStale = (entry.expiration - Date.now()) < (ANIME_CACHE.HOME * 0.3);
+      if (isStale) return null;
+      return entry.payload;
     } catch {
       return null;
     }
@@ -95,7 +100,11 @@ export class AnimeService {
 
     const cached = await this.getCachedData<T>(cacheKey, force || false);
     if (cached) {
-      return { data: cached, error: null, fromCache: true };
+      // Check freshness: if less than 30% of TTL remains, it's stale
+      const isStale = (cached.expiration - Date.now()) < (cacheTtl * 0.3);
+      if (!isStale) {
+        return { data: cached.payload, error: null, fromCache: true };
+      }
     }
 
     try {

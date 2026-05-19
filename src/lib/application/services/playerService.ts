@@ -44,7 +44,7 @@ export class PlayerService {
     if (!force && !signal?.aborted) {
       const cached = await this.cache.get<VideoServer[]>(cKey);
       if (cached) {
-        return { servers: cached, error: null };
+        return { servers: cached.payload, error: null };
       }
     }
 
@@ -71,7 +71,7 @@ export class PlayerService {
     const cached = await this.cache.get<ResolvedStream>(cKey);
     if (cached) {
       logger.debug("playerService", `stream cache hit for ${server.url.slice(0, 40)}`);
-      return { stream: cached, error: null, fromCache: true };
+      return { stream: cached.payload, error: null, fromCache: true };
     }
 
     logger.debug("playerService", `resolving stream for ${server.url}`);

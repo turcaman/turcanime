@@ -78,9 +78,8 @@ function RootInner() {
         lastRefreshTime.current = Date.now();
 
         // Show loading state immediately before slow operations
-        useHomeStore.getState().reset();
+        useHomeStore.getState().prepareRefresh();
         useDetailsStore.getState().reset();
-        useHomeStore.getState().setIsHomeLoading(true);
 
         await refreshSession();
         await getDeps().animeService.clearAnimeCache();

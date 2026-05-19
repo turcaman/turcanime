@@ -5,13 +5,13 @@
 import { LIMITS } from "../../config/limits";
 import { logger } from "../../utils/logger";
 
-interface CacheEntry<T> {
+export interface CacheEntry<T> {
   payload: T;
   expiration: number;
 }
 
 export interface ICacheRepo {
-  get<T>(key: string): Promise<T | null>;
+  get<T>(key: string): Promise<CacheEntry<T> | null>;
   set<T>(key: string, value: T, ttlMs: number): Promise<void>;
   remove(key: string): Promise<void>;
   clearWithPrefix(prefix: string): Promise<void>;
@@ -35,14 +35,14 @@ export class CacheRepo implements ICacheRepo {
   }
 
 
-  async get<T>(key: string): Promise<T | null> {
+  async get<T>(key: string): Promise<CacheEntry<T> | null> {
     const entry = await this.storage.get<CacheEntry<T>>(key);
     if (!entry) return null;
     if (Date.now() >= entry.expiration) {
       await this.storage.remove(key);
       return null;
     }
-    return entry.payload;
+    return entry;
   }
 
   async set<T>(key: string, value: T, ttlMs: number): Promise<void> {

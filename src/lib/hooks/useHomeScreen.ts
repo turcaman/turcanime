@@ -22,7 +22,7 @@ function buildSections(
 }
 
 export function useHomeScreen() {
-  const { fetchHome, homeData, isHomeLoading, error } = useHomeStore();
+  const { fetchHome, homeData, isHomeLoading, isRefreshing, error } = useHomeStore();
   const { continueWatching } = useHistoryStore();
   const { cacheInvalidationTimestamp } = useSettingsStore();
   const { isInitialized } = useUserInitializationStore();
@@ -37,7 +37,7 @@ export function useHomeScreen() {
     return buildSections(homeData, continueWatching);
   }, [homeData, continueWatching]);
 
-  const isLoading = isHomeLoading || !isInitialized;
+  const isLoading = isHomeLoading || (isRefreshing && homeData.recent.length === 0) || !isInitialized;
 
   return {
     sections,
