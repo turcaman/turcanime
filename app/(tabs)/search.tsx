@@ -161,7 +161,6 @@ export default function SearchScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: Theme.edge.horizontal },
   searchBarContainer: {
     paddingHorizontal: Theme.edge.horizontal,
     paddingBottom: Theme.spacing.lg,
