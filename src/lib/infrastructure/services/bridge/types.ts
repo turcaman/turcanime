@@ -2,7 +2,7 @@ export type MessageType = "STREAM_URL" | "ERROR" | "LOG" | "DECRYPTION_RESULT" |
 
 export interface BridgeMessage {
   type: MessageType;
-  payload: any;
+  payload: unknown;
 }
 
 export interface IMessageRouter {

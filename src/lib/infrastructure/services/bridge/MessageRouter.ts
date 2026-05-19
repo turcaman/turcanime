@@ -10,8 +10,10 @@ export class MessageRouter {
   handle(message: BridgeMessage): void {
     const { type, payload } = message;
 
-    if (type === "DECRYPTION_RESULT") {
-      let { id, data: url } = payload;
+    if (type === "DECRYPTION_RESULT" && typeof payload === "object" && payload !== null) {
+      const decrypted = payload as { id: string; data: string | null };
+      let id = decrypted.id;
+      const url = decrypted.data;
       
       // Auto-resolve logic
       if (id === "stream_auto") {
@@ -27,8 +29,9 @@ export class MessageRouter {
       }
     }
 
-    if (type === "EMBED_VIDEO_URL") {
-      this.onStreamFound(payload.url);
+    if (type === "EMBED_VIDEO_URL" && typeof payload === "object" && payload !== null) {
+      const { url } = payload as { url: string };
+      this.onStreamFound(url);
     }
   }
 }
