@@ -20,6 +20,20 @@ export const useHomeStore = create<HomeState>((set) => ({
 
   fetchHome: async (force = false) => {
     const controller = abortManager.getController("home");
+
+    // Serve cached data immediately to avoid loader flash
+    if (!force) {
+      try {
+        const cached = await getDeps().animeService.peekHomeCache();
+        if (cached) {
+          set({ homeData: cached, isHomeLoading: false, error: null });
+          return;
+        }
+      } catch {
+        // Ignore cache read error, proceed with normal fetch
+      }
+    }
+
     set({ isHomeLoading: true, error: null });
 
     const result = await getDeps().animeService.fetchHomeData(controller.signal, force);

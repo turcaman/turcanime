@@ -81,6 +81,15 @@ export class AnimeService {
     }
   }
 
+  async peekHomeCache(): Promise<HomeData | null> {
+    const cacheKey = createCacheKey(CACHE_PREFIXES.HOME, '/');
+    try {
+      return await this.cache.get<HomeData>(cacheKey);
+    } catch {
+      return null;
+    }
+  }
+
   private async fetchWithCache<T>(options: AnimeFetchOptions<T>, signal: AbortSignal): Promise<FetchResult<T>> {
     const { cacheKey, cacheTtl, errorMessage, fetchFn, force, onSuccess } = options;
 
