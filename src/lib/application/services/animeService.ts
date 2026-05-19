@@ -67,7 +67,7 @@ export class AnimeService {
         logger.error("animeService", `Error handling authentication error for key ${cacheKey}`, error);
         return {
           data: null,
-          error: createGenericError(error as any, "Error handling authentication error"),
+          error: createGenericError(error, "Error handling authentication error"),
           fromCache: false,
         };
       }
@@ -208,6 +208,7 @@ function createNetworkError(message?: string): AppError {
   return { type: "NETWORK_ERROR", message: message || "Sin conexión a internet" };
 }
 
-function createGenericError(error: any, fallbackMessage: string): AppError {
-  return { type: "UNKNOWN", message: error?.message || fallbackMessage };
+function createGenericError(error: unknown, fallbackMessage: string): AppError {
+  const message = error instanceof Error ? error.message : undefined;
+  return { type: "UNKNOWN", message: message || fallbackMessage };
 }
