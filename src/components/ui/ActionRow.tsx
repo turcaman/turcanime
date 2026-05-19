@@ -11,7 +11,6 @@ interface ActionRowProps {
   description?: string;
   value?: string;
   onPress?: () => void;
-  isDestructive?: boolean;
   noBorder?: boolean;
 }
 
@@ -21,13 +20,8 @@ export const ActionRow = ({
   description,
   value,
   onPress,
-  isDestructive,
   noBorder,
 }: ActionRowProps) => {
-  const labelColor = isDestructive ? "primary" : "primary";
-  const iconColor = isDestructive
-    ? Theme.colors.error
-    : Theme.colors.text.muted;
 
   return (
     <AnimatedPressable
@@ -40,12 +34,12 @@ export const ActionRow = ({
         <Feather
           name={icon}
           size={18}
-          color={iconColor}
+          color={Theme.colors.text.muted}
           style={styles.icon}
         />
       )}
       <View style={styles.textContainer}>
-        <ThemedText variant="body" color={labelColor} style={styles.label}>
+        <ThemedText variant="body" color="primary" style={styles.label}>
           {label}
         </ThemedText>
         {description && (
