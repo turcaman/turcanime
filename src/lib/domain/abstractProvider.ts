@@ -64,7 +64,7 @@ export abstract class AbstractProvider {
         }
 
         // Retry 403/network errors once on any path (not just critical)
-        if ((res.status === 403 || !res.ok) && retryCount < 1) {
+        if (retryCount < 1) {
           log("fetch", `Smart retry (1/1) for HTTP ${res.status}: ${url}`);
           await new Promise(resolve => setTimeout(resolve, TIMEOUTS.RETRY_DELAY));
           return this.fetchWithSession(path, options, retryCount + 1);
