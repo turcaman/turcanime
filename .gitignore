@@ -40,7 +40,10 @@ app-example
 
 # generated native folders
 /ios
-/android
 
 # test fixtures
 /animelatinohd/
+
+release-key.jks
+key.properties
+

@@ -90,6 +90,14 @@ jobs:
       - name: 🔄 Verify EAS CLI installation
         run: eas --version
 
+      - name: 🔐 Decode Keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+          echo "storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=release.keystore" >> android/key.properties
+
       - name: 📱 Build Production APK
         run: eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk
 
@@ -148,6 +156,14 @@ jobs:
 
       - name: 🔄 Verify EAS CLI installation
         run: eas --version
+
+      - name: 🔐 Decode Keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+          echo "storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=release.keystore" >> android/key.properties
 
       - name: 📱 Build Preview APK
         run: eas build --platform android --profile preview-apk --local --non-interactive --output=./app-preview.apk
