@@ -42,3 +42,4 @@ Active strict rules: `no-floating-promises`, `strict-boolean-expressions`, `no-c
 - Path alias `@/` for all src imports.
 - Components: `src/components/`, hooks: `src/lib/hooks/`, stores: `src/lib/store/`.
 - Providers implement `IContentProvider` interface from `src/lib/domain/interfaces.ts`.
+- No unnecessary comments. Only add comments that explain *why*, not *what*. Skip comments for self-explanatory code. Never add comments like "// constructor" or "// returns the value".
