@@ -1,3 +1,4 @@
+import "../global.css";
 import { NetworkBanner } from "@/components/NetworkBanner";
 import { Theme } from "@/constants/Theme";
 import { getDeps, initializeDeps } from "@/lib/di";
