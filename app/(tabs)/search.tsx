@@ -3,11 +3,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RecentSearches } from "@/components/RecentSearches";
 import { SuggestionsList } from "@/components/SuggestionsList";
 import { AppLoader } from "@/components/ui/AppLoader";
-import {
-    searchGridCardWidth,
-    TAB_BAR_BOTTOM_OFFSET,
-} from "@/constants/layout";
-import { Theme } from "@/constants/Theme";
+import { useSearchCardWidth } from "@/lib/hooks/useSearchCardWidth";
 import type { Anime } from "@/lib/domain/entities";
 import { useSearchScreen } from "@/lib/hooks/useSearchScreen";
 import { useTabBarManager } from "@/lib/hooks/useTabBarManager";
@@ -39,7 +35,7 @@ function SearchScreenContent() {
   } = useSearchScreen();
 
   const insets = useSafeAreaInsets();
-  const cardWidth = searchGridCardWidth();
+  const cardWidth = useSearchCardWidth();
 
   const { handleScroll, reset, showTabBar } = useTabBarManager({ threshold: 8 });
 
@@ -54,19 +50,19 @@ function SearchScreenContent() {
     <View className="flex-1">
       <View
         className="px-5 pb-4 bg-black"
-        style={{ paddingTop: insets.top + Theme.spacing.lg }}
+        style={{ paddingTop: insets.top + 16 }}
       >
         <View className="flex-row items-center h-12 bg-[#0A0A0A] rounded-lg px-4">
           <Feather
             name="search"
             size={18}
-            color={Theme.colors.text.muted}
+            color={"#777777"}
             style={{ marginRight: 8 }}
           />
           <TextInput
             className="flex-1 text-white text-[15px] font-medium h-12"
             placeholder="Buscar anime..."
-            placeholderTextColor={Theme.colors.text.muted}
+            placeholderTextColor={"#777777"}
             value={searchTerm}
             onChangeText={handleTextChange}
             onSubmitEditing={() => { handleSearch(searchTerm); }}
@@ -76,7 +72,7 @@ function SearchScreenContent() {
             <Feather
               name="x"
               size={16}
-              color={Theme.colors.text.secondary}
+              color="#AAAAAA"
               onPress={() => {
                 resetSearch();
                 showTabBar();
@@ -101,7 +97,7 @@ function SearchScreenContent() {
             suggestions={suggestions}
             onSelect={handleSelectSuggestion}
             onScroll={handleScroll}
-            tabBarOffset={TAB_BAR_BOTTOM_OFFSET}
+            tabBarOffset={116}
           />
         )}
 
@@ -121,7 +117,7 @@ function SearchScreenContent() {
             )}
             columnWrapperClassName="justify-start gap-[10px]"
             contentContainerClassName="pt-4"
-            contentContainerStyle={{ paddingBottom: TAB_BAR_BOTTOM_OFFSET }}
+            contentContainerStyle={{ paddingBottom: 116 }}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
@@ -130,7 +126,7 @@ function SearchScreenContent() {
                 <Feather
                   name="meh"
                   size={40}
-                  color={Theme.colors.text.muted}
+                  color={"#777777"}
                 />
                 <Text className="text-[15px] text-[#777777] mt-2">
                   No se encontraron resultados

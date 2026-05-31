@@ -4,8 +4,6 @@ import { AnimeDetailsHeader } from "@/components/AnimeDetailsHeader";
 import { AnimeEpisodeModal } from "@/components/AnimeEpisodeModal";
 import { EpisodeRangeSelector } from "@/components/EpisodeRangeSelector";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { TAB_BAR_BOTTOM_OFFSET } from "@/constants/layout";
-import { Theme } from "@/constants/Theme";
 import { useAnimeDetailScreen } from "@/lib/hooks/useAnimeDetailScreen";
 import { navigateBack, navigateToPlayer } from "@/lib/utils/navigation";
 import { useHistoryStore } from "@/lib/store/user";
@@ -56,13 +54,13 @@ function AnimeDetailsContent() {
     >
       <View className="flex-1">
         <ScrollView
-          contentContainerStyle={{ paddingBottom: TAB_BAR_BOTTOM_OFFSET }}
+          contentContainerStyle={{ paddingBottom: 116 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={hasLoaded && isAnimeLoading}
               onRefresh={refresh}
-              tintColor={Theme.colors.primary}
+              tintColor="#A855F7"
             />
           }
         >
@@ -93,7 +91,7 @@ function AnimeDetailsContent() {
                   <Text className="font-semibold">
                     Episodio {item.number}
                   </Text>
-                  <Feather name="play" size={16} color={Theme.colors.primary} />
+                  <Feather name="play" size={16} color="#A855F7" />
                 </View>
               </AnimatedPressable>
             ))}

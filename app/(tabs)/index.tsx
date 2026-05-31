@@ -2,8 +2,7 @@ import { ContinueWatching } from "@/components/home/ContinueWatching";
 import { AnimeGridSection } from "@/components/home/AnimeGridSection";
 import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { TAB_BAR_BOTTOM_OFFSET } from "@/constants/layout";
-import { Theme } from "@/constants/Theme";
+
 import { type SectionItem, useHomeScreen } from "@/lib/hooks/useHomeScreen";
 import { useTabBarManager } from "@/lib/hooks/useTabBarManager";
 import React, { useEffect } from "react";
@@ -44,8 +43,8 @@ const HomeContent = React.memo(function HomeContent() {
           data={sections}
           keyExtractor={(item: SectionItem, index: number) => `${item.type}-${index}`}
           renderItem={renderItem}
-          ItemSeparatorComponent={() => <View style={{ height: Theme.spacing.xl }} />}
-          contentContainerStyle={{ paddingHorizontal: Theme.edge.horizontal, paddingTop: insets.top + Theme.spacing.lg, paddingBottom: TAB_BAR_BOTTOM_OFFSET + insets.bottom }}
+          ItemSeparatorComponent={() => <View style={{ height: 20 }} />}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: 116 + insets.bottom }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={null}
           onScroll={handleScroll}
@@ -54,7 +53,7 @@ const HomeContent = React.memo(function HomeContent() {
             <RefreshControl
               refreshing={isLoading}
               onRefresh={() => { void fetchHome(true); }}
-              tintColor={Theme.colors.primary}
+              tintColor="#A855F7"
             />
           }
           accessibilityLabel="Lista de anime"

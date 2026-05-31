@@ -1,7 +1,7 @@
 import { FlatList, View } from "react-native";
-import { searchGridCardWidth } from "@/constants/layout";
 import type { Anime } from "@/lib/domain/entities";
 import React, { memo, useMemo } from "react";
+import { useSearchCardWidth } from "@/lib/hooks/useSearchCardWidth";
 import AnimeCard from "../AnimeCard";
 import { SectionTitle } from "../ui/SectionTitle";
 
@@ -11,7 +11,7 @@ interface AnimeGridSectionProps {
 }
 
 export const AnimeGridSection = memo(({ label, items }: AnimeGridSectionProps) => {
-  const cardWidth = searchGridCardWidth();
+  const cardWidth = useSearchCardWidth();
 
   const columnWrapperStyle = useMemo(() => ({
     justifyContent: "flex-start" as const,

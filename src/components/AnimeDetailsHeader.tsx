@@ -3,7 +3,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { memo } from "react";
 import { Text, useWindowDimensions, View } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
-import { Theme } from "../constants/Theme";
 import type { AnimeDetail } from "../lib/domain/entities";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ImageWithLoader } from "./ui/ImageWithLoader";
@@ -46,7 +45,7 @@ export const AnimeDetailsHeader = memo(
             className="absolute inset-0 w-full h-full"
           />
           <LinearGradient
-            colors={Theme.colors.overlay.detailsHero}
+            colors={["rgba(0,0,0,0.35)","rgba(0,0,0,0.15)","rgba(0,0,0,0.55)","rgba(0,0,0,0.98)"]}
             locations={[0.05, 0.35, 0.7, 1]}
             style={[{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingBottom: 20, paddingTop: insets.top }]}
           >
@@ -59,7 +58,7 @@ export const AnimeDetailsHeader = memo(
               <Feather
                 name="arrow-left"
                 size={24}
-                color={Theme.colors.text.primary}
+                color="#FFFFFF"
               />
             </AnimatedPressable>
 
@@ -115,7 +114,7 @@ export const AnimeDetailsHeader = memo(
             <Feather
               name={isAscending ? "chevron-up" : "chevron-down"}
               size={20}
-              color={Theme.colors.primary}
+              color="#A855F7"
             />
           </AnimatedPressable>
         </View>

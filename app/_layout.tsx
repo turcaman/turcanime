@@ -1,6 +1,5 @@
 import "../global.css";
 import { NetworkBanner } from "@/components/NetworkBanner";
-import { Theme } from "@/constants/Theme";
 import { getDeps, initializeDeps } from "@/lib/di";
 import { useNetworkStatus, type ConnectionType } from "@/lib/hooks/useNetworkStatus";
 import { refreshSession } from "@/lib/core/infrastructure";
@@ -114,18 +113,18 @@ function RootInner() {
 
   if (!ready) {
     return (
-      <View style={{ flex: 1, backgroundColor: Theme.colors.background }} />
+      <View className="flex-1 bg-black" />
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+    <View className="flex-1 bg-black">
       <NetworkBanner visible={isInternetReachable === false} />
       <StatusBar style="light" />
       <Stack screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
-        contentStyle: { backgroundColor: Theme.colors.background },
+        contentStyle: { backgroundColor: "#000000" },
         statusBarStyle: 'light',
       }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

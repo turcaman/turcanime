@@ -8,7 +8,6 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Theme } from "../constants/Theme";
 import { useUIStore } from "../lib/store/uiStore";
 import { AnimatedPressable } from "./AnimatedPressable";
 
@@ -56,7 +55,7 @@ export function FloatingTabBar({
           right: 0,
           alignItems: "center",
           justifyContent: "center",
-          bottom: insets.bottom + Theme.spacing.lg,
+          bottom: insets.bottom + 16,
         },
         animatedStyle,
       ]}
@@ -83,8 +82,8 @@ export function FloatingTabBar({
 
           const iconName = ICONS[route.name];
           const color = isFocused
-            ? Theme.colors.primary
-            : Theme.colors.text.muted;
+            ? "#A855F7"
+            : "#777777";
 
           return (
             <AnimatedPressable

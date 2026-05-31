@@ -1,5 +1,4 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { Theme } from "@/constants/Theme";
 import { useServices } from "@/lib/hooks/useServices";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { StatusBar } from "expo-status-bar";
@@ -43,7 +42,7 @@ function PlayerContent() {
         />
       ) : (
         <View style={styles.loadingArea}>
-          <ActivityIndicator size="large" color={Theme.colors.primary} />
+          <ActivityIndicator size="large" color="#A855F7" />
         </View>
       )}
     </View>
@@ -51,7 +50,7 @@ function PlayerContent() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.background },
+  container: { flex: 1, backgroundColor: "#000000" },
   loadingArea: { flex: 1, justifyContent: "center", alignItems: "center" }
 });
 
