@@ -20,12 +20,6 @@
         "buildType": "apk",
         "ndk": "27.1.12297006"
       }
-    },
-    "preview-apk": {
-      "extends": "preview",
-      "android": {
-        "buildType": "apk"
-      }
     }
   },
   "submit": {
