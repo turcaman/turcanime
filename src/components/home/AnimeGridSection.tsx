@@ -19,7 +19,7 @@ export const AnimeGridSection = memo(({ label, items }: AnimeGridSectionProps) =
     gap: 10,
   }), []);
 
-  if (!items || items.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
     <View style={styles.sectionContainer}>

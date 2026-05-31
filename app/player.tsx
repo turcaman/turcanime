@@ -13,16 +13,16 @@ function PlayerContent() {
 
   // Immersive orientation
   useEffect(() => {
-    playerUIService.setupImmersiveMode();
+    void playerUIService.setupImmersiveMode();
 
     return () => {
-      playerUIService.cleanupImmersiveMode();
+      void playerUIService.cleanupImmersiveMode();
       clearStream();
     };
   }, [clearStream, playerUIService]);
 
   // Video player - initialized directly with URL
-  const videoSource = streamUrl
+  const videoSource = streamUrl !== null
     ? { uri: streamUrl, headers: streamHeaders ?? undefined }
     : null;
 
@@ -36,7 +36,7 @@ function PlayerContent() {
   return (
     <View style={styles.container}>
       <StatusBar hidden />
-      {streamUrl ? (
+      {streamUrl !== null ? (
         <VideoView
           player={player}
           style={StyleSheet.absoluteFill}

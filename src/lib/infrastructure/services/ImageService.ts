@@ -7,7 +7,7 @@ export interface IImageService {
 export class ImageService implements IImageService {
   prefetchImages(items: { image?: string }[]): void {
     items.forEach((item) => {
-      if (item.image) {
+      if (item.image != null && item.image !== '') {
         Image.prefetch(item.image).catch(() => {});
       }
     });

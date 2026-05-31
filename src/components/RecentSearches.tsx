@@ -14,7 +14,7 @@ interface RecentSearchesProps {
 }
 
 export const RecentSearches = memo(({ searches, onSelect, onRemove }: RecentSearchesProps) => {
-  if (!searches || searches.length === 0) return null;
+  if (searches.length === 0) return null;
 
   return (
     <View style={styles.container}>
@@ -23,7 +23,7 @@ export const RecentSearches = memo(({ searches, onSelect, onRemove }: RecentSear
         data={searches}
         keyExtractor={(item) => item}
         renderItem={({ item }) => (
-          <AnimatedPressable style={styles.row} onPress={() => onSelect(item)}>
+          <AnimatedPressable style={styles.row} onPress={() => { onSelect(item); }}>
             <View style={styles.left}>
               <Feather name="clock" size={Theme.dimensions.icon.sm} color={Theme.colors.primary} />
               <ThemedText style={styles.text}>{item}</ThemedText>

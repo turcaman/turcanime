@@ -17,7 +17,7 @@ const HomeContent = React.memo(function HomeContent() {
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    fetchHome();
+    void fetchHome();
     reset();
   }, [fetchHome, reset]);
 
@@ -38,7 +38,7 @@ const HomeContent = React.memo(function HomeContent() {
       isLoading={isLoading}
       error={!!error}
       hasContent={hasContent}
-      onRetry={() => fetchHome(true)}
+      onRetry={() => { void fetchHome(true); }}
     >
       <ThemedView style={styles.root}>
         <FlatList
@@ -54,7 +54,7 @@ const HomeContent = React.memo(function HomeContent() {
           refreshControl={
             <RefreshControl
               refreshing={isLoading}
-              onRefresh={() => fetchHome(true)}
+              onRefresh={() => { void fetchHome(true); }}
               tintColor={Theme.colors.primary}
             />
           }

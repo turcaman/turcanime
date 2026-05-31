@@ -98,7 +98,7 @@ export class AnimeService {
   private async fetchWithCache<T>(options: AnimeFetchOptions<T>, signal: AbortSignal): Promise<FetchResult<T>> {
     const { cacheKey, cacheTtl, errorMessage, fetchFn, force, onSuccess } = options;
 
-    const cached = await this.getCachedData<T>(cacheKey, force || false);
+    const cached = await this.getCachedData<T>(cacheKey, force ?? false);
     if (cached) {
       // Check freshness: if less than 30% of TTL remains, it's stale
       const isStale = (cached.expiration - Date.now()) < (cacheTtl * 0.3);
@@ -139,14 +139,14 @@ export class AnimeService {
         errorMessage: "Error al cargar la pantalla de inicio",
         fetchFn: (sig: AbortSignal) => this.getProvider().getHomeData({ signal: sig }),
         force,
-        onSuccess: (data: HomeData) => (data.sections || []).forEach((s: { items: Anime[] }) => this.prefetchImages(s.items))
+        onSuccess: (data: HomeData) => { (data.sections ?? []).forEach((s: { items: Anime[] }) => { this.prefetchImages(s.items); }); }
       },
       signal
     );
   }
 
   async fetchSearchData(query: string, signal: AbortSignal, force: boolean): Promise<FetchResult<Anime[]>> {
-    if (!query?.trim()) {
+    if (!query.trim()) {
       return { data: [], error: null, fromCache: false };
     }
 
@@ -159,13 +159,13 @@ export class AnimeService {
         errorMessage: "Error searching anime",
         fetchFn: async (sig: AbortSignal) => {
           const timeoutPromise = new Promise<never>((_, reject) => {
-            setTimeout(() => reject(new Error("Search timeout")), SEARCH_TIMEOUT);
+            setTimeout(() => { reject(new Error("Search timeout")); }, SEARCH_TIMEOUT);
           });
           const searchPromise = this.getProvider().search(query, { signal: sig });
           return await Promise.race([searchPromise, timeoutPromise]);
         },
         force,
-        onSuccess: (data) => this.prefetchImages(data)
+        onSuccess: (data) => { this.prefetchImages(data); }
       },
       signal
     );
@@ -182,11 +182,11 @@ export class AnimeService {
         cacheTtl: ANIME_CACHE.SUGGESTIONS,
         errorMessage: "Error loading suggestions",
         fetchFn: (sig: AbortSignal) => this.getProvider().getSuggestions(query, { signal: sig }),
-        onSuccess: (data: AutocompleteAnime[]) => this.prefetchImages(data.map(item => ({ image: item.poster })))
+        onSuccess: (data: AutocompleteAnime[]) => { this.prefetchImages(data.map(item => ({ image: item.poster }))); }
       },
       signal ?? new AbortController().signal
     );
-    return result.data || [];
+    return result.data ?? [];
   }
 
   async fetchDetailsData(slug: string, signal: AbortSignal, force: boolean): Promise<FetchResult<AnimeDetail | null>> {
@@ -214,10 +214,10 @@ export class AnimeService {
 }
 
 function createNetworkError(message?: string): AppError {
-  return { type: "NETWORK_ERROR", message: message || "Sin conexión a internet" };
+  return { type: "NETWORK_ERROR", message: message ?? "Sin conexión a internet" };
 }
 
 function createGenericError(error: unknown, fallbackMessage: string): AppError {
   const message = error instanceof Error ? error.message : undefined;
-  return { type: "UNKNOWN", message: message || fallbackMessage };
+  return { type: "UNKNOWN", message: message ?? fallbackMessage };
 }

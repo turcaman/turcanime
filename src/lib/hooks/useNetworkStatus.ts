@@ -40,7 +40,7 @@ export function useNetworkStatus(): NetworkStatus {
       setIsInternetReachable(false);
     });
 
-    return () => unsubscribe();
+    return () => { unsubscribe(); };
   }, []);
 
   return { isConnected, isInternetReachable, connectionType };

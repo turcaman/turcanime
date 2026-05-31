@@ -1,7 +1,7 @@
 import type { HistoryItem } from "../domain/entities";
 
 export function prependDedup<T>(list: T[], item: T, max: number, dedupKey?: keyof T): T[] {
-  const filtered = dedupKey
+  const filtered = dedupKey != null
     ? list.filter(i => i[dedupKey] !== item[dedupKey])
     : list.filter(i => i !== item);
   return [item, ...filtered].slice(0, max);

@@ -35,7 +35,7 @@ export function useSearchScreen() {
   // Fetch suggestions when user types (only in typing state with text)
   useEffect(() => {
     if (debouncedTerm.trim().length > 0 && state.status === "typing") {
-      fetchSuggestions(debouncedTerm);
+      void fetchSuggestions(debouncedTerm);
     }
     // Clear suggestions when text is empty
     if (debouncedTerm.trim().length === 0 && suggestions.length > 0) {
@@ -55,20 +55,20 @@ export function useSearchScreen() {
 
     try {
       await fetchSearch(trimmed, force);
-      saveRecentSearch(trimmed);
+      void saveRecentSearch(trimmed);
     } finally {
       // Always transition to searched, even if fetch failed
       setState({ term, status: "searched" });
     }
   }, [fetchSearch, setStoreSearchTerm, saveRecentSearch, cancelSearch]);
 
-  const handleSearch = useCallback((term: string | null | undefined) => {
-    if (!term) return;
-    executeSearch(term);
+  const handleSearch = useCallback((term: string | null | undefined): void => {
+    if (term == null || term === '') return;
+    void executeSearch(term);
   }, [executeSearch]);
 
   const retrySearch = useCallback(() => {
-    executeSearch(state.term, true);
+    void executeSearch(state.term, true);
   }, [executeSearch, state.term]);
 
   const handleTextChange = useCallback((text: string) => {
@@ -88,7 +88,7 @@ export function useSearchScreen() {
   const handleSelectSuggestion = useCallback((suggestion: { slug: string }) => {
     const trimmed = state.term.trim();
     if (trimmed) {
-      saveRecentSearch(trimmed);
+      void saveRecentSearch(trimmed);
       setStoreSearchTerm(trimmed);
     }
     if (suggestion.slug) {

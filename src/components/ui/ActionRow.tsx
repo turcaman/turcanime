@@ -28,7 +28,7 @@ export const ActionRow = ({
       onPress={onPress}
       disabled={!onPress}
       hapticFeedback={!!onPress}
-      style={[styles.row, noBorder && styles.noBorder]}
+      style={[styles.row, noBorder === true && styles.noBorder]}
     >
       {icon && (
         <Feather
@@ -42,13 +42,13 @@ export const ActionRow = ({
         <ThemedText variant="body" color="primary" style={styles.label}>
           {label}
         </ThemedText>
-        {description && (
+        {description != null && description !== '' && (
           <ThemedText variant="caption" color="muted" style={styles.description}>
             {description}
           </ThemedText>
         )}
       </View>
-      {value ? (
+      {value != null && value !== '' ? (
         <ThemedText variant="body" color="muted">
           {value}
         </ThemedText>

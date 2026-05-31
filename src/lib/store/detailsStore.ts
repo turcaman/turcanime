@@ -27,10 +27,10 @@ export const useDetailsStore = create<DetailsState>((set) => ({
     if (result.error) {
       set({ error: result.error, isDetailsLoading: false });
     } else {
-      set({ activeAnime: result.data || null, isDetailsLoading: false, error: null });
+      set({ activeAnime: result.data ?? null, isDetailsLoading: false, error: null });
     }
   },
 
-  reset: () => set({ activeAnime: null, error: null, isDetailsLoading: false }),
-  setError: (error) => set({ error }),
+  reset: () => { set({ activeAnime: null, error: null, isDetailsLoading: false }); },
+  setError: (error) => { set({ error }); },
 }));

@@ -27,7 +27,7 @@ export function useAnimeDetailScreen(slug: string) {
   const handleEpisodePress = useCallback(
     (ep: Episode) => {
       episodeUI.selectEpisode(ep);
-      fetchAndSet(ep);
+      void fetchAndSet(ep);
     },
     [fetchAndSet, episodeUI],
   );

@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
   override render() {
     if (this.state.hasError) {
       // Custom fallback UI
-      if (this.props.fallback) {
+      if (this.props.fallback != null && this.props.fallback !== false) {
         return this.props.fallback;
       }
 
@@ -57,7 +57,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <Text style={styles.emoji}>😵</Text>
           <Text style={styles.title}>Algo salió mal</Text>
           <Text style={styles.message}>
-            {this.state.error?.message || "Error inesperado"}
+            {this.state.error?.message ?? "Error inesperado"}
           </Text>
           <TouchableOpacity style={styles.button} onPress={this.handleRetry}>
             <Text style={styles.buttonText}>Reintentar</Text>

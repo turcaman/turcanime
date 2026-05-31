@@ -26,7 +26,7 @@ export class HtmlParser implements IHtmlParser {
         const episodes = JSON.parse(json);
         if (!Array.isArray(episodes)) return [];
         return episodes
-          .filter((ep: { id: unknown; number: unknown }) => ep && ep.id != null && ep.number != null)
+          .filter((ep: { id: unknown; number: unknown }) => ep.id != null && ep.number != null)
           .map((ep: { id: unknown; number: unknown }) => ({
             id: String(ep.id),
             number: String(ep.number),
@@ -67,9 +67,9 @@ export class HtmlParser implements IHtmlParser {
     const descriptionMatch = html.match(/<meta name="description" content="([^"]+)"/);
 
     return {
-      title: titleMatch?.[1] || null,
-      banner: bannerMatch?.[1] || null,
-      description: descriptionMatch?.[1] || null,
+      title: titleMatch?.[1] ?? null,
+      banner: bannerMatch?.[1] ?? null,
+      description: descriptionMatch?.[1] ?? null,
     };
   }
 
@@ -133,7 +133,7 @@ export class HtmlParser implements IHtmlParser {
     if (!jsonLdMatch) return null;
     try {
       const data = JSON.parse(jsonLdMatch[1]);
-      return data.description || null;
+      return data.description ?? null;
     } catch {
       return null;
     }
@@ -144,7 +144,7 @@ export class HtmlParser implements IHtmlParser {
     if (!jsonLdMatch) return null;
     try {
       const data = JSON.parse(jsonLdMatch[1]);
-      if (data.image) {
+      if (data.image != null) {
         if (typeof data.image === "string") return data.image;
         if (Array.isArray(data.image) && data.image.length > 0) return data.image[0];
       }

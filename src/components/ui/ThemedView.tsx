@@ -19,7 +19,7 @@ export const ThemedView = ({
   style,
   ...props
 }: ThemedViewProps) => {
-  const backgroundColor = Theme.colors[variant] || Theme.colors.background;
+  const backgroundColor = Theme.colors[variant];
 
   const customStyles: ViewStyle = {
     backgroundColor,
@@ -29,7 +29,7 @@ export const ThemedView = ({
   if (margin) customStyles.margin = Theme.spacing[margin as keyof typeof Theme.spacing];
   if (radius) customStyles.borderRadius = Theme.radius[radius];
 
-  if (border || variant === "border") {
+  if (border === true || variant === "border") {
       if (variant !== "border") {
           customStyles.backgroundColor = backgroundColor;
       } else {

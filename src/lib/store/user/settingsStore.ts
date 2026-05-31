@@ -15,13 +15,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   episodeOrder: "asc",
   cacheInvalidationTimestamp: 0,
   
-  initialize: (order: "asc" | "desc") => set({ episodeOrder: order }),
+  initialize: (order: "asc" | "desc") => { set({ episodeOrder: order }); },
 
   setEpisodeOrder: async (order: "asc" | "desc") => {
     const previous = get().episodeOrder;
     set({ episodeOrder: order });
-    await persistState(EPISODE_ORDER_KEY, order, () => set({ episodeOrder: previous }), "settingsStore", "Failed to persist order");
+    await persistState(EPISODE_ORDER_KEY, order, () => { set({ episodeOrder: previous }); }, "settingsStore", "Failed to persist order");
   },
 
-  invalidateCache: () => set({ cacheInvalidationTimestamp: Date.now() }),
+  invalidateCache: () => { set({ cacheInvalidationTimestamp: Date.now() }); },
 }));

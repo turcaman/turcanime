@@ -51,8 +51,8 @@ export function getVisibleEpisodes(
   activeRangeIdx: number,
   ascending: boolean,
 ): Episode[] {
-  const range = ranges[activeRangeIdx];
-  if (!range) return [];
+  const range = ranges[activeRangeIdx] as EpisodeRange | undefined;
+  if (range == null) return [];
   const slice = episodes.slice(range.start, range.end);
   return ascending ? slice : [...slice].reverse();
 }

@@ -28,7 +28,7 @@ export const useSearchStore = create<SearchState>((set) => ({
   error: null,
 
   fetchSearch: async (query: string, force = false) => {
-    if (!query?.trim()) {
+    if (!query.trim()) {
       set({ searchAnimes: [], suggestions: [], error: null });
       return;
     }
@@ -40,7 +40,7 @@ export const useSearchStore = create<SearchState>((set) => ({
     if (result.error) {
       set({ error: result.error, isSearchLoading: false });
     } else {
-      set({ searchAnimes: result.data || [], isSearchLoading: false, error: null });
+      set({ searchAnimes: result.data ?? [], isSearchLoading: false, error: null });
     }
   },
 
@@ -65,6 +65,6 @@ export const useSearchStore = create<SearchState>((set) => ({
     set({ searchAnimes: [], suggestions: [], error: null, isSearchLoading: false });
   },
 
-  setSearchTerm: (term: string) => set({ lastSearchTerm: term }),
-  setError: (error) => set({ error }),
+  setSearchTerm: (term: string) => { set({ lastSearchTerm: term }); },
+  setError: (error) => { set({ error }); },
 }));

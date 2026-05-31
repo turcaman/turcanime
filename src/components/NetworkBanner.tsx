@@ -18,7 +18,7 @@ export const NetworkBanner = ({ visible, onRetry }: NetworkBannerProps) => {
       const timer = setTimeout(() => {
         onRetry();
       }, 500);
-      return () => clearTimeout(timer);
+      return () => { clearTimeout(timer); };
     }
     return undefined;
   }, [visible, onRetry]);

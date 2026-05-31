@@ -35,7 +35,7 @@ export function usePersistedRange(slug: string | undefined) {
 
   // Load persisted index on mount / slug change
   useEffect(() => {
-    if (!slug) {
+    if (slug == null) {
       setIsRestoring(false);
       return;
     }
@@ -54,7 +54,7 @@ export function usePersistedRange(slug: string | undefined) {
   const setAndPersist = useCallback(
     (idx: number) => {
       setActiveRangeIdx(idx);
-      if (slug) {
+      if (slug != null) {
         getDeps().storage.set(`range_${slug}`, idx).catch((error) => {
           logger.error("usePersistedRange", "Failed to persist range", error);
         });
@@ -86,7 +86,7 @@ export function useEpisodePagination(
   const isAscending = order === "asc";
 
   // Computaciones baratas - no necesitan useMemo
-  const orderedEpisodes = episodes?.length ? orderEpisodes(episodes) : [];
+  const orderedEpisodes = episodes != null && episodes.length > 0 ? orderEpisodes(episodes) : [];
   const ranges = buildRanges(orderedEpisodes);
   const visibleEpisodes = getVisibleEpisodes(orderedEpisodes, ranges, activeRangeIdx, isAscending);
 
@@ -110,7 +110,7 @@ export function useServerFetcher(
 
   const fetchAndSet = useCallback(
     async (ep: Episode) => {
-      if (!slug) return;
+      if (slug == null) return;
 
       // Increment request ID to track which request is current
       const currentRequestId = ++requestIdRef.current;

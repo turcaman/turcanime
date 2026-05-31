@@ -30,7 +30,7 @@ export const ListRow = ({
         onPress={onPress}
         disabled={!onPress}
       >
-        {posterUrl && (
+        {posterUrl != null && posterUrl !== '' && (
           <View style={styles.posterWrap}>
             <ImageWithLoader
               uri={posterUrl}
@@ -46,13 +46,13 @@ export const ListRow = ({
           >
             {title}
           </ThemedText>
-          {subtitle && (
+          {subtitle != null && subtitle !== '' && (
             <ThemedText variant="caption" color="muted">
               {subtitle}
             </ThemedText>
           )}
         </View>
-        {showChevron && onPress && (
+        {showChevron === true && onPress != null && (
           <Feather
             name="chevron-right"
             size={18}

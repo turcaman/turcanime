@@ -39,11 +39,11 @@ export class SiteVersionManager implements ISiteVersionManager {
   async getStoredVersion(): Promise<string | null> {
     try {
       const session = await this.sessionManager.getSession();
-      if (session?.cookies) {
+      if (session?.cookies != null) {
         // Try to parse as JSON (new format with metadata)
         try {
           const parsed = JSON.parse(session.cookies);
-          return parsed.siteVersion || null;
+          return parsed.siteVersion ?? null;
         } catch {
           // Raw cookie string (old format or first run) - not JSON
           return null;
@@ -100,7 +100,7 @@ export class SiteVersionManager implements ISiteVersionManager {
       try {
         // Try to extract from existing JSON wrapper
         const parsed = JSON.parse(rawCookies);
-        rawCookies = parsed.raw || "";
+        rawCookies = parsed.raw ?? "";
       } catch {
         // Already raw string or empty, use as-is
       }

@@ -29,7 +29,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     const updated = prependDedup(previous, newItem, 50, "url");
     
     set({ lastViewed: updated, continueWatching: computeContinueWatching(updated) });
-    await persistState(historyKey, updated, () => set({ lastViewed: previous, continueWatching: computeContinueWatching(previous) }), "historyStore", "Failed to persist history");
+    await persistState(historyKey, updated, () => { set({ lastViewed: previous, continueWatching: computeContinueWatching(previous) }); }, "historyStore", "Failed to persist history");
   },
 
   removeFromHistory: async (url: string) => {
@@ -37,7 +37,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     const updated = removeBy(previous, i => i.url !== url);
     
     set({ lastViewed: updated, continueWatching: computeContinueWatching(updated) });
-    await persistState(historyKey, updated, () => set({ lastViewed: previous, continueWatching: computeContinueWatching(previous) }), "historyStore", "Failed to persist removal");
+    await persistState(historyKey, updated, () => { set({ lastViewed: previous, continueWatching: computeContinueWatching(previous) }); }, "historyStore", "Failed to persist removal");
   },
 
   clearHistory: async () => {

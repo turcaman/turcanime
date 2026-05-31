@@ -17,8 +17,8 @@ export class PlayerUIService {
     if (this.isImmersive) return;
 
     try {
+      RNStatusBar.setHidden(true, "fade");
       await Promise.all([
-        RNStatusBar.setHidden(true, "fade"),
         ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE),
         NavigationBar.setVisibilityAsync("hidden"),
       ]);
@@ -34,8 +34,8 @@ export class PlayerUIService {
     if (!this.isImmersive) return;
 
     try {
+      RNStatusBar.setHidden(false, "fade");
       await Promise.all([
-        RNStatusBar.setHidden(false, "fade"),
         ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP),
         NavigationBar.setVisibilityAsync("visible"),
       ]);

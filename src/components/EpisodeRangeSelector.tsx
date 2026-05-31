@@ -43,7 +43,7 @@ export const EpisodeRangeSelector = memo(({
           });
         }
       }, 100);
-      return () => clearTimeout(timer);
+      return () => { clearTimeout(timer); };
     }
     return undefined;
   }, [activeRangeIdx, ranges.length, isRestoring]);
@@ -62,7 +62,7 @@ export const EpisodeRangeSelector = memo(({
           const isActive = activeRangeIdx === index;
           return (
             <AnimatedPressable
-              onPress={() => setActiveRangeIdx(index)}
+              onPress={() => { setActiveRangeIdx(index); }}
               style={[styles.badge, isActive && styles.badgeActive]}
             >
               <ThemedText

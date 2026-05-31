@@ -53,7 +53,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
 
     // Haptic feedback on press
     if (hapticFeedback && Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
     if (onPressIn) onPressIn(e);

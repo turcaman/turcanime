@@ -24,8 +24,8 @@ export class MessageRouter {
       const resolve = this.activeDecryptions.get(id);
       if (resolve) {
         this.activeDecryptions.delete(id);
-        logger.debug("MessageRouter", `DECRYPTION_RESULT for ${id}: ${url ? "OK" : "null"}`);
-        resolve(url || null);
+        logger.debug("MessageRouter", `DECRYPTION_RESULT for ${id}: ${url != null ? "OK" : "null"}`);
+        resolve(url ?? null);
       }
     }
 

@@ -74,7 +74,7 @@ export function FloatingTabBar({
             }
           };
 
-          const iconName = ICONS[route.name] || "circle";
+          const iconName = ICONS[route.name];
           const color = isFocused
             ? Theme.colors.primary
             : Theme.colors.text.muted;

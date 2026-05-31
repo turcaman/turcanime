@@ -19,7 +19,7 @@ export const ThemedText = ({
 }: ThemedTextProps) => {
   const variantStyles = styles[variant];
   const textColor = Theme.colors.text[color];
-  const fontWeight = weight || (variantStyles.fontWeight as FontWeight);
+  const fontWeight = weight ?? (variantStyles.fontWeight as FontWeight);
 
   return (
     <Text

@@ -66,7 +66,7 @@ function RootInner() {
       if (elapsed < 5 * 60 * 1000) return;
       triggerSessionRefresh();
     });
-    return () => sub.remove();
+    return () => { sub.remove(); };
   }, [triggerSessionRefresh]);
 
   // Execute full session refresh flow
@@ -84,14 +84,14 @@ function RootInner() {
         await refreshSession();
         await getDeps().animeService.clearAnimeCache();
 
-        useHomeStore.getState().fetchHome(true);
+        void useHomeStore.getState().fetchHome(true);
         useSettingsStore.getState().invalidateCache();
       } finally {
         setSessionRefreshing(false);
       }
     };
 
-    doRefresh();
+    void doRefresh();
   }, [sessionRefreshTrigger, setSessionRefreshing]);
 
   useEffect(() => {
@@ -120,7 +120,7 @@ function RootInner() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
-      <NetworkBanner visible={!isInternetReachable} />
+      <NetworkBanner visible={isInternetReachable === false} />
       <StatusBar style="light" />
       <Stack screenOptions={{
         headerShown: false,

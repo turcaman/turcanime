@@ -30,7 +30,7 @@ export const AnimeEpisodeModal = ({
   if (!visible) return null;
 
   // Prefer delta servers (AnimeLatinoHD), fallback to all
-  const delta = servers.filter((s) => s.title?.toLowerCase().includes("delta"));
+  const delta = servers.filter((s) => s.title.toLowerCase().includes("delta"));
   const displayServers = delta.length > 0 ? delta : servers;
 
   return (
@@ -61,7 +61,7 @@ export const AnimeEpisodeModal = ({
               <AnimatedPressable
                 key={server.id || `server-${index}`}
                 style={styles.serverCard}
-                onPress={() => onServerSelect(server)}
+                onPress={() => { onServerSelect(server); }}
               >
                 <View style={styles.playIcon}>
                   <Feather name="play" size={14} color={Theme.colors.primary} />

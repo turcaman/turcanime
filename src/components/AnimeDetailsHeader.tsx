@@ -31,8 +31,9 @@ export const AnimeDetailsHeader = memo(
     onBackPress,
   }: AnimeDetailsHeaderProps) => {
     const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-    const hasSynopsis = anime?.synopsis && anime.synopsis.length > 0;
-    const isAiring = anime?.status?.toLowerCase().includes("emisión") || anime?.status?.toLowerCase().includes("emision") || false;
+    const hasSynopsis = anime?.synopsis != null && anime.synopsis.length > 0;
+    const statusLower = anime?.status.toLowerCase();
+    const isAiring = statusLower != null && (statusLower.includes("emisión") || statusLower.includes("emision"));
 
     return (
       <>
@@ -44,7 +45,7 @@ export const AnimeDetailsHeader = memo(
           ]}
         >
           <ImageWithLoader
-            uri={anime?.banner || anime?.poster || ''}
+            uri={anime?.banner ?? anime?.poster ?? ''}
             style={styles.image}
           />
           <LinearGradient
@@ -96,14 +97,14 @@ export const AnimeDetailsHeader = memo(
         <View style={styles.section}>
           <SectionTitle>Sinopsis</SectionTitle>
           {hasSynopsis ? (
-            <AnimatedPressable onPress={() => setIsExpanded(!isExpanded)}>
+            <AnimatedPressable onPress={() => { setIsExpanded(!isExpanded); }}>
               <ThemedText
                 numberOfLines={isExpanded ? undefined : 3}
                 color="secondary"
               >
-                {anime?.synopsis}
+                {anime.synopsis}
               </ThemedText>
-              {!isExpanded && (anime?.synopsis?.length || 0) > 150 && (
+              {!isExpanded && anime.synopsis.length > 150 && (
                 <ThemedText
                   color="accent"
                   weight={Theme.fontWeight.bold as "700"}
@@ -122,7 +123,7 @@ export const AnimeDetailsHeader = memo(
 
         {/* Episodes Header */}
         <View style={styles.episodesHeader}>
-          <SectionTitle>Episodios ({anime?.episodes?.length || 0})</SectionTitle>
+          <SectionTitle>Episodios ({anime?.episodes.length ?? 0})</SectionTitle>
           <AnimatedPressable onPress={toggleSort}>
             <Feather
               name={isAscending ? "chevron-up" : "chevron-down"}

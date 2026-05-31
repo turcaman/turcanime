@@ -23,7 +23,7 @@ function resolvePoster(poster: string): string {
 }
 
 export const SuggestionsList = memo(({ suggestions, onSelect, onScroll, tabBarOffset }: SuggestionsListProps) => {
-  if (!suggestions || suggestions.length === 0) return null;
+  if (suggestions.length === 0) return null;
 
   return (
     <View style={styles.container}>
@@ -34,7 +34,7 @@ export const SuggestionsList = memo(({ suggestions, onSelect, onScroll, tabBarOf
         onScroll={onScroll}
         scrollEventThrottle={16}
         renderItem={({ item }) => (
-          <AnimatedPressable style={styles.row} onPress={() => onSelect(item)}>
+          <AnimatedPressable style={styles.row} onPress={() => { onSelect(item); }}>
             <View style={styles.posterWrap}>
               {item.poster ? (
                 <ImageWithLoader

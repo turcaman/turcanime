@@ -71,32 +71,32 @@ class Logger {
   debug(tag: string, message: string): void {
     if (!this.shouldLog(LogLevel.DEBUG)) return;
     console.log(this.format(LogLevel.DEBUG, tag, message));
-    this.persist({ timestamp: Date.now(), level: LogLevel.DEBUG, tag, message });
+    void this.persist({ timestamp: Date.now(), level: LogLevel.DEBUG, tag, message });
   }
 
   info(tag: string, message: string): void {
     if (!this.shouldLog(LogLevel.INFO)) return;
     console.log(this.format(LogLevel.INFO, tag, message));
-    this.persist({ timestamp: Date.now(), level: LogLevel.INFO, tag, message });
+    void this.persist({ timestamp: Date.now(), level: LogLevel.INFO, tag, message });
   }
 
   warn(tag: string, message: string, error?: unknown): void {
     if (!this.shouldLog(LogLevel.WARN)) return;
-    const errorStr = error ? this.serializeError(error) : undefined;
-    console.warn(this.format(LogLevel.WARN, tag, message), error || "");
-    this.persist({ timestamp: Date.now(), level: LogLevel.WARN, tag, message, error: errorStr });
+    const errorStr = error != null ? this.serializeError(error) : undefined;
+    console.warn(this.format(LogLevel.WARN, tag, message), error ?? "");
+    void this.persist({ timestamp: Date.now(), level: LogLevel.WARN, tag, message, error: errorStr });
   }
 
   error(tag: string, message: string, error?: unknown): void {
     if (!this.shouldLog(LogLevel.ERROR)) return;
-    const errorStr = error ? this.serializeError(error) : undefined;
-    console.error(this.format(LogLevel.ERROR, tag, message), error || "");
-    this.persist({ timestamp: Date.now(), level: LogLevel.ERROR, tag, message, error: errorStr });
+    const errorStr = error != null ? this.serializeError(error) : undefined;
+    console.error(this.format(LogLevel.ERROR, tag, message), error ?? "");
+    void this.persist({ timestamp: Date.now(), level: LogLevel.ERROR, tag, message, error: errorStr });
   }
 
   private serializeError(error: unknown): string {
     if (error instanceof Error) {
-      return `${error.name}: ${error.message}\n${error.stack || ""}`;
+      return `${error.name}: ${error.message}\n${error.stack ?? ""}`;
     }
     return String(error);
   }
@@ -104,7 +104,7 @@ class Logger {
   async getLogs(): Promise<LogEntry[]> {
     if (!this.persistenceEnabled || !this.storage) return [];
     try {
-      return await this.storage.get<LogEntry[]>(LOG_STORAGE_KEY) || [];
+      return (await this.storage.get<LogEntry[]>(LOG_STORAGE_KEY)) ?? [];
     } catch {
       return [];
     }
@@ -125,7 +125,7 @@ export const logger = new Logger();
 
 // Backward compatibility with existing code
 export function log(tag: string, msg: string, error?: unknown): void {
-  if (error) {
+  if (error != null) {
     logger.warn(tag, msg, error);
   } else {
     logger.info(tag, msg);

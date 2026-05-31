@@ -18,10 +18,10 @@ export class WebViewBridge implements IWebViewBridge {
 
   constructor() {
     this.injectionService = new InjectionService();
-    this.streamResolver = new StreamResolver((code) => this.injectFn(code));
+    this.streamResolver = new StreamResolver((code) => { this.injectFn(code); });
     this.messageRouter = new MessageRouter(
       this.activeDecryptions,
-      (url) => this.handleEmbedUrl(url)
+      (url) => { this.handleEmbedUrl(url); }
     );
   }
 
@@ -50,7 +50,7 @@ export class WebViewBridge implements IWebViewBridge {
   handleMessage(message: string): { type: string; data: WebViewMessageData } | null {
     try {
       const parsed = JSON.parse(message);
-      if (!parsed.type && typeof parsed === "object") return this.handleLegacyMessage(parsed);
+      if (parsed.type == null && typeof parsed === "object") return this.handleLegacyMessage(parsed);
 
       // Route message through router
       this.messageRouter.handle({ type: parsed.type, payload: parsed.data });
@@ -63,7 +63,7 @@ export class WebViewBridge implements IWebViewBridge {
 
   private handleEmbedUrl(url: string) {
     const lastRequestId = Array.from(this.activeDecryptions.keys()).pop();
-    if (lastRequestId) {
+    if (lastRequestId != null) {
       const autoResolve = this.activeDecryptions.get(lastRequestId);
       if (autoResolve) {
         this.activeDecryptions.delete(lastRequestId);
@@ -95,7 +95,7 @@ export class WebViewBridge implements IWebViewBridge {
     this.navigateFn(this.extractOrigin(videoUrl));
     try { await this.waitForPageLoad(TIMEOUTS.PAGE_LOAD); } catch {}
 
-    if (episodeUrl) {
+    if (episodeUrl != null) {
       this.navigateFn(episodeUrl);
       try { await this.waitForPageLoad(TIMEOUTS.EPISODE_PAGE_LOAD); } catch {}
     }

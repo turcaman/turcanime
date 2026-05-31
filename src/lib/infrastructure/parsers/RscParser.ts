@@ -55,12 +55,12 @@ export class RscParser implements IRscParser {
         // RSC reference — resolve the actual text
         const rid = val.slice(1);
         const resolved = this.resolveRscReference(fullHtml, rid);
-        if (resolved && resolved.length > 20) return resolved;
+        if (resolved != null && resolved.length > 20) return resolved;
       } else {
         // Direct text value
         try {
           const parsed = JSON.parse('"' + val + '"');
-          if (parsed && parsed.length > 20) return parsed;
+          if (typeof parsed === 'string' && parsed.length > 20) return parsed;
         } catch {
           if (val.length > 20) return val;
         }
@@ -135,7 +135,7 @@ export class RscParser implements IRscParser {
         const p = this.parseRscPayload(text);
         if (p) {
           const result = this.extractSynopsis(p, html);
-          if (result) {
+          if (result != null) {
             synopsis = result;
             synopsisLocked = true;
           }

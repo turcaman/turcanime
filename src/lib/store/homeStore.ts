@@ -21,7 +21,7 @@ export const useHomeStore = create<HomeState>((set) => ({
   isRefreshing: false,
   error: null,
 
-  prepareRefresh: () => set({ homeData: { recent: [] }, isHomeLoading: true, isRefreshing: true, error: null }),
+  prepareRefresh: () => { set({ homeData: { recent: [] }, isHomeLoading: true, isRefreshing: true, error: null }); },
 
   fetchHome: async (force = false) => {
     const controller = abortManager.getController("home");
@@ -70,7 +70,7 @@ export const useHomeStore = create<HomeState>((set) => ({
     set(newState);
   },
 
-  setIsHomeLoading: (loading) => set({ isHomeLoading: loading }),
-  setError: (error) => set({ error }),
-  reset: () => set({ homeData: { recent: [] }, error: null, isHomeLoading: false, isRefreshing: false }),
+  setIsHomeLoading: (loading) => { set({ isHomeLoading: loading }); },
+  setError: (error) => { set({ error }); },
+  reset: () => { set({ homeData: { recent: [] }, error: null, isHomeLoading: false, isRefreshing: false }); },
 }));

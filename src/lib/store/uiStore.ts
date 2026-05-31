@@ -13,7 +13,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   tabBarVisible: true,
   isRefreshingSession: false,
   sessionRefreshTrigger: 0,
-  setTabBarVisible: (visible) => set({ tabBarVisible: visible }),
+  setTabBarVisible: (visible) => { set({ tabBarVisible: visible }); },
   triggerSessionRefresh: () => {
     const state = get();
     if (state.isRefreshingSession) return;
@@ -22,5 +22,5 @@ export const useUIStore = create<UIState>((set, get) => ({
       isRefreshingSession: true,
     });
   },
-  setSessionRefreshing: (refreshing) => set({ isRefreshingSession: refreshing }),
+  setSessionRefreshing: (refreshing) => { set({ isRefreshingSession: refreshing }); },
 }));

@@ -23,17 +23,17 @@ export abstract class AbstractProvider {
     const session = await this.sessionManager.getSession();
 
     // Extract raw cookies from JSON wrapper (if present) or use as-is
-    let rawCookies = session?.cookies || "";
+    let rawCookies = session?.cookies ?? "";
     try {
       const parsed = JSON.parse(rawCookies);
-      rawCookies = parsed.raw || "";
+      rawCookies = parsed.raw ?? "";
     } catch {
       // Already raw string, use as-is
     }
 
     const headers: Record<string, string> = {
       ...(options.headers as Record<string, string>),
-      "User-Agent": session?.userAgent || "",
+      "User-Agent": session?.userAgent ?? "",
       "Cookie": rawCookies,
       "Referer": this.baseUrl + "/",
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",

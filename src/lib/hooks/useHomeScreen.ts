@@ -29,7 +29,7 @@ export function useHomeScreen() {
 
   useEffect(() => {
     if (cacheInvalidationTimestamp > 0) {
-      fetchHome();
+      void fetchHome();
     }
   }, [cacheInvalidationTimestamp, fetchHome]);
 

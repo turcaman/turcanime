@@ -20,7 +20,7 @@ export default function SettingsScreen() {
         style: "default", 
         onPress: () => {
           useUIStore.getState().triggerSessionRefresh();
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
       }
     ]);

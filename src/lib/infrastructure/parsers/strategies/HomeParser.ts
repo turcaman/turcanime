@@ -74,9 +74,9 @@ export class HomeParser extends BaseParser implements IParserStrategy<Anime[]> {
         const imageUrl = ParserUtils.extractImageUrl(context);
         const altTitle = this.extractTitleFromAltAttribute(context);
 
-        if (imageUrl) {
+        if (imageUrl != null && imageUrl !== '') {
           seen.add(url);
-          const title = altTitle || this.formatTitleFromUrl(url);
+          const title = altTitle ?? this.formatTitleFromUrl(url);
           return this.createAnimeCard(url, imageUrl, title);
         }
         return null;

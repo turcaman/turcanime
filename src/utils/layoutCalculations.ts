@@ -23,8 +23,7 @@ export const calculateSearchCardWidth = (screenWidth?: number): number => {
   const width = screenWidth ?? getScreenInfo().width;
   const config = GridConfig.search;
 
-  // Validate inputs with reasonable bounds
-  if (width <= 0 || width > 10000 || config.columns <= 0) {
+  if (width <= 0 || width > 10000) {
     throw new Error("Invalid screen width or grid configuration");
   }
 

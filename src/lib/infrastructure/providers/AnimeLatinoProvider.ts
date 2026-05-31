@@ -53,8 +53,8 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
   // ——— Public API ———
 
   async getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData> {
-    const homeEndpoint = ANIMELATINO_CONFIG.endpoints?.home || "/";
-    const res = await this.fetchWithSession(homeEndpoint, options || {});
+    const homeEndpoint = ANIMELATINO_CONFIG.endpoints?.home ?? "/";
+    const res = await this.fetchWithSession(homeEndpoint, options ?? {});
     const html = await res.text();
 
     // Check for site structure changes
@@ -72,7 +72,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
   async search(query: string, options?: { signal?: AbortSignal }): Promise<Anime[]> {
     const res = await this.fetchWithSession(
       `/api/anime/search?q=${encodeURIComponent(query)}`,
-      options || {}
+      options ?? {}
     );
 
     if (!res.ok) {
@@ -80,7 +80,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     }
 
     const json = await res.json();
-    const items = json.data || [];
+    const items = json.data ?? [];
 
     if (!Array.isArray(items)) {
       throw new ProviderError(`Unexpected response format for query: ${query}`, "UNKNOWN");
@@ -97,7 +97,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
   async getSuggestions(query: string, options?: { signal?: AbortSignal }): Promise<AutocompleteAnime[]> {
     const res = await this.fetchWithSession(
       `/api/anime/search?q=${encodeURIComponent(query)}`,
-      options || {}
+      options ?? {}
     );
 
     if (!res.ok) {
@@ -105,7 +105,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     }
 
     const json = await res.json();
-    const items = json.data || [];
+    const items = json.data ?? [];
 
     if (!Array.isArray(items)) {
       throw new ProviderError(`Unexpected response format for query: ${query}`, "UNKNOWN");
@@ -120,7 +120,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
   }
 
   async getDetails(slug: string, options?: { signal?: AbortSignal }): Promise<AnimeDetail | null> {
-    const res = await this.fetchWithSession(`/anime/${slug}`, options || {});
+    const res = await this.fetchWithSession(`/anime/${slug}`, options ?? {});
     
     if (res.status === 404) return null;
     
@@ -133,7 +133,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
   }
 
   async getEpisodeServers(slug: string, number: string, options?: { signal?: AbortSignal }): Promise<VideoServer[]> {
-    const res = await this.fetchWithSession(`/ver/${slug}/${number}`, options || {});
+    const res = await this.fetchWithSession(`/ver/${slug}/${number}`, options ?? {});
     
     if (!res.ok) {
       throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
@@ -183,7 +183,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
   }
 
   async resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<string | null> {
-    const res = await this.fetchWithSession(videoUrl, options || {});
+    const res = await this.fetchWithSession(videoUrl, options ?? {});
     if (!res.ok) {
       throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
     }

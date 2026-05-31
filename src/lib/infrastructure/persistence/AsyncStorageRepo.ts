@@ -6,7 +6,7 @@ export class AsyncStorageRepo implements IStorage {
   async get<T>(key: string): Promise<T | null> {
     try {
       const data = await AsyncStorage.getItem(key);
-      if (!data) return null;
+      if (data == null) return null;
       try {
         return JSON.parse(data);
       } catch (parseError) {

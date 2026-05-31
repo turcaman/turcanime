@@ -17,15 +17,15 @@ export class AnimeOrchestrator {
 
     const jsonLdSynopsis = this.htmlParser.extractSynopsisFromJsonLd(html);
     const jsonLdImage = this.htmlParser.extractImageFromJsonLd(html);
-    const synopsis = rscData.synopsis || jsonLdSynopsis || domSynopsis || meta.description || "";
+    const synopsis = rscData.synopsis ?? jsonLdSynopsis ?? domSynopsis ?? meta.description ?? "";
 
-    const image = rscData.poster || jsonLdImage || meta.banner || "";
+    const image = rscData.poster || (jsonLdImage ?? meta.banner ?? "");
 
     return {
-      title: cleanTitle(title || meta.title || ""),
+      title: cleanTitle(title || (meta.title ?? "")),
       image,
       synopsis,
-      banner: meta.banner || image,
+      banner: meta.banner ?? image,
       poster: image,
       status,
       genres: [],

@@ -23,17 +23,17 @@ export const useUserInitializationStore = create<InitializationState>(() => ({
     const searches = await getDeps().storage.get<string[]>(searchesKey);
     const order = await getDeps().storage.get<"asc" | "desc">(EPISODE_ORDER_KEY);
     
-    useHistoryStore.getState().initialize(history || []);
-    useSearchHistoryStore.getState().initialize(searches || []);
-    useSettingsStore.getState().initialize(order || "asc");
+    useHistoryStore.getState().initialize(history ?? []);
+    useSearchHistoryStore.getState().initialize(searches ?? []);
+    useSettingsStore.getState().initialize(order ?? "asc");
     
     useUserInitializationStore.setState({ isInitialized: true });
   },
   
   clearAllData: async () => {
-    useHistoryStore.getState().clearHistory();
-    useSearchHistoryStore.getState().clearRecentSearches();
-    useSettingsStore.getState().setEpisodeOrder("asc");
+    void useHistoryStore.getState().clearHistory();
+    void useSearchHistoryStore.getState().clearRecentSearches();
+    void useSettingsStore.getState().setEpisodeOrder("asc");
     await getDeps().storage.clear();
   }
 }));

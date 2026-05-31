@@ -41,14 +41,14 @@ export class PlayerService {
   ): Promise<FetchServersResult> {
     const cKey = serverKey(slug, number);
 
-    if (!force && !signal?.aborted) {
+    if (!force && signal?.aborted !== true) {
       const cached = await this.cache.get<VideoServer[]>(cKey);
       if (cached) {
         return { servers: cached.payload, error: null };
       }
     }
 
-    if (signal?.aborted) {
+    if (signal?.aborted === true) {
       return { servers: [], error: new Error("Request aborted") };
     }
 
@@ -66,7 +66,7 @@ export class PlayerService {
   }
 
   async resolveStreamUrl(server: VideoServer, episodeUrl?: string): Promise<ResolveStreamResult> {
-    const cKey = episodeUrl ? streamKey(episodeUrl) : streamKey(server.url);
+    const cKey = episodeUrl != null ? streamKey(episodeUrl) : streamKey(server.url);
 
     const cached = await this.cache.get<ResolvedStream>(cKey);
     if (cached) {
@@ -77,13 +77,13 @@ export class PlayerService {
     logger.debug("playerService", `resolving stream for ${server.url}`);
     try {
       const iframeUrl = await this.getProvider().resolveStreamUrl(server.url);
-      if (!iframeUrl) {
+      if (iframeUrl == null) {
         return { stream: null, error: new Error("Failed to extract iframe URL"), fromCache: false };
       }
       logger.debug("playerService", `extracted iframe URL: ${iframeUrl}`);
 
       const hlsUrl = await this.webViewBridge.resolveEmbedStreamUrl(iframeUrl);
-      if (!hlsUrl) {
+      if (hlsUrl == null) {
         return { stream: null, error: new Error("Failed to resolve HLS stream"), fromCache: false };
       }
       logger.debug("playerService", `resolved HLS stream: OK`);

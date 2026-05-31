@@ -19,7 +19,7 @@ export class MetricsTracker implements IMetricsTracker {
 
   constructor(cache: CacheRepo) {
     this.cache = cache;
-    this.loadMetrics();
+    void this.loadMetrics();
   }
 
   private async loadMetrics(): Promise<void> {
@@ -43,7 +43,7 @@ export class MetricsTracker implements IMetricsTracker {
   }
 
   record(strategy: string, success: boolean): void {
-    const current = this.metrics.get(strategy) || {
+    const current = this.metrics.get(strategy) ?? {
       success: 0,
       failure: 0,
       lastUsed: 0,
@@ -57,7 +57,7 @@ export class MetricsTracker implements IMetricsTracker {
     current.lastUsed = Date.now();
 
     this.metrics.set(strategy, current);
-    this.saveMetrics();
+    void this.saveMetrics();
   }
 
 }

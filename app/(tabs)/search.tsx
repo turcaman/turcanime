@@ -74,7 +74,7 @@ function SearchScreenContent() {
             placeholderTextColor={Theme.colors.text.muted}
             value={searchTerm}
             onChangeText={handleTextChange}
-            onSubmitEditing={() => handleSearch(searchTerm)}
+            onSubmitEditing={() => { handleSearch(searchTerm); }}
             returnKeyType="search"
           />
           {searchTerm.length > 0 && (
@@ -97,7 +97,7 @@ function SearchScreenContent() {
         {isIdle && recentSearches.length > 0 && (
           <RecentSearches
             searches={recentSearches}
-            onSelect={handleSearch}
+            onSelect={(term) => { handleSearch(term); }}
             onRemove={removeRecentSearch}
           />
         )}

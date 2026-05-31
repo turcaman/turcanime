@@ -16,20 +16,20 @@ interface SearchHistoryState {
 export const useSearchHistoryStore = create<SearchHistoryState>((set, get) => ({
   recentSearches: [],
   
-  initialize: (data: string[]) => set({ recentSearches: data }),
+  initialize: (data: string[]) => { set({ recentSearches: data }); },
 
   saveRecentSearch: async (term: string) => {
     const previous = get().recentSearches;
     const updated = prependDedup(previous, term, 10);
     set({ recentSearches: updated });
-    await persistState(searchesKey, updated, () => set({ recentSearches: previous }), "searchHistoryStore", "Failed to persist search");
+    await persistState(searchesKey, updated, () => { set({ recentSearches: previous }); }, "searchHistoryStore", "Failed to persist search");
   },
 
   removeRecentSearch: async (term: string) => {
     const previous = get().recentSearches;
     const updated = removeBy(previous, t => t !== term);
     set({ recentSearches: updated });
-    await persistState(searchesKey, updated, () => set({ recentSearches: previous }), "searchHistoryStore", "Failed to persist removal");
+    await persistState(searchesKey, updated, () => { set({ recentSearches: previous }); }, "searchHistoryStore", "Failed to persist removal");
   },
 
   clearRecentSearches: async () => {

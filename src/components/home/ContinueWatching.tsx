@@ -14,12 +14,12 @@ interface ContinueWatchingProps {
 }
 
 export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
-  if (!items || items.length === 0) return null;
+  if (items.length === 0) return null;
 
   const renderItem = ({ item }: { item: HistoryItem }) => (
     <AnimatedPressable
       style={styles.card}
-      onPress={() => navigateToAnime(item.url)}
+      onPress={() => { navigateToAnime(item.url); }}
       accessibilityLabel={`Continuar viendo: ${item.title}`}
     >
       <ImageWithLoader

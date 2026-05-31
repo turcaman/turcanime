@@ -33,7 +33,7 @@ export const WebViewWorker = () => {
 
     if (result?.type === "SESSION_UPDATE") {
       if (typeof result.data === "object" && "cookies" in result.data && "userAgent" in result.data) {
-        sessionManager.setSession(result.data as ISession);
+        void sessionManager.setSession(result.data as ISession);
       }
     }
   }, []);
@@ -45,7 +45,7 @@ export const WebViewWorker = () => {
         source={{ uri: WORKER_URL }}
         injectedJavaScript={GLOBAL_BOOTSTRAP}
         onMessage={handleMessage}
-        onLoadEnd={() => webViewBridge.notifyPageLoaded()}
+        onLoadEnd={() => { webViewBridge.notifyPageLoaded(); }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
       />

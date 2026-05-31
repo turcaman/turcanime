@@ -73,7 +73,7 @@ function AnimeDetailsContent() {
             isExpanded={isExpanded}
             setIsExpanded={setIsExpanded}
             isAscending={isAscending}
-            toggleSort={() => setEpisodeOrder(isAscending ? "desc" : "asc")}
+            toggleSort={() => { void setEpisodeOrder(isAscending ? "desc" : "asc"); }}
             insets={insets}
             onBackPress={navigateBack}
           />
@@ -90,7 +90,7 @@ function AnimeDetailsContent() {
             {visibleEpisodes.map((item) => (
               <AnimatedPressable
                 key={item.id}
-                onPress={() => handleEpisodePress(item)}
+                onPress={() => { handleEpisodePress(item); }}
               >
                 <ThemedView
                   variant="surface"
@@ -119,7 +119,7 @@ function AnimeDetailsContent() {
           isLoading={serverLoading}
         onServerSelect={(server) => {
           if (selectedEpisode) {
-            resolveStream(server, selectedEpisode.url);
+            void resolveStream(server, selectedEpisode.url);
           }
           setSelectedEpisode(null);
           if (selectedEpisode && anime) {

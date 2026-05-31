@@ -35,7 +35,7 @@ export function useAnimeData(slug: string): UseAnimeDataResult {
   }, [anime]);
 
   const refresh = () => {
-    fetchDetails(slug, true);
+    void fetchDetails(slug, true);
   };
 
   return {

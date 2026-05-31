@@ -44,7 +44,7 @@ const AnimeCard = ({ anime, width, onPress, variant = "default", episodeNumber }
           ]}
         />
         {/* Badge de episodio para modo continue */}
-        {isContinue && episodeNumber && (
+        {isContinue && episodeNumber != null && episodeNumber !== '' && (
           <View style={styles.episodeBadge}>
             <ThemedText variant="caption" weight={Theme.fontWeight.bold} color="primary">
               Ep. {episodeNumber}
