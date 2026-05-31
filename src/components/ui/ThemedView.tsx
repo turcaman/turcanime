@@ -1,5 +1,5 @@
 import React from "react";
-import { View, ViewProps, ViewStyle } from "react-native";
+import { type ViewProps, type ViewStyle, View } from "react-native";
 import { Theme } from "../../constants/Theme";
 
 interface ThemedViewProps extends ViewProps {

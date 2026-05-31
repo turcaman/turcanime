@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { getDeps } from "../di";
-import { VideoServer } from "../domain/entities";
+import type { VideoServer } from "../domain/entities";
 
 interface PlayerState {
   servers: VideoServer[];

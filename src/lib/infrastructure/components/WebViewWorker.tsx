@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { View } from "react-native";
-import { WebView, WebViewMessageEvent } from "react-native-webview";
+import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { sessionManager, webViewBridge } from "../../core/infrastructure";
-import { ISession } from "../../domain/interfaces";
+import type { ISession } from "../../domain/interfaces";
 import { GLOBAL_BOOTSTRAP } from "../webview/bootstrap";
 import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 

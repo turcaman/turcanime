@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 import { useUIStore } from "../store/uiStore";
 
 export interface TabBarOptions {

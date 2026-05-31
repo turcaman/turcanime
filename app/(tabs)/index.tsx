@@ -5,7 +5,7 @@ import { ThemedView } from "@/components/ui/ThemedView";
 import { WithErrorBoundary } from "@/components/WithErrorBoundary";
 import { TAB_BAR_BOTTOM_OFFSET } from "@/constants/layout";
 import { Theme } from "@/constants/Theme";
-import { SectionItem, useHomeScreen } from "@/lib/hooks/useHomeScreen";
+import { type SectionItem, useHomeScreen } from "@/lib/hooks/useHomeScreen";
 import { useTabBarManager } from "@/lib/hooks/useTabBarManager";
 import React, { useEffect } from "react";
 import { FlatList, RefreshControl, StyleSheet, View } from "react-native";

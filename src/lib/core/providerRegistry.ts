@@ -1,4 +1,4 @@
-import { IContentProvider } from "../domain/interfaces";
+import type { IContentProvider } from "../domain/interfaces";
 
 let currentProvider: IContentProvider | null = null;
 

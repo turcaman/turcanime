@@ -3,7 +3,7 @@ import { getDeps } from "../../di";
 import { useHistoryStore } from "./historyStore";
 import { useSearchHistoryStore } from "./searchHistoryStore";
 import { useSettingsStore } from "./settingsStore";
-import { HistoryItem } from "../../domain/entities";
+import type { HistoryItem } from "../../domain/entities";
 
 const historyKey = "last_viewed";
 const searchesKey = "recent_searches";

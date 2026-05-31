@@ -1,4 +1,4 @@
-import { Anime, AnimeDetail, AutocompleteAnime, Episode, HomeData, VideoServer } from "./entities";
+import type { Anime, AnimeDetail, AutocompleteAnime, Episode, HomeData, VideoServer } from "./entities";
 
 // ─── Parser interfaces ─────────────────────────────────────────────────
 

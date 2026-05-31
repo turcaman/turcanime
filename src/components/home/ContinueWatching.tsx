@@ -2,7 +2,7 @@ import React, { memo } from "react";
 import { StyleSheet, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { Theme } from "../../constants/Theme";
-import { HistoryItem } from "../../lib/domain/entities";
+import type { HistoryItem } from "../../lib/domain/entities";
 import { navigateToAnime } from "../../lib/utils/navigation";
 import { AnimatedPressable } from "../AnimatedPressable";
 import { ImageWithLoader } from "../ui/ImageWithLoader";

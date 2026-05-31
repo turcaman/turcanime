@@ -1,6 +1,6 @@
 import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { PERF_LIMITS } from "../../config/limits";
-import { ISession, ISessionManager, ISiteVersionManager } from "../../domain/interfaces";
+import type { ISession, ISessionManager, ISiteVersionManager } from "../../domain/interfaces";
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import { log } from "../../utils/logger";
 

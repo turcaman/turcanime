@@ -1,6 +1,6 @@
 import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 import { TIMEOUTS } from "../../config/timeouts";
-import { ISession, IWebViewBridge, WebViewMessageData } from "../../domain/interfaces";
+import type { ISession, IWebViewBridge, WebViewMessageData } from "../../domain/interfaces";
 import { InjectionService } from "./bridge/InjectionService";
 import { StreamResolver } from "./bridge/StreamResolver";
 import { MessageRouter } from "./bridge/MessageRouter";

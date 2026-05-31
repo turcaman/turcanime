@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { Anime, HistoryItem } from "../domain/entities";
+import type { Anime, HistoryItem } from "../domain/entities";
 import { useHomeStore } from "../store/homeStore";
 import { useHistoryStore, useSettingsStore, useUserInitializationStore } from "../store/user";
 

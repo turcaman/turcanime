@@ -1,9 +1,9 @@
 import { ANIME_CACHE } from "../../config/cacheTTLs";
 import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { TIMEOUTS } from "../../config/timeouts";
-import { IContentProvider, ISessionManager } from "../../domain/interfaces";
-import { Anime, AnimeDetail, AppError, AutocompleteAnime, HomeData } from "../../domain/entities";
-import { CacheEntry, CacheRepo } from "../../domain/repositories/cacheRepo";
+import type { IContentProvider, ISessionManager } from "../../domain/interfaces";
+import type { Anime, AnimeDetail, AppError, AutocompleteAnime, HomeData } from "../../domain/entities";
+import { type CacheEntry, CacheRepo } from "../../domain/repositories/cacheRepo";
 import { ImageService } from "../../infrastructure/services/ImageService";
 import { createCacheKey } from "../../utils/CacheUtils";
 import { logger } from "../../utils/logger";

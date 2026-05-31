@@ -3,7 +3,7 @@
  * and display a fallback UI instead of crashing the app.
  */
 
-import React, { Component, ErrorInfo, ReactNode } from "react";
+import React, { type ErrorInfo, type ReactNode, Component } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Theme } from "../constants/Theme";
 import { logger } from "../lib/utils/logger";
@@ -30,7 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     logger.error("ErrorBoundary", `Component error: ${error.message}`, error);
 
     if (this.props.onError) {
@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   };
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       // Custom fallback UI
       if (this.props.fallback) {

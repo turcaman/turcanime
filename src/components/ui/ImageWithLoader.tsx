@@ -1,5 +1,5 @@
 import React from "react";
-import { Image as RNImage, StyleSheet, View, ViewStyle } from "react-native";
+import { type ViewStyle, Image as RNImage, StyleSheet, View } from "react-native";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 

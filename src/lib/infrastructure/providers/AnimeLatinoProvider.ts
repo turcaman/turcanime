@@ -1,12 +1,12 @@
 import { AbstractProvider } from "../../domain/abstractProvider";
-import {
+import type {
     Anime,
     AnimeDetail,
     AutocompleteAnime,
     HomeData,
     VideoServer
 } from "../../domain/entities";
-import { IContentProvider, IHtmlParser, IMetricsTracker, IRscParser, ISessionManager, ISiteVersionManager } from "../../domain/interfaces";
+import type { IContentProvider, IHtmlParser, IMetricsTracker, IRscParser, ISessionManager, ISiteVersionManager } from "../../domain/interfaces";
 import { ProviderError } from "../../utils/errors";
 import { log } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";

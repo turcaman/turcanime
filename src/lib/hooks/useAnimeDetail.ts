@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getDeps } from "../di";
-import { Episode } from "../domain/entities";
+import type { Episode } from "../domain/entities";
 import {
     buildRanges,
     getVisibleEpisodes,

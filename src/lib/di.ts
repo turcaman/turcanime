@@ -10,7 +10,7 @@ import { PlayerService } from "./application/services/playerService";
 import { PlayerUIService } from "./application/services/PlayerUIService";
 import { sessionManager, storage, webViewBridge } from "./core/infrastructure";
 import { getProvider, setProvider } from "./core/providerRegistry";
-import { ISessionManager, IStorage, IWebViewBridge } from "./domain/interfaces";
+import type { ISessionManager, IStorage, IWebViewBridge } from "./domain/interfaces";
 import { CacheRepo } from "./domain/repositories/cacheRepo";
 import { AnimeLatinoProvider } from "./infrastructure/providers/AnimeLatinoProvider";
 import { HtmlParser } from "./infrastructure/parsers/HtmlParser";

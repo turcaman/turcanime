@@ -1,7 +1,7 @@
 import { FlatList, StyleSheet, View } from "react-native";
 import { searchGridCardWidth } from "@/constants/layout";
 import { Theme } from "@/constants/Theme";
-import { Anime } from "@/lib/domain/entities";
+import type { Anime } from "@/lib/domain/entities";
 import React, { memo, useMemo } from "react";
 import AnimeCard from "../AnimeCard";
 import { SectionTitle } from "../ui/SectionTitle";

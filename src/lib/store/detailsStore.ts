@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { getDeps } from "../di";
-import { AnimeDetail, AppError } from "../domain/entities";
+import type { AnimeDetail, AppError } from "../domain/entities";
 import { abortManager } from "../utils/AbortControllerManager";
 
 interface DetailsState {

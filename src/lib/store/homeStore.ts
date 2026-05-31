@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { getDeps } from "../di";
-import { AppError, HomeData } from "../domain/entities";
+import type { AppError, HomeData } from "../domain/entities";
 import { abortManager } from "../utils/AbortControllerManager";
 
 interface HomeState {

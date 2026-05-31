@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { getDeps } from "../di";
-import { Anime, AppError, AutocompleteAnime } from "../domain/entities";
+import type { Anime, AppError, AutocompleteAnime } from "../domain/entities";
 import { abortManager } from "../utils/AbortControllerManager";
 
 interface SearchState {

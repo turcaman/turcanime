@@ -4,7 +4,7 @@
  */
 
 import { LOG_LIMITS } from "../config/limits";
-import { IStorage } from "../domain/interfaces";
+import type { IStorage } from "../domain/interfaces";
 
 declare const __DEV__: boolean | undefined;
 

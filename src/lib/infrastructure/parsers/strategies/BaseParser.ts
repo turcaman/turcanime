@@ -1,4 +1,4 @@
-import { Anime } from "../../../domain/entities";
+import type { Anime } from "../../../domain/entities";
 import { ParserUtils } from "../ParserUtils";
 import { cleanTitle } from "../../../utils/text";
 

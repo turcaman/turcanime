@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { IStorage } from "../../domain/interfaces";
+import type { IStorage } from "../../domain/interfaces";
 import { logger } from "../../utils/logger";
 
 export class AsyncStorageRepo implements IStorage {

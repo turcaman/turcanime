@@ -1,5 +1,5 @@
 import { TIMEOUTS } from "../../config/timeouts";
-import { ISession, ISessionManager, IStorage } from "../../domain/interfaces";
+import type { ISession, ISessionManager, IStorage } from "../../domain/interfaces";
 import { logger } from "../../utils/logger";
 
 export class SessionManager implements ISessionManager {

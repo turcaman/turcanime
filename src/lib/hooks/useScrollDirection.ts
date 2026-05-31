@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 
 type ScrollDirection = "up" | "down" | null;
 

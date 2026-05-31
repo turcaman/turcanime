@@ -1,7 +1,7 @@
 import { AppLoader } from "@/components/ui/AppLoader";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { ThemedView } from "@/components/ui/ThemedView";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 interface ScreenWrapperProps {
   isLoading: boolean;

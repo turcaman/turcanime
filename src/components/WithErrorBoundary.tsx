@@ -1,5 +1,5 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 interface WithErrorBoundaryProps {
   children: ReactNode;

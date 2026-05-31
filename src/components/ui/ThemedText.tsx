@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, TextProps, TextStyle } from "react-native";
+import { type TextProps, type TextStyle, StyleSheet, Text } from "react-native";
 import { Theme } from "../../constants/Theme";
 
 type FontWeight = "400" | "500" | "600" | "700" | "800";

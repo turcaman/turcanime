@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Episode } from "../domain/entities";
+import type { Episode } from "../domain/entities";
 import { usePlayerStore } from "../store/playerStore";
 import { useSettingsStore } from "../store/user";
 import { useAnimeData } from "./useAnimeData";

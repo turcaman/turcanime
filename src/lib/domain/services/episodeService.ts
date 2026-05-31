@@ -1,4 +1,4 @@
-import { Episode } from "../entities";
+import type { Episode } from "../entities";
 
 export interface EpisodeRange {
   label: string;

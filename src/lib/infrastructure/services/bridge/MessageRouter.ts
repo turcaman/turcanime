@@ -1,5 +1,5 @@
 import { logger } from "../../../utils/logger";
-import { BridgeMessage } from "./types";
+import type { BridgeMessage } from "./types";
 
 export class MessageRouter {
   constructor(

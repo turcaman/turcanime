@@ -5,7 +5,7 @@
  */
 import { TIMEOUTS } from "../config/timeouts";
 import { log } from "../utils/logger";
-import { ISessionManager } from "./interfaces";
+import type { ISessionManager } from "./interfaces";
 
 export abstract class AbstractProvider {
   constructor(

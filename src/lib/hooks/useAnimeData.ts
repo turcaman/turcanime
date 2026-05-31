@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AnimeDetail, AppError } from "../domain/entities";
+import type { AnimeDetail, AppError } from "../domain/entities";
 import { useDetailsStore } from "../store/detailsStore";
 import { logger } from "../utils/logger";
 

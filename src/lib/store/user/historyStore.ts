@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { getDeps } from "../../di";
-import { HistoryItem } from "../../domain/entities";
+import type { HistoryItem } from "../../domain/entities";
 import { computeContinueWatching, prependDedup, removeBy } from "../../utils/history";
 import { persistState } from "../../utils/storage";
 

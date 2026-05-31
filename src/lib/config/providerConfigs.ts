@@ -1,4 +1,4 @@
-import { ProviderConfig } from "../domain/providerConfig";
+import type { ProviderConfig } from "../domain/providerConfig";
 
 /**
  * AnimeLatinoHD provider configuration

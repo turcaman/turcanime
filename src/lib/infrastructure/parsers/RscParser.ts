@@ -1,6 +1,6 @@
 import { log } from "../../utils/logger";
 import { TMDB_IMAGE_BASE } from "../../config/images";
-import { IRscParser } from "../../domain/interfaces";
+import type { IRscParser } from "../../domain/interfaces";
 
 export interface RscExtractionResult {
   poster: string;

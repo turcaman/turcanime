@@ -1,5 +1,5 @@
-import { Episode } from "../../domain/entities";
-import { IHtmlParser, ParseResult } from "../../domain/interfaces";
+import type { Episode } from "../../domain/entities";
+import type { IHtmlParser, ParseResult } from "../../domain/interfaces";
 import { log } from "../../utils/logger";
 import { ParserUtils } from "./ParserUtils";
 import { HomeParser } from "./strategies/HomeParser";

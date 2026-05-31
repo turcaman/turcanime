@@ -1,5 +1,5 @@
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
-import { IMetricsTracker } from "../../domain/interfaces";
+import type { IMetricsTracker } from "../../domain/interfaces";
 import { log } from "../../utils/logger";
 
 export interface MetricData {

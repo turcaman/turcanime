@@ -1,8 +1,8 @@
 import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { PLAYER_CACHE } from "../../config/cacheTTLs";
 import { getRequiredReferer } from "../../config/embedServers";
-import { IContentProvider, IWebViewBridge } from "../../domain/interfaces";
-import { VideoServer } from "../../domain/entities";
+import type { IContentProvider, IWebViewBridge } from "../../domain/interfaces";
+import type { VideoServer } from "../../domain/entities";
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import { logger } from "../../utils/logger";
 import { createCacheKey } from "../../utils/CacheUtils";

@@ -11,7 +11,7 @@ import {
     TAB_BAR_BOTTOM_OFFSET,
 } from "@/constants/layout";
 import { Theme } from "@/constants/Theme";
-import { Anime } from "@/lib/domain/entities";
+import type { Anime } from "@/lib/domain/entities";
 import { useSearchScreen } from "@/lib/hooks/useSearchScreen";
 import { useTabBarManager } from "@/lib/hooks/useTabBarManager";
 import { Feather } from "@expo/vector-icons";

@@ -1,4 +1,4 @@
-import { AppError, AppErrorType } from "../domain/entities";
+import type { AppError, AppErrorType } from "../domain/entities";
 
 export class ProviderError extends Error implements AppError {
   type: AppErrorType;

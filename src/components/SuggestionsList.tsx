@@ -1,9 +1,9 @@
 import React, { memo } from "react";
-import { NativeScrollEvent, NativeSyntheticEvent, StyleSheet, View } from "react-native";
+import { type NativeScrollEvent, type NativeSyntheticEvent, StyleSheet, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { TAB_BAR_BOTTOM_OFFSET } from "../constants/layout";
 import { Theme } from "../constants/Theme";
-import { AutocompleteAnime } from "../lib/domain/entities";
+import type { AutocompleteAnime } from "../lib/domain/entities";
 import { TMDB_POSTER_W92 } from "../lib/config/images";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ImageWithLoader } from "./ui/ImageWithLoader";

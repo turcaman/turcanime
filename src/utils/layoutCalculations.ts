@@ -1,7 +1,7 @@
 import { Dimensions } from "react-native";
 import { SpacingTokens } from "../constants/design/SpacingTokens";
 import { GridConfig } from "../constants/layout/GridConfig";
-import { BreakpointKey, getBreakpoint } from "../constants/layout/Responsive";
+import { type BreakpointKey, getBreakpoint } from "../constants/layout/Responsive";
 import { logger } from "../lib/utils/logger";
 
 export interface ScreenInfo {

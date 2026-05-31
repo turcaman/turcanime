@@ -1,5 +1,5 @@
-import { AnimeDetail } from "../../domain/entities";
-import { IHtmlParser, IRscParser } from "../../domain/interfaces";
+import type { AnimeDetail } from "../../domain/entities";
+import type { IHtmlParser, IRscParser } from "../../domain/interfaces";
 import { cleanTitle } from "../../utils/text";
 
 export class AnimeOrchestrator {

@@ -1,6 +1,6 @@
-import { Anime } from "../../../domain/entities";
+import type { Anime } from "../../../domain/entities";
 import { ParserUtils } from "../ParserUtils";
-import { IParserStrategy, ParserResult } from "./types";
+import type { IParserStrategy, ParserResult } from "./types";
 import { BaseParser } from "./BaseParser";
 
 interface CardStrategy {

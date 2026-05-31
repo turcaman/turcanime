@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Episode } from "../domain/entities";
+import type { Episode } from "../domain/entities";
 
 interface UseEpisodeUIResult {
   selectedEpisode: Episode | null;
