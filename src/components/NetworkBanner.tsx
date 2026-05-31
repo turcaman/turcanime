@@ -1,9 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect } from "react";
-import { Modal, StyleSheet, View } from "react-native";
-import { Theme } from "../constants/Theme";
+import { Modal, Text, View } from "react-native";
 import { AnimatedPressable } from "./AnimatedPressable";
-import { ThemedText } from "./ui/ThemedText";
 
 interface NetworkBannerProps {
   visible: boolean;
@@ -11,10 +9,8 @@ interface NetworkBannerProps {
 }
 
 export const NetworkBanner = ({ visible, onRetry }: NetworkBannerProps) => {
-  // Auto-retry when reconnection detected
   useEffect(() => {
     if (!visible && onRetry) {
-      // Small delay to ensure connection is stable
       const timer = setTimeout(() => {
         onRetry();
       }, 500);
@@ -30,21 +26,21 @@ export const NetworkBanner = ({ visible, onRetry }: NetworkBannerProps) => {
       animationType="fade"
       statusBarTranslucent={true}
     >
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <Feather name="wifi-off" size={48} color={Theme.colors.text.muted} />
-          <ThemedText variant="h3" style={styles.title}>
+      <View className="flex-1 items-center justify-center bg-black p-5">
+        <View className="items-center">
+          <Feather name="wifi-off" size={48} color="#737373" />
+          <Text className="mt-2 text-lg font-bold text-white">
             Sin conexión
-          </ThemedText>
-          <ThemedText variant="body" color="muted" style={styles.subtitle}>
+          </Text>
+          <Text className="mt-2 text-center text-base text-neutral-500">
             Conectate a internet para continuar
-          </ThemedText>
+          </Text>
           {onRetry && (
-            <AnimatedPressable style={styles.button} onPress={onRetry}>
-              <Feather name="refresh-cw" size={18} color={Theme.colors.primary} />
-              <ThemedText variant="body" color="accent" style={styles.buttonText}>
+            <AnimatedPressable className="mt-5 flex-row items-center p-4" onPress={onRetry}>
+              <Feather name="refresh-cw" size={18} color="#A855F7" />
+              <Text className="ml-2 text-base text-purple-500">
                 Intentar de nuevo
-              </ThemedText>
+              </Text>
             </AnimatedPressable>
           )}
         </View>
@@ -52,32 +48,3 @@ export const NetworkBanner = ({ visible, onRetry }: NetworkBannerProps) => {
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: Theme.colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Theme.spacing.xl,
-  },
-  container: {
-    alignItems: 'center',
-  },
-  title: {
-    marginTop: Theme.spacing.sm,
-  },
-  subtitle: {
-    marginTop: Theme.spacing.sm,
-    textAlign: 'center',
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Theme.spacing.xl,
-    padding: Theme.spacing.lg,
-  },
-  buttonText: {
-    marginLeft: Theme.spacing.sm,
-  },
-});

@@ -1,11 +1,8 @@
-import { TAB_BAR_BOTTOM_OFFSET } from "@/constants/layout";
-import { Theme } from "@/constants/Theme";
 import { Feather } from "@expo/vector-icons";
 import React, { memo } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, Text, View } from "react-native";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { SectionTitle } from "./ui/SectionTitle";
-import { ThemedText } from "./ui/ThemedText";
 
 interface RecentSearchesProps {
   searches: string[];
@@ -17,19 +14,19 @@ export const RecentSearches = memo(({ searches, onSelect, onRemove }: RecentSear
   if (searches.length === 0) return null;
 
   return (
-    <View style={styles.container}>
+    <View className="mt-3 pb-20">
       <SectionTitle>Búsquedas recientes</SectionTitle>
       <FlatList
         data={searches}
         keyExtractor={(item) => item}
         renderItem={({ item }) => (
-          <AnimatedPressable style={styles.row} onPress={() => { onSelect(item); }}>
-            <View style={styles.left}>
-              <Feather name="clock" size={Theme.dimensions.icon.sm} color={Theme.colors.primary} />
-              <ThemedText style={styles.text}>{item}</ThemedText>
+          <AnimatedPressable className="mb-2 flex-row items-center justify-between border-b border-neutral-800 py-2" onPress={() => { onSelect(item); }}>
+            <View className="flex-1 flex-row items-center">
+              <Feather name="clock" size={18} color="#A855F7" />
+              <Text className="ml-3 text-base text-white">{item}</Text>
             </View>
-            <AnimatedPressable style={styles.remove} onPress={(e) => { e.stopPropagation(); onRemove(item); }}>
-              <Feather name="x" size={Theme.dimensions.icon.sm} color={Theme.colors.text.muted} />
+            <AnimatedPressable className="p-2" onPress={(e) => { e.stopPropagation(); onRemove(item); }}>
+              <Feather name="x" size={18} color="#737373" />
             </AnimatedPressable>
           </AnimatedPressable>
         )}
@@ -40,22 +37,3 @@ export const RecentSearches = memo(({ searches, onSelect, onRemove }: RecentSear
 });
 
 RecentSearches.displayName = "RecentSearches";
-
-const styles = StyleSheet.create({
-  container: {
-    marginTop: Theme.spacing.md,
-    paddingBottom: TAB_BAR_BOTTOM_OFFSET,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: Theme.spacing.sm,
-    marginBottom: Theme.spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Theme.colors.border,
-  },
-  left: { flexDirection: "row", alignItems: "center", flex: 1 },
-  text: { marginLeft: Theme.spacing.md, fontSize: Theme.fontSize.m },
-  remove: { padding: Theme.spacing.sm },
-});
