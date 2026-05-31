@@ -45,7 +45,7 @@ export class HtmlParser implements IHtmlParser {
 
     const scripts = html.matchAll(/<script[^>]*>(.*?)<\/script>/gs);
     for (const match of scripts) {
-      const text = match[1].replace(/\\"/g, '"');
+      const text = match[1]!.replace(/\\"/g, '"');
       const scriptJsonMatch = ParserUtils.extractJson(text, '"episodes":', "[", "]");
       if (scriptJsonMatch) {
         log("HtmlParser", `Extracted episodes via script JSON for ${slug}`);
@@ -76,7 +76,7 @@ export class HtmlParser implements IHtmlParser {
   extractSynopsisFromDom(html: string): string | null {
     const domOverview = html.match(/page_overview__[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
     if (domOverview) {
-      const cleaned = domOverview[1].replace(/<[^>]*>/g, "").trim();
+      const cleaned = domOverview[1]!.replace(/<[^>]*>/g, "").trim();
       if (cleaned.length > 20) return cleaned;
     }
     return null;
@@ -85,7 +85,7 @@ export class HtmlParser implements IHtmlParser {
   extractTitleFromHtml(html: string): string {
     const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/);
     if (h1Match) {
-      return h1Match[1].trim();
+      return h1Match[1]!.trim();
     }
     return "";
   }
@@ -93,7 +93,7 @@ export class HtmlParser implements IHtmlParser {
   extractStatusFromHtml(html: string): string {
     const statusMatch = html.match(/<span[^>]*class="[^"]*text-primary[^"]*"[^>]*>([^<]+)<\/span>/);
     if (statusMatch) {
-      return statusMatch[1].trim();
+      return statusMatch[1]!.trim();
     }
     return "";
   }
@@ -106,7 +106,7 @@ export class HtmlParser implements IHtmlParser {
 
     while ((match = episodeRegex.exec(html)) !== null) {
       const episodeSlug = match[1];
-      const number = match[2];
+      const number = match[2]!;
 
       if (episodeSlug !== slug) continue;
 
@@ -132,7 +132,7 @@ export class HtmlParser implements IHtmlParser {
     const jsonLdMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
     if (!jsonLdMatch) return null;
     try {
-      const data = JSON.parse(jsonLdMatch[1]);
+      const data = JSON.parse(jsonLdMatch[1]!);
       return data.description ?? null;
     } catch {
       return null;
@@ -143,7 +143,7 @@ export class HtmlParser implements IHtmlParser {
     const jsonLdMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
     if (!jsonLdMatch) return null;
     try {
-      const data = JSON.parse(jsonLdMatch[1]);
+      const data = JSON.parse(jsonLdMatch[1]!);
       if (data.image != null) {
         if (typeof data.image === "string") return data.image;
         if (Array.isArray(data.image) && data.image.length > 0) return data.image[0];

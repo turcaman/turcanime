@@ -143,7 +143,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
 
     const scripts = html.matchAll(/<script[^>]*>(.*?)<\/script>/gs);
     for (const match of scripts) {
-      const text = match[1];
+      const text = match[1]!;
       if (!text.includes("self.__next_f.push")) continue;
 
       const p = this.rscParser.parseRscPayload(text);
@@ -169,7 +169,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
             id: String(player.id),
             title: player.server_name,
             url: player.bridge_url,
-            language: languageMap[player.language] || player.language,
+            language: languageMap[player.language] ?? player.language,
           });
         }
 
@@ -196,7 +196,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     }
 
     log("resolveStreamUrl", `Extracted iframe URL: ${iframeMatch[1]}`);
-    return iframeMatch[1];
+    return iframeMatch[1]!;
   }
 
   // ——— Helpers ———

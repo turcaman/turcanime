@@ -29,7 +29,7 @@ export class RscParser implements IRscParser {
   extractPosterUrl(rsc: string): string {
     const posterMatch = rsc.match(/"poster"\s*:\s*"([^"]+)"/);
     if (posterMatch) {
-      const path = posterMatch[1];
+      const path = posterMatch[1]!;
       if (path.startsWith("http")) return path;
       if (path.startsWith("/")) return `${TMDB_IMAGE_BASE}${path}`;
     }
@@ -50,7 +50,7 @@ export class RscParser implements IRscParser {
       /page_overview__[^"]*"\s*,\s*"children"\s*:\s*"((?:\\.|[^"\\])*)"/
     );
     if (ovMatch) {
-      const val = ovMatch[1];
+      const val = ovMatch[1]!;
       if (val.startsWith("$")) {
         // RSC reference — resolve the actual text
         const rid = val.slice(1);
@@ -70,7 +70,7 @@ export class RscParser implements IRscParser {
     // Secondary: long text tuple — format: "N:Thex,text" or "N:T,text"
     const tMatch = rsc.match(/^\d+:T(?:\w+,)?([\s\S]+)$/);
     if (tMatch) {
-      const candidate = tMatch[1];
+      const candidate = tMatch[1]!;
       if (candidate.length > 30 && !candidate.startsWith("Ver ")) {
         return candidate;
       }
@@ -94,7 +94,7 @@ export class RscParser implements IRscParser {
       );
       const hexMatch = html.match(hexPattern);
       if (hexMatch) {
-        let raw = hexMatch[1];
+        let raw = hexMatch[1]!;
         raw = raw.replace(/\\\\/g, "\\").replace(/\\"/g, '"').replace(/\\n/g, "\n");
         return raw;
       }
@@ -105,7 +105,7 @@ export class RscParser implements IRscParser {
       );
       const refMatch = html.match(refPattern);
       if (refMatch) {
-        let raw = refMatch[1];
+        let raw = refMatch[1]!;
         raw = raw.replace(/\\\\/g, "\\").replace(/\\"/g, '"').replace(/\\n/g, "\n");
         return raw;
       }
@@ -124,7 +124,7 @@ export class RscParser implements IRscParser {
 
     const scripts = html.matchAll(/<script[^>]*>(.*?)<\/script>/gs);
     for (const match of scripts) {
-      const text = match[1];
+      const text = match[1]!;
       if (!text.includes("self.__next_f.push")) continue;
 
       if (!poster) {

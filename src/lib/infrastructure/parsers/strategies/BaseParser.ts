@@ -27,6 +27,6 @@ export abstract class BaseParser {
 
   protected extractTitleFromAltAttribute(context: string): string | null {
     const altMatch = context.match(/alt="([^"]+)"/);
-    return altMatch ? altMatch[1].trim() : null;
+    return altMatch ? altMatch[1]!.trim() : null;
   }
 }

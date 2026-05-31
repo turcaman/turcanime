@@ -80,6 +80,6 @@ export class ParserUtils {
   static extractImageUrl(context: string): string | null {
     const imgRegex = /(?:src|data-src)="([^"]+\.(?:jpg|jpeg|png|webp))"/i;
     const match = context.match(imgRegex);
-    return match ? match[1] : null;
+    return match ? match[1]! : null;
   }
 }

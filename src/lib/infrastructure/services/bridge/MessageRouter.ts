@@ -18,7 +18,7 @@ export class MessageRouter {
       // Auto-resolve logic
       if (id === "stream_auto") {
         const keys = Array.from(this.activeDecryptions.keys());
-        id = keys[keys.length - 1] || id;
+        id = keys.at(-1) ?? id;
       }
 
       const resolve = this.activeDecryptions.get(id);

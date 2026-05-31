@@ -52,16 +52,16 @@ export class HomeParser extends BaseParser implements IParserStrategy<Anime[]> {
 
   private extractCardsWithStrategy(html: string, strategy: CardStrategy, seen: Set<string>): Anime[] {
     return ParserUtils.extractWithRegex(html, strategy.regex, (match) => {
-      const url = match[1];
+      const url = match[1]!;
       if (!ParserUtils.isValidUrl(url) || seen.has(url)) return null;
       seen.add(url);
-      return this.createAnimeCard(url, match[2], match[3]);
+      return this.createAnimeCard(url, match[2]!, match[3]!);
     }).filter((card): card is Anime => card !== null);
   }
 
   private strategyContextSearch(html: string, seen: Set<string>): Anime[] {
     const linkRegex = /href="\/anime\/([^"]+)"/g;
-    const links = [...html.matchAll(linkRegex)].map((m) => m[1]);
+    const links = [...html.matchAll(linkRegex)].map((m) => m[1]!);
     const uniqueLinks = [...new Set(links)];
 
     return uniqueLinks

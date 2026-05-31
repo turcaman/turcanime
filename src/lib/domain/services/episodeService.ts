@@ -26,7 +26,7 @@ export function buildRanges(episodes: Episode[]): EpisodeRange[] {
   if (!episodes.length) return [];
   if (episodes.length <= 50) {
     return [{
-      label: `1-${episodes[episodes.length - 1].number}`,
+      label: `1-${episodes[episodes.length - 1]!.number}`,
       start: 0,
       end: episodes.length,
     }];
@@ -35,7 +35,7 @@ export function buildRanges(episodes: Episode[]): EpisodeRange[] {
     const start = i * 50;
     const end = Math.min(start + 50, episodes.length);
     return {
-      label: `${episodes[start].number}-${episodes[end - 1].number}`,
+      label: `${episodes[start]!.number}-${episodes[end - 1]!.number}`,
       start,
       end,
     };
