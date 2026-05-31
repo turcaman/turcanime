@@ -5,12 +5,12 @@ node_modules/
 .expo/
 dist/
 web-build/
-expo-env.d.ts
+expo-env.d.ts           # auto-generated types
 
-# Native
+# Native build artifacts
 .kotlin/
 *.orig.*
-*.jks
+*.jks                   # signing keystores
 *.p8
 *.p12
 *.key
@@ -19,16 +19,16 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
-# debug
+# debug logs
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
 # macOS
 .DS_Store
-*.pem
+*.pem                   # certificates/keys
 
-# local env files
+# local env
 .env*.local
 
 # typescript
@@ -37,12 +37,13 @@ yarn-error.*
 app-example
 
 # generated native folders
-/ios
+/ios                    # use expo prebuild
 
 # test fixtures
 /animelatinohd/
 
+# signing (never commit)
 release-key.jks
 key.properties
 
-.codegraph
+.codegraph              # AI code analysis cache

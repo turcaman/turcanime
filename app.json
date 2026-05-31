@@ -30,7 +30,6 @@
     "plugins": [
       "expo-router",
       "expo-video",
-      "expo-image",
       [
         "expo-build-properties",
         {
