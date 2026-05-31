@@ -81,6 +81,7 @@ export class AnimeService {
     }
   }
 
+  /** Returns cached home data if fresh (>30% TTL remaining), null otherwise. */
   async peekHomeCache(): Promise<HomeData | null> {
     const cacheKey = createCacheKey(CACHE_PREFIXES.HOME, '/');
     try {
@@ -131,6 +132,7 @@ export class AnimeService {
     }
   }
 
+  /** Fetches home screen data with caching and image prefetching. */
   async fetchHomeData(signal: AbortSignal, force: boolean): Promise<FetchResult<HomeData>> {
     return await this.fetchWithCache(
       {
@@ -145,6 +147,7 @@ export class AnimeService {
     );
   }
 
+  /** Searches anime by query with debouncing and caching. */
   async fetchSearchData(query: string, signal: AbortSignal, force: boolean): Promise<FetchResult<Anime[]>> {
     if (!query.trim()) {
       return { data: [], error: null, fromCache: false };
@@ -171,6 +174,7 @@ export class AnimeService {
     );
   }
 
+  /** Fetches autocomplete suggestions (no caching). */
   async fetchSuggestionsData(query: string, signal?: AbortSignal): Promise<AutocompleteAnime[]> {
     if (!query || query.length < 3) {
       return [];
@@ -189,6 +193,7 @@ export class AnimeService {
     return result.data ?? [];
   }
 
+  /** Fetches anime details with caching and image prefetching. */
   async fetchDetailsData(slug: string, signal: AbortSignal, force: boolean): Promise<FetchResult<AnimeDetail | null>> {
     return await this.fetchWithCache(
       {
@@ -202,6 +207,7 @@ export class AnimeService {
     );
   }
 
+  /** Clears all anime-related cache entries. */
   async clearAnimeCache(): Promise<void> {
     await Promise.all([
       this.cache.clearWithPrefix(CACHE_PREFIXES.HOME),

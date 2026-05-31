@@ -19,16 +19,16 @@ export class SiteVersionManager implements ISiteVersionManager {
    */
   calculateSiteHash(html: string): string {
     const structural = html
-      .replace(/<!--[\s\S]*?-->/g, "") // Remove comments
-      .replace(/\s+/g, " ") // Normalize whitespace
-      .replace(/"[^"]*"/g, '""') // Normalize attribute values
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .replace(/\s+/g, " ")
+      .replace(/"[^"]*"/g, '""')
       .slice(0, PERF_LIMITS.SITE_VERSION_SAMPLE_SIZE);
 
     let hash = 0;
     for (let i = 0; i < structural.length; i++) {
       const char = structural.charCodeAt(i);
       hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32bit integer
+      hash = hash & hash;
     }
     return Math.abs(hash).toString(36);
   }
@@ -40,12 +40,10 @@ export class SiteVersionManager implements ISiteVersionManager {
     try {
       const session = await this.sessionManager.getSession();
       if (session?.cookies != null) {
-        // Try to parse as JSON (new format with metadata)
         try {
           const parsed = JSON.parse(session.cookies);
           return parsed.siteVersion ?? null;
         } catch {
-          // Raw cookie string (old format or first run) - not JSON
           return null;
         }
       }
@@ -95,17 +93,13 @@ export class SiteVersionManager implements ISiteVersionManager {
       const session = await this.sessionManager.getSession();
       if (!session) return;
 
-      // Get raw cookies - handle both old format (raw string) and new format (JSON)
       let rawCookies = session.cookies || "";
       try {
-        // Try to extract from existing JSON wrapper
         const parsed = JSON.parse(rawCookies);
         rawCookies = parsed.raw ?? "";
       } catch {
-        // Already raw string or empty, use as-is
       }
 
-      // Create JSON wrapper with metadata
       const cookieData = {
         raw: rawCookies,
         siteVersion: version,
@@ -130,7 +124,6 @@ export class SiteVersionManager implements ISiteVersionManager {
     const { changed, currentHash, storedHash } = await this.hasSiteChanged(html);
 
     if (storedHash === null) {
-      // First time - store current version
       await this.storeVersion(currentHash);
       return false;
     }

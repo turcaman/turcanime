@@ -69,7 +69,6 @@ function RootInner() {
     return () => { sub.remove(); };
   }, [triggerSessionRefresh]);
 
-  // Execute full session refresh flow
   useEffect(() => {
     if (sessionRefreshTrigger === 0) return;
 

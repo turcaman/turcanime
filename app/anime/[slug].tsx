@@ -78,7 +78,6 @@ function AnimeDetailsContent() {
             onBackPress={navigateBack}
           />
 
-          {/* Episode Range Selector - above episode list */}
           <EpisodeRangeSelector
             ranges={ranges}
             activeRangeIdx={activeRangeIdx}

@@ -11,7 +11,6 @@ function PlayerContent() {
   const { streamUrl, streamHeaders, reset: clearStream } = usePlayerStore();
   const { playerUIService } = useServices();
 
-  // Immersive orientation
   useEffect(() => {
     void playerUIService.setupImmersiveMode();
 
@@ -21,7 +20,6 @@ function PlayerContent() {
     };
   }, [clearStream, playerUIService]);
 
-  // Video player - initialized directly with URL
   const videoSource = streamUrl !== null
     ? { uri: streamUrl, headers: streamHeaders ?? undefined }
     : null;

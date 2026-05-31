@@ -33,6 +33,7 @@ export class PlayerService {
     private webViewBridge: IWebViewBridge,
   ) {}
 
+  /** Fetches available video servers for an episode with caching. */
   async fetchEpisodeServers(
     slug: string,
     number: string,
@@ -65,6 +66,7 @@ export class PlayerService {
     }
   }
 
+  /** Resolves a video server URL to a playable stream URL via WebView extraction. */
   async resolveStreamUrl(server: VideoServer, episodeUrl?: string): Promise<ResolveStreamResult> {
     const cKey = episodeUrl != null ? streamKey(episodeUrl) : streamKey(server.url);
 

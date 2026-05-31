@@ -32,12 +32,10 @@ export function useSearchScreen() {
   });
   const debouncedTerm = useDebounce(state.term, 300);
 
-  // Fetch suggestions when user types (only in typing state with text)
   useEffect(() => {
     if (debouncedTerm.trim().length > 0 && state.status === "typing") {
       void fetchSuggestions(debouncedTerm);
     }
-    // Clear suggestions when text is empty
     if (debouncedTerm.trim().length === 0 && suggestions.length > 0) {
       resetStoreSearch();
     }
@@ -47,7 +45,6 @@ export function useSearchScreen() {
     const trimmed = term.trim();
     if (!trimmed) return;
 
-    // Cancel any ongoing search first
     cancelSearch();
 
     setState({ term, status: "searching" });

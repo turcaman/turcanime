@@ -24,7 +24,6 @@ export class SessionManager implements ISessionManager {
         };
         await this.setSession(initialSession);
       } else if (existingSession.cookies && existingSession.cookies.length > 0) {
-        // Session has cookies - mark as ready immediately
         logger.debug("SessionManager", "Existing session with cookies found");
         promiseResolver = () => {}; // Will be called immediately after promise creation
       } else {
@@ -39,7 +38,6 @@ export class SessionManager implements ISessionManager {
     // This ensures waitForCookies() never hangs indefinitely
     this.sessionReadyPromise = new Promise(resolve => {
       this.sessionReadyResolver = resolve;
-      // Resolve immediately if we already have cookies
       if (promiseResolver) {
         resolve();
       }
@@ -58,7 +56,6 @@ export class SessionManager implements ISessionManager {
   async setSession(session: ISession): Promise<void> {
     try {
       await this.storage.set(this.SESSION_KEY, session);
-      // If this session has cookies, mark as ready
       if (session.cookies && session.cookies.length > 0 && this.sessionReadyResolver) {
         logger.info("SessionManager", `Session updated with ${session.cookies.length} cookies`);
         this.sessionReadyResolver();

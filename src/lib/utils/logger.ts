@@ -55,13 +55,12 @@ class Logger {
 
     this.logs = [...this.logs, entry];
     if (this.logs.length > MAX_LOG_ENTRIES) {
-      this.logs = this.logs.slice(-MAX_LOG_ENTRIES); // Keep last N
+      this.logs = this.logs.slice(-MAX_LOG_ENTRIES);
     }
 
     try {
       await this.storage.set(LOG_STORAGE_KEY, this.logs);
     } catch (error) {
-      // Silent fail in production, warn in development
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Logger] Failed to persist logs:', error);
       }
@@ -116,7 +115,6 @@ class Logger {
     try {
       await this.storage.remove(LOG_STORAGE_KEY);
     } catch {
-      // Silent fail
     }
   }
 }

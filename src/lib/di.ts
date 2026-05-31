@@ -22,8 +22,6 @@ import { ImageService } from "./infrastructure/services/ImageService";
 import { ANIMELATINO_CONFIG } from "./config/providerConfigs";
 import { logger } from "./utils/logger";
 
-// ─── Dependencies interface ────────────────────────────────────────────
-
 export interface AppDependencies {
   storage: IStorage;
   webViewBridge: IWebViewBridge;
@@ -35,8 +33,6 @@ export interface AppDependencies {
   imageService: ImageService;
   cacheRepo: CacheRepo;
 }
-
-// ─── Singleton instance ────────────────────────────────────────────────
 
 let deps: AppDependencies | null = null;
 let initPromise: Promise<void> | null = null;

@@ -45,7 +45,6 @@ export class RscParser implements IRscParser {
   }
 
   extractSynopsis(rsc: string, fullHtml: string): string | null {
-    // Primary: RSC page_overview with "children"
     const ovMatch = rsc.match(
       /page_overview__[^"]*"\s*,\s*"children"\s*:\s*"((?:\\.|[^"\\])*)"/
     );
@@ -57,7 +56,6 @@ export class RscParser implements IRscParser {
         const resolved = this.resolveRscReference(fullHtml, rid);
         if (resolved != null && resolved.length > 20) return resolved;
       } else {
-        // Direct text value
         try {
           const parsed = JSON.parse('"' + val + '"');
           if (typeof parsed === 'string' && parsed.length > 20) return parsed;
@@ -67,7 +65,6 @@ export class RscParser implements IRscParser {
       }
     }
 
-    // Secondary: long text tuple — format: "N:Thex,text" or "N:T,text"
     const tMatch = rsc.match(/^\d+:T(?:\w+,)?([\s\S]+)$/);
     if (tMatch) {
       const candidate = tMatch[1]!;

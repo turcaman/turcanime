@@ -63,7 +63,6 @@ export const useHomeStore = create<HomeState>((set) => ({
     } else if (result.data) {
       newState.homeData = result.data;
     } else if (!isSuccessful) {
-      // If no data, keep old data or reset? Let's keep old if available, or reset to empty
       newState.homeData = { recent: [] };
     }
 

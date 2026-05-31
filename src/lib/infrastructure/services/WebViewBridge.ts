@@ -7,6 +7,13 @@ import { MessageRouter } from "./bridge/MessageRouter";
 
 type NavigateFn = (uri: string) => void;
 
+/**
+ * Bridges React Native with WebView for stream URL extraction.
+ *
+ * Flow: navigate to video page → inject JS to extract iframe → poll for result → resolve URL.
+ * Uses a Map of pending requests with timeouts to handle async decryption.
+ * Supports both iframe-based (Delta server) and HLS direct streams.
+ */
 export class WebViewBridge implements IWebViewBridge {
   private activeDecryptions = new Map<string, (url: string | null) => void>();
   private navigateFn: NavigateFn | null = null;

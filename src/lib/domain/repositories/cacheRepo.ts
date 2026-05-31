@@ -46,7 +46,6 @@ export class CacheRepo implements ICacheRepo {
   }
 
   async set<T>(key: string, value: T, ttlMs: number): Promise<void> {
-    // Check entry size to prevent caching excessively large items
     try {
       const size = JSON.stringify(value).length;
       if (size > this.MAX_ENTRY_SIZE) {
@@ -54,13 +53,10 @@ export class CacheRepo implements ICacheRepo {
         return;
       }
     } catch {
-      // If can't stringify, skip size check and continue
     }
 
-    // Check total entries limit and cleanup if needed
     const allKeys = await this.storage.getAllKeys();
     if (allKeys.length >= this.MAX_ENTRIES) {
-      // Remove oldest entries (first percentage)
       const toRemove = allKeys.slice(0, Math.floor(this.MAX_ENTRIES * LIMITS.CACHE_CLEANUP_PERCENTAGE));
       await Promise.all(toRemove.map((k) => this.storage.remove(k)));
     }

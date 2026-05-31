@@ -21,14 +21,11 @@ export function useScrollDirection(options: UseScrollDirectionOptions = {}) {
       const previousY = scrollYRef.current;
       const delta = currentY - previousY;
 
-      // Detect if at the top
       setIsAtTop(currentY < 10);
 
-      // Only process if threshold exceeded
       if (Math.abs(delta) > threshold) {
         const newDirection: ScrollDirection = delta > 0 ? "down" : "up";
 
-        // Only update if direction changed
         if (newDirection !== lastDirectionRef.current) {
           setDirection(newDirection);
           lastDirectionRef.current = newDirection;

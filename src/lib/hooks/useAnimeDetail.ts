@@ -1,8 +1,3 @@
-/**
- * Custom hooks for the anime detail screen.
- * Extracts pagination, persistence, and server-fetching logic
- * from the component to keep it focused on rendering.
- */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getDeps } from "../di";
 import type { Episode } from "../domain/entities";
@@ -13,18 +8,11 @@ import {
 } from "../domain/services/episodeService";
 import { logger } from "../utils/logger";
 
-// ─── Persisted active range index ──────────────────────────────────────
-
-/**
- * Persist the active episode range index per anime slug.
- * Returns `[activeRangeIdx, setActiveRangeIdx]` synced with getDeps().storage.
- */
 export function usePersistedRange(slug: string | undefined) {
   const [activeRangeIdx, setActiveRangeIdx] = useState(0);
   const [isRestoring, setIsRestoring] = useState(true);
   const currentSlugRef = useRef(slug);
 
-  // Reset when navigating to a different anime
   useEffect(() => {
     if (slug !== currentSlugRef.current) {
       currentSlugRef.current = slug;
@@ -33,7 +21,6 @@ export function usePersistedRange(slug: string | undefined) {
     }
   }, [slug]);
 
-  // Load persisted index on mount / slug change
   useEffect(() => {
     if (slug == null) {
       setIsRestoring(false);
@@ -66,18 +53,12 @@ export function usePersistedRange(slug: string | undefined) {
   return [activeRangeIdx, setAndPersist, isRestoring] as const;
 }
 
-// ─── Episode pagination (order → ranges → visible slice) ───────────────
-
 interface UseEpisodePaginationResult {
   orderedEpisodes: Episode[];
   ranges: { label: string; start: number; end: number }[];
   visibleEpisodes: Episode[];
 }
 
-/**
- * Computes ordered episodes, builds ranges, and returns the visible slice
- * for the current active range and sort order.
- */
 export function useEpisodePagination(
   episodes: Episode[] | undefined,
   order: "asc" | "desc",
@@ -93,13 +74,6 @@ export function useEpisodePagination(
   return { orderedEpisodes, ranges, visibleEpisodes };
 }
 
-// ─── Server fetch with loading state ───────────────────────────────────
-
-/**
- * Fetches servers for a given episode and manages a local loading flag.
- * Returns `{ serverLoading, fetchAndSet }`.
- * The component should read `servers` from usePlayerStore directly.
- */
 export function useServerFetcher(
   slug: string | undefined,
   fetchServers: (slug: string, number: string, force: boolean, signal?: AbortSignal) => Promise<void>,
@@ -115,7 +89,6 @@ export function useServerFetcher(
       // Increment request ID to track which request is current
       const currentRequestId = ++requestIdRef.current;
 
-      // Cancel previous request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }

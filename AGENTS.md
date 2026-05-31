@@ -43,3 +43,10 @@ Active strict rules: `no-floating-promises`, `strict-boolean-expressions`, `no-c
 - Components: `src/components/`, hooks: `src/lib/hooks/`, stores: `src/lib/store/`.
 - Providers implement `IContentProvider` interface from `src/lib/domain/interfaces.ts`.
 - No unnecessary comments. Only add comments that explain *why*, not *what*. Skip comments for self-explanatory code. Never add comments like "// constructor" or "// returns the value".
+
+## Documentation
+
+- **JSDoc:** Add to all interfaces and public methods of services. Keep concise (1 line).
+- **WHY comments:** Allowed for non-obvious workarounds, race conditions, platform bugs.
+- **Section labels:** Delete ("// Data", "// Player"). Code structure speaks for itself.
+- **Regex/bitwise:** Delete explanations. Patterns are self-documenting.

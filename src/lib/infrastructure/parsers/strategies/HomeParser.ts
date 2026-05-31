@@ -37,13 +37,11 @@ export class HomeParser extends BaseParser implements IParserStrategy<Anime[]> {
   parse(html: string): ParserResult<Anime[]> {
     const seen = new Set<string>();
     
-    // Try strategies
     for (const strategy of CARD_STRATEGIES) {
       const cards = this.extractCardsWithStrategy(html, strategy, seen);
       if (cards.length > 0) return { data: cards, strategyUsed: strategy.name, success: true };
     }
 
-    // Fallback
     const cards = this.strategyContextSearch(html, seen);
     if (cards.length > 0) return { data: cards, strategyUsed: "fallback_context_search", success: true };
 

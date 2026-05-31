@@ -35,17 +35,14 @@ export function useAnimeDetailScreen(slug: string) {
   const isAscending = episodeOrder === "asc";
 
   return {
-    // Data
     anime,
     isAnimeLoading,
     error,
     hasLoaded,
     refresh,
-    // Player
     servers,
     serverLoading,
     resolveStream,
-    // Episodes
     episodeOrder,
     setEpisodeOrder,
     isAscending,
@@ -55,7 +52,6 @@ export function useAnimeDetailScreen(slug: string) {
     ranges,
     visibleEpisodes,
     handleEpisodePress,
-    // UI
     ...episodeUI,
   };
 }
