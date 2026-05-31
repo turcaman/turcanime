@@ -1,14 +1,13 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { memo } from "react";
-import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { Text, useWindowDimensions, View } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
 import { Theme } from "../constants/Theme";
 import type { AnimeDetail } from "../lib/domain/entities";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ImageWithLoader } from "./ui/ImageWithLoader";
 import { SectionTitle } from "./ui/SectionTitle";
-import { ThemedText } from "./ui/ThemedText";
 
 interface AnimeDetailsHeaderProps {
   anime: AnimeDetail | null;
@@ -39,23 +38,23 @@ export const AnimeDetailsHeader = memo(
       <>
         {/* Hero Image */}
         <View
-          style={[
-            styles.hero,
-            { height: windowHeight * 0.35, width: windowWidth },  // Increased from 0.25 for less claustrophobic feel
-          ]}
+          className="overflow-hidden"
+          style={{ height: windowHeight * 0.35, width: windowWidth }}
         >
           <ImageWithLoader
             uri={anime?.banner ?? anime?.poster ?? ''}
-            style={styles.image}
+            className="absolute inset-0 w-full h-full"
           />
           <LinearGradient
             colors={Theme.colors.overlay.detailsHero}
             locations={[0.05, 0.35, 0.7, 1]}
-            style={[styles.overlay, { paddingTop: insets.top }]}>
+            style={[{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingBottom: 20, paddingTop: insets.top }]}
+          >
             {/* Back Button */}
             <AnimatedPressable
               onPress={onBackPress}
-              style={[styles.backButton, { marginTop: insets.top }]}
+              className="absolute top-0 left-5 w-12 h-12 rounded-full bg-black/60 items-center justify-center"
+              style={{ marginTop: insets.top }}
             >
               <Feather
                 name="arrow-left"
@@ -66,63 +65,51 @@ export const AnimeDetailsHeader = memo(
 
             {/* Status Badge - Top Right */}
             <View
-              style={[
-                styles.statusBadge,
-                {
-                  top: insets.top,
-                  backgroundColor: Theme.colors.overlay.dark,
-                }
-              ]}
+              className={`absolute right-5 px-2 py-1 rounded-lg ${isAiring ? "bg-purple-500/20" : "bg-black/60"}`}
+              style={{ top: insets.top }}
             >
               <Text
-                style={[
-                  styles.statusText,
-                  { color: isAiring ? Theme.colors.primary : Theme.colors.text.primary }
-                ]}
+                className={`text-[10px] font-bold tracking-wider leading-[14px] ${isAiring ? "text-purple-500" : "text-white"}`}
               >
                 {(isAiring ? "En emisión" : "Finalizado").toUpperCase()}
               </Text>
             </View>
 
             {/* Title */}
-            <View style={styles.titleContainer}>
-              <ThemedText variant="h1" numberOfLines={2}>
+            <View className="flex-1 justify-end">
+              <Text className="text-2xl font-extrabold tracking-tight text-white" numberOfLines={2}>
                 {anime?.title}
-              </ThemedText>
+              </Text>
             </View>
           </LinearGradient>
         </View>
 
         {/* Synopsis */}
-        <View style={styles.section}>
+        <View className="px-5 py-5">
           <SectionTitle>Sinopsis</SectionTitle>
           {hasSynopsis ? (
             <AnimatedPressable onPress={() => { setIsExpanded(!isExpanded); }}>
-              <ThemedText
+              <Text
+                className="text-[15px] font-medium leading-5 text-neutral-400"
                 numberOfLines={isExpanded ? undefined : 3}
-                color="secondary"
               >
                 {anime.synopsis}
-              </ThemedText>
+              </Text>
               {!isExpanded && anime.synopsis.length > 150 && (
-                <ThemedText
-                  color="accent"
-                  weight={Theme.fontWeight.bold as "700"}
-                  style={styles.readMore}
-                >
+                <Text className="mt-2 text-[15px] font-bold leading-5 text-purple-500">
                   Leer más
-                </ThemedText>
+                </Text>
               )}
             </AnimatedPressable>
           ) : (
-            <ThemedText variant="caption" color="muted">
+            <Text className="text-[10px] font-semibold tracking-wider leading-[14px] text-neutral-400">
               Sinopsis no disponible
-            </ThemedText>
+            </Text>
           )}
         </View>
 
         {/* Episodes Header */}
-        <View style={styles.episodesHeader}>
+        <View className="flex-row items-center justify-between px-5 pt-3">
           <SectionTitle>Episodios ({anime?.episodes.length ?? 0})</SectionTitle>
           <AnimatedPressable onPress={toggleSort}>
             <Feather
@@ -138,62 +125,3 @@ export const AnimeDetailsHeader = memo(
 );
 
 AnimeDetailsHeader.displayName = "AnimeDetailsHeader";
-
-const styles = StyleSheet.create({
-  hero: {
-    overflow: "hidden",
-  },
-  image: {
-    ...StyleSheet.absoluteFillObject,
-    width: "100%",
-    height: "100%",
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    paddingHorizontal: Theme.edge.horizontal,
-    paddingBottom: Theme.spacing.xl,
-  },
-  backButton: {
-    position: "absolute",
-    top: 0,
-    left: Theme.edge.horizontal,
-    width: Theme.dimensions.layout.backButton,
-    height: Theme.dimensions.layout.backButton,
-    borderRadius: Theme.radius.full,
-    backgroundColor: Theme.colors.overlay.dark,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  statusBadge: {
-    position: "absolute",
-    right: Theme.edge.horizontal,
-    paddingHorizontal: Theme.spacing.sm,
-    paddingVertical: Theme.spacing.xs,
-    borderRadius: Theme.radius.m,
-  },
-  statusText: {
-    fontSize: Theme.fontSize.xs,
-    fontWeight: Theme.fontWeight.bold as "700",
-    letterSpacing: 0.5,
-    lineHeight: Theme.lineHeight.xs,
-  },
-  titleContainer: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  section: {
-    paddingHorizontal: Theme.edge.horizontal,
-    paddingTop: Theme.spacing.xl,
-    paddingBottom: Theme.spacing.xl,
-  },
-  readMore: {
-    marginTop: Theme.spacing.sm,
-  },
-  episodesHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Theme.edge.horizontal,
-    paddingTop: Theme.spacing.md,
-  },
-});

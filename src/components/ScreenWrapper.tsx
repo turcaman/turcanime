@@ -1,7 +1,7 @@
 import { AppLoader } from "@/components/ui/AppLoader";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { ThemedView } from "@/components/ui/ThemedView";
 import type { ReactNode } from "react";
+import { View } from "react-native";
 
 interface ScreenWrapperProps {
   isLoading: boolean;
@@ -11,26 +11,26 @@ interface ScreenWrapperProps {
   children: ReactNode;
 }
 
-export function ScreenWrapper({ 
-  isLoading, 
-  error, 
-  hasContent, 
-  onRetry, 
-  children 
+export function ScreenWrapper({
+  isLoading,
+  error,
+  hasContent,
+  onRetry,
+  children
 }: ScreenWrapperProps) {
   if (isLoading) {
     return (
-      <ThemedView style={{ flex: 1 }}>
+      <View className="flex-1">
         <AppLoader variant="full" />
-      </ThemedView>
+      </View>
     );
   }
 
   if (!hasContent && error && onRetry) {
     return (
-      <ThemedView style={{ flex: 1 }}>
+      <View className="flex-1">
         <ErrorState onRetry={onRetry} />
-      </ThemedView>
+      </View>
     );
   }
 

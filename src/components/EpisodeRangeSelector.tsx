@@ -1,11 +1,9 @@
 import React, { memo, useEffect, useRef } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
-import { Theme } from "../constants/Theme";
+import { FlatList, Text, View } from "react-native";
 import { AnimatedPressable } from "./AnimatedPressable";
-import { ThemedText } from "./ui/ThemedText";
 
-const RANGE_BADGE_WIDTH = Theme.dimensions.layout.episodeRangeBadge.width;
-const RANGE_BADGE_GAP = Theme.dimensions.layout.episodeRangeBadge.gap;
+const RANGE_BADGE_WIDTH = 90;
+const RANGE_BADGE_GAP = 12;
 
 interface EpisodeRange {
   label: string;
@@ -51,7 +49,7 @@ export const EpisodeRangeSelector = memo(({
   if (ranges.length <= 1) return null;
 
   return (
-    <View style={styles.container}>
+    <View className="mb-3">
       <FlatList
         ref={listRef}
         horizontal
@@ -63,18 +61,15 @@ export const EpisodeRangeSelector = memo(({
           return (
             <AnimatedPressable
               onPress={() => { setActiveRangeIdx(index); }}
-              style={[styles.badge, isActive && styles.badgeActive]}
+              className={`rounded-lg bg-neutral-900 gap-3 w-[90px] items-center py-2 ${isActive ? "bg-purple-500/15" : ""}`}
             >
-              <ThemedText
-                variant="caption"
-                color={isActive ? "accent" : "dark"}
-              >
+              <Text className={`text-xs ${isActive ? "text-purple-500" : "text-neutral-500"}`}>
                 {item.label}
-              </ThemedText>
+              </Text>
             </AnimatedPressable>
           );
         }}
-        contentContainerStyle={styles.scroll}
+        contentContainerClassName="gap-3 px-5"
         getItemLayout={(_, index) => ({
           length: RANGE_BADGE_WIDTH,
           offset: (RANGE_BADGE_WIDTH + RANGE_BADGE_GAP) * index,
@@ -92,24 +87,3 @@ export const EpisodeRangeSelector = memo(({
 });
 
 EpisodeRangeSelector.displayName = "EpisodeRangeSelector";
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: Theme.spacing.md,
-  },
-  scroll: {
-    gap: Theme.dimensions.layout.episodeRangeBadge.gap,
-    paddingHorizontal: Theme.edge.horizontal,
-  },
-  badge: {
-    backgroundColor: Theme.colors.surface,
-    gap: Theme.dimensions.layout.episodeRangeBadge.gap,
-    width: Theme.dimensions.layout.episodeRangeBadge.width,
-    alignItems: "center",
-    paddingVertical: Theme.spacing.sm,
-    borderRadius: Theme.radius.m,
-  },
-  badgeActive: {
-    backgroundColor: Theme.colors.primaryMuted,
-  },
-});

@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -50,15 +50,22 @@ export function FloatingTabBar({
   return (
     <Animated.View
       style={[
-        styles.container,
         {
+          position: "absolute",
+          left: 0,
+          right: 0,
+          alignItems: "center",
+          justifyContent: "center",
           bottom: insets.bottom + Theme.spacing.lg,
         },
         animatedStyle,
       ]}
       pointerEvents="box-none"
     >
-      <View style={styles.tabBar}>
+      <View
+        className="flex-row items-center justify-center rounded-xl px-4 py-2 gap-4 bg-neutral-900/80"
+        style={{ elevation: 8 }}
+      >
         {state.routes.map((route, index) => {
           const isFocused = state.index === index;
 
@@ -83,7 +90,7 @@ export function FloatingTabBar({
             <AnimatedPressable
               key={route.key}
               onPress={onPress}
-              style={styles.tabButton}
+              style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 8 }}
               hapticFeedback={false}
               accessibilityLabel={LABELS[route.name]}
               accessibilityRole="button"
@@ -97,30 +104,4 @@ export function FloatingTabBar({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tabBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Theme.colors.surfaceElevated,
-    borderRadius: Theme.radius.l,
-    paddingHorizontal: Theme.spacing.lg,
-    paddingVertical: Theme.spacing.sm,
-    gap: Theme.spacing.lg,
-    elevation: 8, // Native Android shadow for accessibility/differentiation
-  },
-  tabButton: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: Theme.radius.m,
-  },
-});
+

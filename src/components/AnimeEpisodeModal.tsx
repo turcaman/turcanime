@@ -1,11 +1,9 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { Theme } from "../constants/Theme";
+import { Pressable, Text, View } from "react-native";
 import type { Episode, VideoServer } from "../lib/domain/entities";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { AppLoader } from "./ui/AppLoader";
-import { ThemedText } from "./ui/ThemedText";
 
 interface AnimeEpisodeModalProps {
   visible: boolean;
@@ -34,41 +32,41 @@ export const AnimeEpisodeModal = ({
   const displayServers = delta.length > 0 ? delta : servers;
 
   return (
-    <View style={styles.overlay}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+    <View className="absolute inset-0 bg-black/80 justify-end">
+      <Pressable className="absolute inset-0" onPress={onClose} />
 
-      <View style={styles.content}>
-        <View style={styles.handle} />
+      <View className="bg-neutral-900 rounded-t-2xl px-5 pt-2 pb-11">
+        <View className="w-9 h-1 rounded-full bg-neutral-800 self-center mb-2" />
 
-        <View style={styles.header}>
-          <ThemedText variant="h2">Episodio {episode?.number}</ThemedText>
-          <Feather name="x" size={20} color={Theme.colors.text.secondary} onPress={onClose} />
+        <View className="flex-row justify-between items-center mb-2">
+          <Text className="text-white text-xl font-bold">Episodio {episode?.number}</Text>
+          <Feather name="x" size={20} color="#AAAAAA" onPress={onClose} />
         </View>
 
-        <ThemedText variant="caption" color="muted" style={styles.subtitle}>
+        <Text className="text-neutral-400 text-xs mb-2">
           Selecciona un idioma
-        </ThemedText>
+        </Text>
 
-        <View style={styles.serverList}>
+        <View className="gap-2">
           {isLoading ? (
             <AppLoader variant="small" />
           ) : displayServers.length === 0 ? (
-            <View style={styles.loaderArea}>
-              <ThemedText variant="caption" color="muted">No hay servidor disponible</ThemedText>
+            <View className="h-48 justify-center items-center">
+              <Text className="text-neutral-400 text-xs">No hay servidor disponible</Text>
             </View>
           ) : (
             displayServers.map((server, index) => (
               <AnimatedPressable
                 key={server.id || `server-${index}`}
-                style={styles.serverCard}
+                className="flex-row items-center bg-black p-4 rounded-xl"
                 onPress={() => { onServerSelect(server); }}
               >
-                <View style={styles.playIcon}>
-                  <Feather name="play" size={14} color={Theme.colors.primary} />
+                <View className="w-7 h-7 rounded-lg bg-purple-500/15 justify-center items-center mr-2">
+                  <Feather name="play" size={14} color="#A855F7" />
                 </View>
-                <ThemedText weight={Theme.fontWeight.bold} style={styles.langText}>
+                <Text className="text-white font-bold flex-1">
                   {mapLanguage(server.language)}
-                </ThemedText>
+                </Text>
               </AnimatedPressable>
             ))
           )}
@@ -79,55 +77,3 @@ export const AnimeEpisodeModal = ({
 };
 
 AnimeEpisodeModal.displayName = "AnimeEpisodeModal";
-
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: Theme.colors.overlay.heavy,
-    justifyContent: "flex-end",
-  },
-  content: {
-    backgroundColor: Theme.colors.surface,
-    borderTopLeftRadius: Theme.radius.l,
-    borderTopRightRadius: Theme.radius.l,
-    paddingHorizontal: Theme.spacing.xl,
-    paddingTop: Theme.spacing.sm,
-    paddingBottom: Theme.spacing.xxl + Theme.spacing.xl,
-  },
-  handle: {
-    width: Theme.dimensions.modal.handle.width,
-    height: Theme.dimensions.modal.handle.height,
-    borderRadius: Theme.dimensions.modal.handle.radius,
-    backgroundColor: Theme.colors.border,
-    alignSelf: "center",
-    marginBottom: Theme.spacing.sm,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Theme.spacing.sm,
-  },
-  subtitle: { marginBottom: Theme.spacing.sm },
-  serverList: { gap: Theme.spacing.sm },
-  serverCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Theme.colors.background,
-    padding: Theme.spacing.lg,
-    borderRadius: Theme.radius.m,
-  },
-  playIcon: {
-    width: Theme.dimensions.player.playIcon.width,
-    height: Theme.dimensions.player.playIcon.height,
-    borderRadius: Theme.radius.s,
-    backgroundColor: Theme.colors.primaryMuted,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: Theme.spacing.sm,
-  },
-  langText: {
-    flex: 1,
-  },
-  loaderArea: { height: Theme.dimensions.layout.loaderHeight, justifyContent: "center", alignItems: "center" },
-});

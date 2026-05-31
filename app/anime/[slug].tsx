@@ -4,8 +4,6 @@ import { AnimeDetailsHeader } from "@/components/AnimeDetailsHeader";
 import { AnimeEpisodeModal } from "@/components/AnimeEpisodeModal";
 import { EpisodeRangeSelector } from "@/components/EpisodeRangeSelector";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ThemedText } from "@/components/ui/ThemedText";
-import { ThemedView } from "@/components/ui/ThemedView";
 import { TAB_BAR_BOTTOM_OFFSET } from "@/constants/layout";
 import { Theme } from "@/constants/Theme";
 import { useAnimeDetailScreen } from "@/lib/hooks/useAnimeDetailScreen";
@@ -17,7 +15,7 @@ import React from "react";
 import {
     RefreshControl,
     ScrollView,
-    StyleSheet,
+    Text,
     View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -56,9 +54,9 @@ function AnimeDetailsContent() {
       hasContent={!!anime}
       onRetry={refresh}
     >
-      <ThemedView style={styles.root}>
+      <View className="flex-1">
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={{ paddingBottom: TAB_BAR_BOTTOM_OFFSET }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -85,24 +83,18 @@ function AnimeDetailsContent() {
             isRestoring={isRestoring}
           />
 
-          <View style={styles.episodeList}>
+          <View className="px-5 mt-3 gap-2">
             {visibleEpisodes.map((item) => (
               <AnimatedPressable
                 key={item.id}
                 onPress={() => { handleEpisodePress(item); }}
               >
-                <ThemedView
-                  variant="surface"
-                  padding="md"
-                  radius="m"
-                  border
-                  style={styles.episodeCardInner}
-                >
-                  <ThemedText variant="body" style={styles.episodeText}>
+                <View className="rounded-lg bg-[#0A0A0A] flex-row items-center justify-between border border-[#1F1F1F] py-4 px-3">
+                  <Text className="font-semibold">
                     Episodio {item.number}
-                  </ThemedText>
+                  </Text>
                   <Feather name="play" size={16} color={Theme.colors.primary} />
-                </ThemedView>
+                </View>
               </AnimatedPressable>
             ))}
           </View>
@@ -138,30 +130,10 @@ function AnimeDetailsContent() {
             }
           }}
         />
-      </ThemedView>
+      </View>
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-  scrollContent: { paddingBottom: TAB_BAR_BOTTOM_OFFSET },
-  episodeList: {
-    paddingHorizontal: Theme.edge.horizontal,
-    marginTop: Theme.spacing.md,
-    gap: Theme.spacing.sm,
-  },
-  episodeCardInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: Theme.spacing.lg,
-    paddingHorizontal: Theme.spacing.md,
-  },
-  episodeText: {
-    fontWeight: Theme.fontWeight.semibold,
-  },
-});
 
 export default function AnimeDetails() {
   return (

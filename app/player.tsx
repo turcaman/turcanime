@@ -1,4 +1,4 @@
-import { WithErrorBoundary } from "@/components/WithErrorBoundary";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Theme } from "@/constants/Theme";
 import { useServices } from "@/lib/hooks/useServices";
 import { usePlayerStore } from "@/lib/store/playerStore";
@@ -57,8 +57,8 @@ const styles = StyleSheet.create({
 
 export default function NativePlayer() {
   return (
-    <WithErrorBoundary>
+    <ErrorBoundary>
       <PlayerContent />
-    </WithErrorBoundary>
+    </ErrorBoundary>
   );
 }

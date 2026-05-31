@@ -3,10 +3,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RecentSearches } from "@/components/RecentSearches";
 import { SuggestionsList } from "@/components/SuggestionsList";
 import { AppLoader } from "@/components/ui/AppLoader";
-import { ThemedText } from "@/components/ui/ThemedText";
-import { ThemedView } from "@/components/ui/ThemedView";
 import {
-    GridConfig,
     searchGridCardWidth,
     TAB_BAR_BOTTOM_OFFSET,
 } from "@/constants/layout";
@@ -18,8 +15,9 @@ import { Feather } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import {
     FlatList,
-    StyleSheet,
-    TextInput
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -45,7 +43,6 @@ function SearchScreenContent() {
 
   const { handleScroll, reset, showTabBar } = useTabBarManager({ threshold: 8 });
 
-  // Reset scroll and show tabbar when search ends
   useEffect(() => {
     if (!isSearched) {
       reset();
@@ -54,22 +51,20 @@ function SearchScreenContent() {
   }, [isSearched, reset, showTabBar]);
 
   return (
-    <ThemedView style={styles.root}>
-      <ThemedView
-        style={[
-          styles.searchBarContainer,
-          { paddingTop: insets.top + Theme.spacing.lg },
-        ]}
+    <View className="flex-1">
+      <View
+        className="px-5 pb-4 bg-black"
+        style={{ paddingTop: insets.top + Theme.spacing.lg }}
       >
-        <ThemedView style={styles.searchBar}>
+        <View className="flex-row items-center h-12 bg-[#0A0A0A] rounded-lg px-4">
           <Feather
             name="search"
             size={18}
             color={Theme.colors.text.muted}
-            style={styles.searchIcon}
+            style={{ marginRight: 8 }}
           />
           <TextInput
-            style={styles.input}
+            className="flex-1 text-white text-[15px] font-medium h-12"
             placeholder="Buscar anime..."
             placeholderTextColor={Theme.colors.text.muted}
             value={searchTerm}
@@ -86,14 +81,13 @@ function SearchScreenContent() {
                 resetSearch();
                 showTabBar();
               }}
-              style={styles.clearIcon}
+              style={{ padding: 8 }}
             />
           )}
-        </ThemedView>
-      </ThemedView>
+        </View>
+      </View>
 
-      <ThemedView style={styles.content}>
-        {/* Estado 1: Vacío → Recientes si existen */}
+      <View className="flex-1 px-5">
         {isIdle && recentSearches.length > 0 && (
           <RecentSearches
             searches={recentSearches}
@@ -102,7 +96,6 @@ function SearchScreenContent() {
           />
         )}
 
-        {/* Estado 2: Escribiendo → Suggestions */}
         {isTyping && suggestions.length > 0 && (
           <SuggestionsList
             suggestions={suggestions}
@@ -112,42 +105,42 @@ function SearchScreenContent() {
           />
         )}
 
-        {/* Estado 3: Buscando / Buscado → Loader o Resultados */}
         {isLoading ? (
-          <ThemedView style={styles.centeredContent}>
+          <View className="flex-1 justify-center items-center">
             <AppLoader variant="small" />
-          </ThemedView>
+          </View>
         ) : isSearched ? (
           <FlatList
             data={searchAnimes}
             keyExtractor={(item: Anime) => item.url}
             numColumns={3}
             renderItem={({ item }: { item: Anime }) => (
-              <ThemedView style={styles.cardWrapper}>
+              <View className="mb-2">
                 <AnimeCard anime={item} width={cardWidth} />
-              </ThemedView>
+              </View>
             )}
-            columnWrapperStyle={styles.columnWrapper}
-            contentContainerStyle={styles.listContent}
+            columnWrapperClassName="justify-start gap-[10px]"
+            contentContainerClassName="pt-4"
+            contentContainerStyle={{ paddingBottom: TAB_BAR_BOTTOM_OFFSET }}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
             ListEmptyComponent={
-              <ThemedView style={styles.emptyContainer} accessibilityLabel="No se encontraron resultados">
+              <View className="flex-1 justify-start items-center px-5 pt-[72px]" accessibilityLabel="No se encontraron resultados">
                 <Feather
                   name="meh"
                   size={40}
                   color={Theme.colors.text.muted}
                 />
-                <ThemedText variant="body" color="muted" style={styles.emptyTitle}>
+                <Text className="text-[15px] text-[#777777] mt-2">
                   No se encontraron resultados
-                </ThemedText>
-              </ThemedView>
+                </Text>
+              </View>
             }
           />
         ) : null}
-      </ThemedView>
-    </ThemedView>
+      </View>
+    </View>
   );
 }
 
@@ -158,58 +151,3 @@ export default function SearchScreen() {
     </ErrorBoundary>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-  searchBarContainer: {
-    paddingHorizontal: Theme.edge.horizontal,
-    paddingBottom: Theme.spacing.lg,
-    backgroundColor: Theme.colors.background,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: Theme.dimensions.input.height,
-    backgroundColor: Theme.colors.surface,
-    borderRadius: Theme.radius.m,
-    paddingHorizontal: Theme.spacing.lg,
-  },
-  searchIcon: { marginRight: Theme.spacing.sm },
-  clearIcon: { padding: Theme.spacing.sm },
-  input: {
-    flex: 1,
-    color: Theme.colors.text.primary,
-    fontSize: Theme.fontSize.m,
-    fontWeight: Theme.fontWeight.medium as "500",
-    height: Theme.dimensions.input.height,
-  },
-  centeredContent: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: Theme.edge.horizontal,
-  },
-  listContent: {
-    paddingBottom: TAB_BAR_BOTTOM_OFFSET,
-    paddingTop: Theme.spacing.lg,
-  },
-  columnWrapper: {
-    justifyContent: "flex-start",
-    gap: GridConfig.search.gaps.column,
-  },
-  cardWrapper: { marginBottom: GridConfig.search.gaps.row },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "flex-start",
-    alignItems: "center",
-    paddingHorizontal: Theme.spacing.xl,
-    paddingTop: Theme.spacing.xxxxl + Theme.spacing.xxl,
-  },
-  emptyTitle: {
-    marginTop: Theme.spacing.sm,
-  },
-});
-

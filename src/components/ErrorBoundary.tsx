@@ -4,8 +4,7 @@
  */
 
 import React, { type ErrorInfo, type ReactNode, Component } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Theme } from "../constants/Theme";
+import { Pressable, Text, View } from "react-native";
 import { logger } from "../lib/utils/logger";
 
 interface Props {
@@ -53,15 +52,18 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Default fallback UI
       return (
-        <View style={styles.container}>
-          <Text style={styles.emoji}>😵</Text>
-          <Text style={styles.title}>Algo salió mal</Text>
-          <Text style={styles.message}>
+        <View className="flex-1 items-center justify-center bg-black p-5">
+          <Text className="text-4xl">😵</Text>
+          <Text className="text-lg font-bold text-white">Algo salió mal</Text>
+          <Text className="text-neutral-500">
             {this.state.error?.message ?? "Error inesperado"}
           </Text>
-          <TouchableOpacity style={styles.button} onPress={this.handleRetry}>
-            <Text style={styles.buttonText}>Reintentar</Text>
-          </TouchableOpacity>
+          <Pressable
+            className="flex-row items-center mt-4 bg-purple-500/15 px-6 py-3 rounded-xl"
+            onPress={this.handleRetry}
+          >
+            <Text className="font-semibold text-purple-500">Reintentar</Text>
+          </Pressable>
         </View>
       );
     }
@@ -69,40 +71,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: Theme.colors.background,
-    padding: Theme.spacing.xl,
-  },
-  emoji: {
-    fontSize: Theme.fontSize.xxl,
-    marginBottom: Theme.spacing.sm,
-  },
-  title: {
-    fontSize: Theme.fontSize.l,
-    fontWeight: "bold",
-    color: Theme.colors.text.primary,
-    marginBottom: Theme.spacing.sm,
-  },
-  message: {
-    fontSize: Theme.fontSize.m,
-    color: Theme.colors.text.secondary,
-    textAlign: "center",
-    marginBottom: Theme.spacing.xl,
-  },
-  button: {
-    backgroundColor: Theme.colors.primary,
-    paddingHorizontal: Theme.spacing.lg,
-    paddingVertical: Theme.spacing.sm,
-    borderRadius: Theme.radius.m,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: Theme.fontSize.m,
-    fontWeight: Theme.fontWeight.semibold,
-  },
-});
