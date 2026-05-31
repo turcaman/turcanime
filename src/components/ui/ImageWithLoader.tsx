@@ -1,11 +1,10 @@
 import React from "react";
-import { type ViewStyle, Image as RNImage, StyleSheet, View } from "react-native";
-import { ThemedText } from "./ThemedText";
-import { ThemedView } from "./ThemedView";
+import { type ViewStyle, Image as RNImage, View, Text } from "react-native";
 
 interface ImageWithLoaderProps {
   uri: string;
   style?: ViewStyle | ViewStyle[];
+  className?: string;
   loadingText?: string;
   errorText?: string;
 }
@@ -13,6 +12,7 @@ interface ImageWithLoaderProps {
 export const ImageWithLoader = ({
   uri,
   style,
+  className,
   loadingText = "Cargando...",
   errorText = "Error",
 }: ImageWithLoaderProps) => {
@@ -29,9 +29,8 @@ export const ImageWithLoader = ({
     setHasError(true);
   }, []);
 
-  // Reset loading state when URI changes
   React.useEffect(() => {
-    if (!uri || uri.trim() === '') {
+    if (!uri || uri.trim() === "") {
       setIsLoading(false);
       setHasError(true);
       return;
@@ -41,41 +40,26 @@ export const ImageWithLoader = ({
   }, [uri]);
 
   return (
-    <ThemedView variant="surface" style={[styles.container, style]}>
+    <View className={`overflow-hidden bg-neutral-900 rounded-lg${className != null ? ` ${className}` : ""}`} style={style}>
       {isLoading && !hasError && (
-        <View style={styles.placeholder}>
-          <ThemedText variant="caption" color="muted">
-            {loadingText}
-          </ThemedText>
+        <View className="absolute inset-0 items-center justify-center">
+          <Text className="text-sm text-neutral-500">{loadingText}</Text>
         </View>
       )}
       {hasError && (
-        <View style={styles.placeholder}>
-          <ThemedText variant="caption" color="muted">
-            {errorText}
-          </ThemedText>
+        <View className="absolute inset-0 items-center justify-center">
+          <Text className="text-sm text-neutral-500">{errorText}</Text>
         </View>
       )}
       {!hasError && uri ? (
         <RNImage
           source={{ uri }}
-          style={StyleSheet.absoluteFill}
+          className="absolute inset-0"
           resizeMode="cover"
           onLoad={handleLoad}
           onError={handleError}
         />
       ) : null}
-    </ThemedView>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    overflow: "hidden",
-  },
-  placeholder: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});

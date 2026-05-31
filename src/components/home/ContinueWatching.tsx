@@ -1,13 +1,11 @@
 import React, { memo } from "react";
-import { StyleSheet, View } from "react-native";
+import { Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
-import { Theme } from "../../constants/Theme";
 import type { HistoryItem } from "../../lib/domain/entities";
 import { navigateToAnime } from "../../lib/utils/navigation";
 import { AnimatedPressable } from "../AnimatedPressable";
 import { ImageWithLoader } from "../ui/ImageWithLoader";
 import { SectionTitle } from "../ui/SectionTitle";
-import { ThemedText } from "../ui/ThemedText";
 
 interface ContinueWatchingProps {
   items: HistoryItem[];
@@ -18,28 +16,28 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
 
   const renderItem = ({ item }: { item: HistoryItem }) => (
     <AnimatedPressable
-      style={styles.card}
+      className="mr-3 w-[110px] h-[165px] rounded-xl overflow-hidden bg-[#0A0A0A]"
       onPress={() => { navigateToAnime(item.url); }}
       accessibilityLabel={`Continuar viendo: ${item.title}`}
     >
       <ImageWithLoader
         uri={item.image}
-        style={styles.image}
+        style={{ width: "100%", height: "100%" }}
       />
-      <View style={styles.overlay}>
-        <ThemedText variant="caption" style={styles.episodeLabel}>
+      <View className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">
+        <Text className="text-xs font-semibold text-purple-500 mb-[2px]">
           Ep. {item.number}
-        </ThemedText>
-        <ThemedText color="primary" numberOfLines={1} style={styles.title}>
+        </Text>
+        <Text numberOfLines={1} className="text-[15px] font-bold text-purple-500">
           {item.title}
-        </ThemedText>
+        </Text>
       </View>
     </AnimatedPressable>
   );
 
   return (
-    <View style={styles.sectionContainer}>
-      <View style={styles.titleWrapper}>
+    <View className="py-4">
+      <View className="mb-3">
         <SectionTitle>Continuar viendo</SectionTitle>
       </View>
       <FlashList
@@ -48,46 +46,9 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
         keyExtractor={(item) => item.url}
         renderItem={renderItem}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.sectionPadding}
       />
     </View>
   );
-});
-
-const styles = StyleSheet.create({
-  sectionContainer: {},
-  titleWrapper: {},
-  sectionPadding: {},
-  card: {
-    width: Theme.dimensions.poster.md.width,
-    height: Theme.dimensions.poster.md.height,
-    marginRight: Theme.spacing.md,
-    borderRadius: Theme.radius.l,
-    overflow: "hidden",
-    backgroundColor: Theme.colors.surface,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  overlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: Theme.colors.overlay.dark,
-    padding: Theme.spacing.sm,
-  },
-  episodeLabel: {
-    color: Theme.colors.primary,
-    fontSize: Theme.fontSize.s,
-    fontWeight: Theme.fontWeight.semibold as "600",
-    marginBottom: 2,
-  },
-  title: {
-    fontSize: Theme.fontSize.m,
-    fontWeight: Theme.fontWeight.bold as "700",
-  },
 });
 
 ContinueWatching.displayName = "ContinueWatching";

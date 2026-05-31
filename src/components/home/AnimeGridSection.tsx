@@ -1,6 +1,5 @@
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, View } from "react-native";
 import { searchGridCardWidth } from "@/constants/layout";
-import { Theme } from "@/constants/Theme";
 import type { Anime } from "@/lib/domain/entities";
 import React, { memo, useMemo } from "react";
 import AnimeCard from "../AnimeCard";
@@ -22,8 +21,8 @@ export const AnimeGridSection = memo(({ label, items }: AnimeGridSectionProps) =
   if (items.length === 0) return null;
 
   return (
-    <View style={styles.sectionContainer}>
-      <View style={styles.titleWrapper}>
+    <View className="py-4">
+      <View className="mb-2">
         <SectionTitle>{label}</SectionTitle>
       </View>
       <FlatList
@@ -31,24 +30,16 @@ export const AnimeGridSection = memo(({ label, items }: AnimeGridSectionProps) =
         numColumns={3}
         keyExtractor={(item) => item.url}
         renderItem={({ item }) => (
-          <View style={[styles.cardWrapper, { width: cardWidth }]}>
+          <View style={{ width: cardWidth }} className="mb-2">
             <AnimeCard anime={item} width={cardWidth} />
           </View>
         )}
         columnWrapperStyle={columnWrapperStyle}
-        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         scrollEnabled={false}
       />
     </View>
   );
-});
-
-const styles = StyleSheet.create({
-  sectionContainer: {},
-  titleWrapper: {},
-  listContent: {},
-  cardWrapper: { marginBottom: Theme.spacing.sm },
 });
 
 AnimeGridSection.displayName = "AnimeGridSection";

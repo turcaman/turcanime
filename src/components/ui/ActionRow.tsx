@@ -1,9 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import { Theme } from "../../constants/Theme";
+import { Text, View } from "react-native";
 import { AnimatedPressable } from "../AnimatedPressable";
-import { ThemedText } from "./ThemedText";
 
 interface ActionRowProps {
   icon?: keyof typeof Feather.glyphMap;
@@ -28,64 +26,37 @@ export const ActionRow = ({
       onPress={onPress}
       disabled={!onPress}
       hapticFeedback={!!onPress}
-      style={[styles.row, noBorder === true && styles.noBorder]}
+      className={`flex-row items-center py-4 px-5 ${noBorder === true ? "" : "border-b border-neutral-800"}`}
     >
       {icon && (
         <Feather
           name={icon}
           size={18}
-          color={Theme.colors.text.muted}
-          style={styles.icon}
+          color="#737373"
+          style={{ marginRight: 12 }}
         />
       )}
-      <View style={styles.textContainer}>
-        <ThemedText variant="body" color="primary" style={styles.label}>
+      <View className="flex-1 mr-2">
+        <Text className="text-base font-medium text-white">
           {label}
-        </ThemedText>
-        {description != null && description !== '' && (
-          <ThemedText variant="caption" color="muted" style={styles.description}>
+        </Text>
+        {description != null && description !== "" && (
+          <Text className="mt-1 text-xs font-semibold tracking-wide text-neutral-400">
             {description}
-          </ThemedText>
+          </Text>
         )}
       </View>
-      {value != null && value !== '' ? (
-        <ThemedText variant="body" color="muted">
+      {value != null && value !== "" ? (
+        <Text className="text-base font-medium text-neutral-400">
           {value}
-        </ThemedText>
+        </Text>
       ) : onPress ? (
         <Feather
           name="chevron-right"
           size={18}
-          color={Theme.colors.text.muted}
+          color="#737373"
         />
       ) : null}
     </AnimatedPressable>
   );
 };
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: Theme.spacing.lg,
-    paddingHorizontal: Theme.edge.horizontal,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Theme.colors.border,
-  },
-  noBorder: {
-    borderBottomWidth: 0,
-  },
-  icon: {
-    marginRight: Theme.spacing.md,
-  },
-  textContainer: {
-    flex: 1,
-    marginRight: Theme.spacing.sm,
-  },
-  label: {
-    fontWeight: Theme.fontWeight.medium as "500",
-  },
-  description: {
-    marginTop: Theme.spacing.xs,
-  },
-});

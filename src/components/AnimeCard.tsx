@@ -1,11 +1,9 @@
 import React, { memo, useCallback } from "react";
-import { StyleSheet, View } from "react-native";
-import { Theme } from "../constants/Theme";
+import { View, Text } from "react-native";
 import type { Anime, HistoryItem } from "../lib/domain/entities";
 import { navigateToAnime } from "../lib/utils/navigation";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ImageWithLoader } from "./ui/ImageWithLoader";
-import { ThemedText } from "./ui/ThemedText";
 
 interface AnimeCardProps {
   anime: Anime | HistoryItem;
@@ -17,7 +15,7 @@ interface AnimeCardProps {
 
 const AnimeCard = ({ anime, width, onPress, variant = "default", episodeNumber }: AnimeCardProps) => {
   const isContinue = variant === "continue";
-  const cardHeight = isContinue ? width * Theme.dimensions.ratios.continue : width * Theme.dimensions.ratios.default;
+  const cardHeight = isContinue ? width * 0.56 : width * 1.4;
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -35,53 +33,24 @@ const AnimeCard = ({ anime, width, onPress, variant = "default", episodeNumber }
       accessibilityHint="Presiona para ver detalles"
       hapticFeedback={true}
     >
-      <View style={styles.imageContainer}>
+      <View className="relative">
         <ImageWithLoader
           uri={anime.image}
-          style={[
-            styles.poster,
-            { width, height: cardHeight } as import("react-native").ImageStyle
-          ]}
+          style={[{ width, height: cardHeight } as import("react-native").ImageStyle]}
         />
-        {/* Badge de episodio para modo continue */}
         {isContinue && episodeNumber != null && episodeNumber !== '' && (
-          <View style={styles.episodeBadge}>
-            <ThemedText variant="caption" weight={Theme.fontWeight.bold} color="primary">
+          <View className="absolute bottom-2 right-2 rounded bg-black/60 px-2 py-1">
+            <Text className="text-[10px] font-bold tracking-wide text-purple-500">
               Ep. {episodeNumber}
-            </ThemedText>
+            </Text>
           </View>
         )}
       </View>
-      <ThemedText style={styles.title} numberOfLines={2}>
+      <Text className="mt-2 text-[15px] font-medium text-white" numberOfLines={2}>
         {anime.title}
-      </ThemedText>
+      </Text>
     </AnimatedPressable>
   );
 };
-
-const styles = StyleSheet.create({
-  imageContainer: {
-    position: 'relative',
-  },
-  poster: {
-    borderRadius: Theme.radius.l,
-    overflow: "hidden",
-    backgroundColor: Theme.colors.surface,
-  },
-  title: {
-    marginTop: Theme.spacing.sm,
-    fontSize: Theme.fontSize.m,
-    fontWeight: Theme.fontWeight.medium as "500",
-  },
-  episodeBadge: {
-    position: 'absolute',
-    bottom: Theme.spacing.sm,
-    right: Theme.spacing.sm,
-    backgroundColor: Theme.colors.overlay.dark,
-    paddingHorizontal: Theme.spacing.sm,
-    paddingVertical: Theme.spacing.xs,
-    borderRadius: Theme.radius.s,
-  },
-});
 
 export default memo(AnimeCard);
