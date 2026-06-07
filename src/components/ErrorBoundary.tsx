@@ -45,12 +45,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   override render() {
     if (this.state.hasError) {
-      // Custom fallback UI
       if (this.props.fallback != null && this.props.fallback !== false) {
         return this.props.fallback;
       }
 
-      // Default fallback UI
       return (
         <View className="flex-1 items-center justify-center bg-black p-5">
           <Text className="text-4xl">😵</Text>

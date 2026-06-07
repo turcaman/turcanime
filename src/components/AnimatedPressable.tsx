@@ -51,7 +51,6 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     scale.value = withTiming(0.96, { duration: 80 });
     opacity.value = withTiming(0.8, { duration: 80 });
 
-    // Haptic feedback on press
     if (hapticFeedback && Platform.OS === 'ios') {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }

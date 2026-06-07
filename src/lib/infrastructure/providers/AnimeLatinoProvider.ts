@@ -50,14 +50,11 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     this.metrics = metrics;
   }
 
-  // ——— Public API ———
-
   async getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData> {
     const homeEndpoint = ANIMELATINO_CONFIG.endpoints?.home ?? "/";
     const res = await this.fetchWithSession(homeEndpoint, options ?? {});
     const html = await res.text();
 
-    // Check for site structure changes
     await this.versionManager.checkAndInvalidateIfNeeded(html);
 
     const recent = this.parseCardsWithMetrics(html);
@@ -198,8 +195,6 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     log("resolveStreamUrl", `Extracted iframe URL: ${iframeMatch[1]}`);
     return iframeMatch[1]!;
   }
-
-  // ——— Helpers ———
 
   private parseCardsWithMetrics(html: string): Anime[] {
     const result = this.htmlParser.parseCards(html);

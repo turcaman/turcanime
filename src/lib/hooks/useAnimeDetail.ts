@@ -66,7 +66,6 @@ export function useEpisodePagination(
 ): UseEpisodePaginationResult {
   const isAscending = order === "asc";
 
-  // Computaciones baratas - no necesitan useMemo
   const orderedEpisodes = episodes != null && episodes.length > 0 ? orderEpisodes(episodes) : [];
   const ranges = buildRanges(orderedEpisodes);
   const visibleEpisodes = getVisibleEpisodes(orderedEpisodes, ranges, activeRangeIdx, isAscending);
@@ -86,7 +85,6 @@ export function useServerFetcher(
     async (ep: Episode) => {
       if (slug == null) return;
 
-      // Increment request ID to track which request is current
       const currentRequestId = ++requestIdRef.current;
 
       if (abortControllerRef.current) {

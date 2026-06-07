@@ -33,7 +33,6 @@ export class WebViewBridge implements IWebViewBridge {
   }
 
   private injectFn(code: string): void {
-    // This will be registered by the WebViewWorker
     if (this._injectFn) this._injectFn(code);
   }
   private _injectFn: ((code: string) => void) | null = null;
@@ -59,7 +58,6 @@ export class WebViewBridge implements IWebViewBridge {
       const parsed = JSON.parse(message);
       if (parsed.type == null && typeof parsed === "object") return this.handleLegacyMessage(parsed);
 
-      // Route message through router
       this.messageRouter.handle({ type: parsed.type, payload: parsed.data });
 
       return { type: parsed.type, data: parsed.data };

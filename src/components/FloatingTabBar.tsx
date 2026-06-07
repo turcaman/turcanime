@@ -33,7 +33,6 @@ export function FloatingTabBar({
   const insets = useSafeAreaInsets();
   const visible = useUIStore((state) => state.tabBarVisible);
 
-  // Entry/exit animation
   const translateY = useSharedValue(0);
 
   React.useEffect(() => {

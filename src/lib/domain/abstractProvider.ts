@@ -17,18 +17,15 @@ export abstract class AbstractProvider {
    * Perform a fetch request with session headers (User-Agent, cookies, referer).
    */
   protected async fetchWithSession(path: string, options: RequestInit = {}, retryCount = 0): Promise<Response> {
-    // Wait for cookies to be ready from WebView (max 5s)
     await this.sessionManager.waitForCookies();
 
     const session = await this.sessionManager.getSession();
 
-    // Extract raw cookies from JSON wrapper (if present) or use as-is
     let rawCookies = session?.cookies ?? "";
     try {
       const parsed = JSON.parse(rawCookies);
       rawCookies = parsed.raw ?? "";
     } catch {
-      // Already raw string, use as-is
     }
 
     const headers: Record<string, string> = {
@@ -55,7 +52,6 @@ export abstract class AbstractProvider {
       if (!res.ok) {
         log("fetch", `HTTP ${res.status} for ${url}`);
 
-        // Single auth error → immediate invalidation
         if (this.isAuthError(res.status)) {
           log("fetch", "Auth error detected, triggering session invalidation");
           const error = new Error("Authentication failed - session invalid") as Error & { type: string };
@@ -72,7 +68,6 @@ export abstract class AbstractProvider {
       }
       return res;
     } catch (error) {
-      // Don't retry if aborted
       if (error instanceof Error && error.name === 'AbortError') {
         throw error;
       }

@@ -26,7 +26,6 @@ export class CacheRepo implements ICacheRepo {
     getAllKeys: () => Promise<string[]>;
   };
 
-  // Cache limits to prevent excessive memory usage
   private readonly MAX_ENTRY_SIZE = LIMITS.CACHE_MAX_ENTRY_SIZE;
   private readonly MAX_ENTRIES = LIMITS.CACHE_MAX_ENTRIES;
 

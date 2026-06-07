@@ -12,13 +12,11 @@ export class AbortControllerManager {
    * @returns New AbortController instance
    */
   getController(key: string): AbortController {
-    // Abort existing controller if it exists
     const existing = this.controllers.get(key);
     if (existing) {
       existing.abort();
     }
 
-    // Create and store new controller
     const controller = new AbortController();
     this.controllers.set(key, controller);
     return controller;
@@ -65,5 +63,4 @@ export class AbortControllerManager {
   }
 }
 
-// Singleton instance for global use
 export const abortManager = new AbortControllerManager();

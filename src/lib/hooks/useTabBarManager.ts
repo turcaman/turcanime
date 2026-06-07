@@ -17,7 +17,6 @@ export const useTabBarManager = (options: TabBarOptions = {}) => {
     const previousY = scrollYRef.current;
     const delta = currentY - previousY;
 
-    // Only process if scroll delta exceeds threshold
     if (Math.abs(delta) > threshold) {
       const isScrollingDown = delta > 0;
       setTabBarVisible(!isScrollingDown);

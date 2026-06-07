@@ -35,7 +35,6 @@ export const AnimeDetailsHeader = memo(
 
     return (
       <>
-        {/* Hero Image */}
         <View
           className="overflow-hidden"
           style={{ height: windowHeight * 0.35, width: windowWidth }}
@@ -49,7 +48,6 @@ export const AnimeDetailsHeader = memo(
             locations={[0.05, 0.35, 0.7, 1]}
             style={[{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingBottom: 20, paddingTop: insets.top }]}
           >
-            {/* Back Button */}
             <AnimatedPressable
               onPress={onBackPress}
               className="absolute top-0 left-5 w-12 h-12 rounded-full bg-black/60 items-center justify-center"
@@ -62,7 +60,6 @@ export const AnimeDetailsHeader = memo(
               />
             </AnimatedPressable>
 
-            {/* Status Badge - Top Right */}
             <View
               className={`absolute right-5 px-2 py-1 rounded-lg ${isAiring ? "bg-purple-500/20" : "bg-black/60"}`}
               style={{ top: insets.top }}
@@ -74,7 +71,6 @@ export const AnimeDetailsHeader = memo(
               </Text>
             </View>
 
-            {/* Title */}
             <View className="flex-1 justify-end">
               <Text className="text-2xl font-extrabold tracking-tight text-white" numberOfLines={2}>
                 {anime?.title}
@@ -83,7 +79,6 @@ export const AnimeDetailsHeader = memo(
           </LinearGradient>
         </View>
 
-        {/* Synopsis */}
         <View className="px-5 py-5">
           <SectionTitle>Sinopsis</SectionTitle>
           {hasSynopsis ? (
@@ -107,7 +102,6 @@ export const AnimeDetailsHeader = memo(
           )}
         </View>
 
-        {/* Episodes Header */}
         <View className="flex-row items-center justify-between px-5 pt-3">
           <SectionTitle>Episodios ({anime?.episodes.length ?? 0})</SectionTitle>
           <AnimatedPressable onPress={toggleSort}>

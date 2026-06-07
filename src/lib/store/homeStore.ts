@@ -35,7 +35,6 @@ export const useHomeStore = create<HomeState>((set) => ({
           return;
         }
       } catch {
-        // Ignore cache read error, proceed with normal fetch
       }
     }
 

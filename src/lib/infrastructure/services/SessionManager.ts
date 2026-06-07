@@ -25,13 +25,12 @@ export class SessionManager implements ISessionManager {
         await this.setSession(initialSession);
       } else if (existingSession.cookies && existingSession.cookies.length > 0) {
         logger.debug("SessionManager", "Existing session with cookies found");
-        promiseResolver = () => {}; // Will be called immediately after promise creation
+        promiseResolver = () => {};
       } else {
         logger.debug("SessionManager", "Existing session found (no cookies)");
       }
     } catch (error) {
       logger.error("SessionManager", "Failed to load session, continuing with empty", error);
-      // Continue - don't throw, we'll create promise below
     }
 
     // Always create the promise, even if session loading failed
@@ -74,7 +73,6 @@ export class SessionManager implements ISessionManager {
         await this.initialize();
       }
       if (this.sessionReadyPromise) {
-        // Wait for cookies from WebView with 30s fallback timeout
         // The bootstrap.js handles Cloudflare detection, but this is a safety net
         logger.debug("SessionManager", "Waiting for cookies from WebView");
         await Promise.race([
@@ -90,7 +88,6 @@ export class SessionManager implements ISessionManager {
   }
 
   async refreshCookies(): Promise<void> {
-    // No-op - keep simple for now
     logger.warn("SessionManager", "refreshCookies called but not implemented");
   }
 

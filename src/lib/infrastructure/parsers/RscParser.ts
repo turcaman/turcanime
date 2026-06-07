@@ -51,7 +51,6 @@ export class RscParser implements IRscParser {
     if (ovMatch) {
       const val = ovMatch[1]!;
       if (val.startsWith("$")) {
-        // RSC reference — resolve the actual text
         const rid = val.slice(1);
         const resolved = this.resolveRscReference(fullHtml, rid);
         if (resolved != null && resolved.length > 20) return resolved;
@@ -76,16 +75,8 @@ export class RscParser implements IRscParser {
     return null;
   }
 
-  /**
-   * Resolve RSC reference to actual text value.
-   * Formats:
-   *   "14:T41e,actual text here"
-   *   "14:T,actual text"
-   *   "abc123":T1,"text"
-   */
   resolveRscReference(html: string, refId: string): string | null {
     try {
-      // Format: "refId:Thex,text..." — most common in Next.js RSC
       const hexPattern = new RegExp(
         '"' + refId + ':T\\w+,((?:[^"\\\\]|\\\\.)*)"(?:,|$)'
       );
@@ -96,7 +87,6 @@ export class RscParser implements IRscParser {
         return raw;
       }
 
-      // Format: "refId":T\d+,"text" — fallback
       const refPattern = new RegExp(
         '"' + refId + '":\\s*T\\d+,"((?:[^"\\\\]|\\\\.)*)"'
       );
