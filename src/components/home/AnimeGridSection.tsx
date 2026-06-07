@@ -4,7 +4,7 @@ import React, { memo, useMemo } from "react";
 import AnimeCard from "../AnimeCard";
 import { SectionTitle } from "../ui/SectionTitle";
 
-const CARD_WIDTH_CONFIG = { columns: 3, gap: 10, horizontalPad: 20, min: 80, max: 400 };
+const CARD_WIDTH_CONFIG = { columns: 3, gap: 12, horizontalPad: 20, min: 80, max: 400 };
 
 function calcCardWidth(screenWidth: number): number {
   const { columns, gap, horizontalPad, min, max } = CARD_WIDTH_CONFIG;
@@ -23,7 +23,7 @@ export const AnimeGridSection = memo(({ label, items }: AnimeGridSectionProps) =
 
   const columnWrapperStyle = useMemo(() => ({
     justifyContent: "flex-start" as const,
-    gap: 10,
+    gap: 12,
   }), []);
 
   if (items.length === 0) return null;
@@ -38,7 +38,7 @@ export const AnimeGridSection = memo(({ label, items }: AnimeGridSectionProps) =
         numColumns={3}
         keyExtractor={(item) => item.url}
         renderItem={({ item }) => (
-          <View style={{ width: cardWidth }} className="mb-2">
+          <View style={{ width: cardWidth }} className="mb-3">
             <AnimeCard anime={item} width={cardWidth} />
           </View>
         )}

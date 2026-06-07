@@ -6,7 +6,7 @@ interface SectionTitleProps {
 }
 
 export const SectionTitle = ({ children }: SectionTitleProps) => (
-  <Text className="mb-3 text-sm font-semibold uppercase tracking-widest text-neutral-500">
+  <Text className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
     {children}
   </Text>
 );

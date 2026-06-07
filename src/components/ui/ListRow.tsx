@@ -53,7 +53,7 @@ export const ListRow = ({
           <Feather
             name="chevron-right"
             size={18}
-            color="#777777"
+            color="#a3a3a3"
             style={{ marginLeft: 8 }}
           />
         )}
@@ -63,7 +63,7 @@ export const ListRow = ({
           <Feather
             name="x"
             size={14}
-            color="#777777"
+            color="#a3a3a3"
           />
         </AnimatedPressable>
       )}

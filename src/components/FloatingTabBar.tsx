@@ -82,13 +82,13 @@ export function FloatingTabBar({
           const iconName = ICONS[route.name];
           const color = isFocused
             ? "#A855F7"
-            : "#777777";
+            : "#a3a3a3";
 
           return (
             <AnimatedPressable
               key={route.key}
               onPress={onPress}
-              style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center", borderRadius: 8 }}
+              className="w-11 h-11 rounded-lg items-center justify-center"
               hapticFeedback={false}
               accessibilityLabel={LABELS[route.name]}
               accessibilityRole="button"

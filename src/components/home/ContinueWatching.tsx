@@ -25,10 +25,10 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
         style={{ width: "100%", height: "100%" }}
       />
       <View className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">
-        <Text className="text-xs font-semibold text-purple-500 mb-[2px]">
+        <Text className="text-xs font-semibold text-purple-500 mb-0.5">
           Ep. {item.number}
         </Text>
-        <Text numberOfLines={1} className="text-[15px] font-bold text-purple-500">
+        <Text numberOfLines={1} className="text-sm font-bold text-purple-500">
           {item.title}
         </Text>
       </View>

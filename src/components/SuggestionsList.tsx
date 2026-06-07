@@ -27,7 +27,7 @@ export const SuggestionsList = memo(({ suggestions, onSelect, onScroll, tabBarOf
       <FlashList
         data={suggestions}
         keyExtractor={(item) => item.slug}
-        contentContainerStyle={{ paddingBottom: tabBarOffset ?? 80 }}
+        contentContainerStyle={{ paddingBottom: tabBarOffset ?? 128 }}
         onScroll={onScroll}
         scrollEventThrottle={16}
         renderItem={({ item }) => (

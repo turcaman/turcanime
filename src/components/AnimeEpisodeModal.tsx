@@ -40,7 +40,7 @@ export const AnimeEpisodeModal = ({
 
         <View className="flex-row justify-between items-center mb-2">
           <Text className="text-white text-xl font-bold">Episodio {episode?.number}</Text>
-          <Feather name="x" size={20} color="#AAAAAA" onPress={onClose} />
+          <Feather name="x" size={20} color="#a3a3a3" onPress={onClose} />
         </View>
 
         <Text className="text-neutral-400 text-xs mb-2">

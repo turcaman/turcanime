@@ -46,7 +46,7 @@ const AnimeCard = ({ anime, width, onPress, variant = "default", episodeNumber }
           </View>
         )}
       </View>
-      <Text className="mt-2 text-[15px] font-medium text-white" numberOfLines={2}>
+      <Text className="mt-2 text-sm font-medium text-white" numberOfLines={2}>
         {anime.title}
       </Text>
     </AnimatedPressable>

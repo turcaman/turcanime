@@ -4,7 +4,7 @@ import { usePlayerStore } from "@/lib/store/playerStore";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import React, { useEffect } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 
 function PlayerContent() {
   const { streamUrl, streamHeaders, reset: clearStream } = usePlayerStore();
@@ -31,28 +31,23 @@ function PlayerContent() {
   });
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-black">
       <StatusBar hidden />
       {streamUrl !== null ? (
         <VideoView
           player={player}
-          style={StyleSheet.absoluteFill}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
           nativeControls
           buttonOptions={{ showSettings: false, showSubtitles: false }}
         />
       ) : (
-        <View style={styles.loadingArea}>
+        <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#A855F7" />
         </View>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000000" },
-  loadingArea: { flex: 1, justifyContent: "center", alignItems: "center" }
-});
 
 export default function NativePlayer() {
   return (

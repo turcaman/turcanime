@@ -87,7 +87,7 @@ function AnimeDetailsContent() {
                 key={item.id}
                 onPress={() => { handleEpisodePress(item); }}
               >
-                <View className="rounded-lg bg-[#0A0A0A] flex-row items-center justify-between border border-[#1F1F1F] py-4 px-3">
+                <View className="rounded-xl bg-neutral-950 flex-row items-center justify-between border border-neutral-800 p-4">
                   <Text className="font-semibold text-white">
                     Episodio {item.number}
                   </Text>

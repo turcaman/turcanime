@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const CARD_WIDTH_CONFIG = { columns: 3, gap: 10, horizontalPad: 20, min: 80, max: 400 };
+const CARD_WIDTH_CONFIG = { columns: 3, gap: 12, horizontalPad: 20, min: 80, max: 400 };
 
 function calcCardWidth(screenWidth: number): number {
   const { columns, gap, horizontalPad, min, max } = CARD_WIDTH_CONFIG;
@@ -62,17 +62,17 @@ function SearchScreenContent() {
         className="px-5 pb-4"
         style={{ paddingTop: insets.top + 16 }}
       >
-        <View className="flex-row items-center h-12 bg-neutral-950 rounded-lg px-4">
+        <View className="flex-row items-center h-12 bg-neutral-900 rounded-xl px-4">
           <Feather
             name="search"
             size={18}
-            color={"#777777"}
+            color={"#a3a3a3"}
             style={{ marginRight: 8 }}
           />
           <TextInput
-            className="flex-1 text-white text-[15px] font-medium h-12"
+            className="flex-1 text-white text-base font-normal h-12"
             placeholder="Buscar anime..."
-            placeholderTextColor={"#777777"}
+            placeholderTextColor={"#737373"}
             value={searchTerm}
             onChangeText={handleTextChange}
             onSubmitEditing={() => { handleSearch(searchTerm); }}
@@ -82,7 +82,7 @@ function SearchScreenContent() {
             <Feather
               name="x"
               size={16}
-              color="#AAAAAA"
+              color="#a3a3a3"
               onPress={() => {
                 resetSearch();
                 showTabBar();
@@ -125,20 +125,20 @@ function SearchScreenContent() {
                 <AnimeCard anime={item} width={cardWidth} />
               </View>
             )}
-            columnWrapperClassName="justify-start gap-[10px]"
+            columnWrapperClassName="justify-start gap-3"
             contentContainerClassName="pt-4"
             contentContainerStyle={{ paddingBottom: 116 }}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
             ListEmptyComponent={
-              <View className="flex-1 justify-start items-center px-5 pt-[72px]" accessibilityLabel="No se encontraron resultados">
+              <View className="flex-1 justify-start items-center px-5 pt-20" accessibilityLabel="No se encontraron resultados">
                 <Feather
                   name="meh"
-                  size={40}
-                  color={"#777777"}
+            size={40}
+            color={"#a3a3a3"}
                 />
-                <Text className="text-[15px] text-neutral-500 mt-2">
+                <Text className="text-sm text-neutral-500 mt-2">
                   No se encontraron resultados
                 </Text>
               </View>

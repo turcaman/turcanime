@@ -65,7 +65,7 @@ export const AnimeDetailsHeader = memo(
               style={{ top: insets.top }}
             >
               <Text
-                className={`text-[10px] font-bold tracking-wider leading-[14px] ${isAiring ? "text-purple-500" : "text-white"}`}
+                className={`text-[10px] font-bold tracking-wider leading-none ${isAiring ? "text-purple-500" : "text-white"}`}
               >
                 {(isAiring ? "En emisión" : "Finalizado").toUpperCase()}
               </Text>
@@ -84,19 +84,19 @@ export const AnimeDetailsHeader = memo(
           {hasSynopsis ? (
             <AnimatedPressable onPress={() => { setIsExpanded(!isExpanded); }}>
               <Text
-                className="text-[15px] font-medium leading-5 text-neutral-400"
+                className="text-sm font-medium leading-6 text-neutral-400"
                 numberOfLines={isExpanded ? undefined : 3}
               >
                 {anime.synopsis}
               </Text>
               {!isExpanded && anime.synopsis.length > 150 && (
-                <Text className="mt-2 text-[15px] font-bold leading-5 text-purple-500">
+                <Text className="mt-2 text-sm font-bold leading-6 text-purple-500">
                   Leer más
                 </Text>
               )}
             </AnimatedPressable>
           ) : (
-            <Text className="text-[10px] font-semibold tracking-wider leading-[14px] text-neutral-400">
+            <Text className="text-[10px] font-semibold tracking-wider leading-none text-neutral-400">
               Sinopsis no disponible
             </Text>
           )}

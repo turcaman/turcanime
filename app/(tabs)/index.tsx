@@ -43,7 +43,7 @@ const HomeContent = React.memo(function HomeContent() {
           data={sections}
           keyExtractor={(item: SectionItem, index: number) => `${item.type}-${index}`}
           renderItem={renderItem}
-          ItemSeparatorComponent={() => <View style={{ height: 20 }} />}
+          ItemSeparatorComponent={() => <View className="h-5" />}
           contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: 116 + insets.bottom }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={null}
