@@ -1,9 +1,16 @@
-import { FlatList, View } from "react-native";
+import { FlatList, useWindowDimensions, View } from "react-native";
 import type { Anime } from "@/lib/domain/entities";
 import React, { memo, useMemo } from "react";
-import { useSearchCardWidth } from "@/lib/hooks/useSearchCardWidth";
 import AnimeCard from "../AnimeCard";
 import { SectionTitle } from "../ui/SectionTitle";
+
+const CARD_WIDTH_CONFIG = { columns: 3, gap: 10, horizontalPad: 20, min: 80, max: 400 };
+
+function calcCardWidth(screenWidth: number): number {
+  const { columns, gap, horizontalPad, min, max } = CARD_WIDTH_CONFIG;
+  const available = screenWidth - horizontalPad * 2 - gap * (columns - 1);
+  return Math.max(min, Math.min(available / columns, max));
+}
 
 interface AnimeGridSectionProps {
   label: string;
@@ -11,7 +18,8 @@ interface AnimeGridSectionProps {
 }
 
 export const AnimeGridSection = memo(({ label, items }: AnimeGridSectionProps) => {
-  const cardWidth = useSearchCardWidth();
+  const { width } = useWindowDimensions();
+  const cardWidth = calcCardWidth(width);
 
   const columnWrapperStyle = useMemo(() => ({
     justifyContent: "flex-start" as const,

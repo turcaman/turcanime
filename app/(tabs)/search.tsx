@@ -3,7 +3,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RecentSearches } from "@/components/RecentSearches";
 import { SuggestionsList } from "@/components/SuggestionsList";
 import { AppLoader } from "@/components/ui/AppLoader";
-import { useSearchCardWidth } from "@/lib/hooks/useSearchCardWidth";
+
 import type { Anime } from "@/lib/domain/entities";
 import { useSearchScreen } from "@/lib/hooks/useSearchScreen";
 import { useTabBarManager } from "@/lib/hooks/useTabBarManager";
@@ -13,9 +13,18 @@ import {
     FlatList,
     Text,
     TextInput,
+    useWindowDimensions,
     View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const CARD_WIDTH_CONFIG = { columns: 3, gap: 10, horizontalPad: 20, min: 80, max: 400 };
+
+function calcCardWidth(screenWidth: number): number {
+  const { columns, gap, horizontalPad, min, max } = CARD_WIDTH_CONFIG;
+  const available = screenWidth - horizontalPad * 2 - gap * (columns - 1);
+  return Math.max(min, Math.min(available / columns, max));
+}
 
 function SearchScreenContent() {
   const {
@@ -35,7 +44,8 @@ function SearchScreenContent() {
   } = useSearchScreen();
 
   const insets = useSafeAreaInsets();
-  const cardWidth = useSearchCardWidth();
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = calcCardWidth(screenWidth);
 
   const { handleScroll, reset, showTabBar } = useTabBarManager({ threshold: 8 });
 
@@ -52,7 +62,7 @@ function SearchScreenContent() {
         className="px-5 pb-4 bg-black"
         style={{ paddingTop: insets.top + 16 }}
       >
-        <View className="flex-row items-center h-12 bg-[#0A0A0A] rounded-lg px-4">
+        <View className="flex-row items-center h-12 bg-neutral-950 rounded-lg px-4">
           <Feather
             name="search"
             size={18}
@@ -128,7 +138,7 @@ function SearchScreenContent() {
                   size={40}
                   color={"#777777"}
                 />
-                <Text className="text-[15px] text-[#777777] mt-2">
+                <Text className="text-[15px] text-neutral-500 mt-2">
                   No se encontraron resultados
                 </Text>
               </View>

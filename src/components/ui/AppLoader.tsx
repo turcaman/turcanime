@@ -1,5 +1,5 @@
 import React from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 
 
 interface AppLoaderProps {
@@ -9,29 +9,15 @@ interface AppLoaderProps {
 export const AppLoader = ({ variant = "full" }: AppLoaderProps) => {
   if (variant === "small") {
     return (
-      <View style={styles.smallContainer}>
+      <View className="justify-center items-center p-4">
         <ActivityIndicator size="small" color="#A855F7" />
       </View>
     );
   }
 
   return (
-    <View style={styles.fullContainer}>
+    <View className="absolute inset-0 justify-center items-center z-10">
       <ActivityIndicator size="large" color="#A855F7" />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  fullContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 10,
-  },
-  smallContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-});

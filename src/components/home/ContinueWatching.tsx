@@ -16,7 +16,7 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
 
   const renderItem = ({ item }: { item: HistoryItem }) => (
     <AnimatedPressable
-      className="mr-3 w-[110px] h-[165px] rounded-xl overflow-hidden bg-[#0A0A0A]"
+      className="mr-3 w-[110px] h-[165px] rounded-xl overflow-hidden bg-neutral-950"
       onPress={() => { navigateToAnime(item.url); }}
       accessibilityLabel={`Continuar viendo: ${item.title}`}
     >
