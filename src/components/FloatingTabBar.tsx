@@ -61,7 +61,7 @@ export function FloatingTabBar({
       pointerEvents="box-none"
     >
       <View
-        className="flex-row items-center justify-center rounded-xl px-4 py-2 gap-4 bg-neutral-900/80"
+        className="flex-row items-center justify-center rounded-xl px-4 py-2 gap-4 bg-neutral-900"
         style={{ elevation: 8 }}
       >
         {state.routes.map((route, index) => {

@@ -38,7 +38,7 @@ const HomeContent = React.memo(function HomeContent() {
       hasContent={hasContent}
       onRetry={() => { void fetchHome(true); }}
     >
-      <View className="flex-1">
+      <View className="flex-1 bg-black">
         <FlatList
           data={sections}
           keyExtractor={(item: SectionItem, index: number) => `${item.type}-${index}`}

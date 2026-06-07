@@ -20,7 +20,7 @@ export function ScreenWrapper({
 }: ScreenWrapperProps) {
   if (isLoading) {
     return (
-      <View className="flex-1">
+      <View className="flex-1 bg-black">
         <AppLoader variant="full" />
       </View>
     );
@@ -28,7 +28,7 @@ export function ScreenWrapper({
 
   if (!hasContent && error && onRetry) {
     return (
-      <View className="flex-1">
+      <View className="flex-1 bg-black">
         <ErrorState onRetry={onRetry} />
       </View>
     );

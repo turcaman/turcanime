@@ -24,7 +24,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View className="flex-1 px-5" style={{ paddingTop: insets.top + 16 }}>
+    <View className="flex-1 bg-black px-5" style={{ paddingTop: insets.top + 16 }}>
       <Text className="mb-4 text-2xl font-bold text-white">Ajustes</Text>
       
       <View className="mt-4">

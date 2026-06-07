@@ -57,9 +57,9 @@ function SearchScreenContent() {
   }, [isSearched, reset, showTabBar]);
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-black">
       <View
-        className="px-5 pb-4 bg-black"
+        className="px-5 pb-4"
         style={{ paddingTop: insets.top + 16 }}
       >
         <View className="flex-row items-center h-12 bg-neutral-950 rounded-lg px-4">
@@ -93,7 +93,7 @@ function SearchScreenContent() {
         </View>
       </View>
 
-      <View className="flex-1 px-5">
+      <View className="flex-1 bg-black px-5">
         {isIdle && recentSearches.length > 0 && (
           <RecentSearches
             searches={recentSearches}

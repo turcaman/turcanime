@@ -52,7 +52,7 @@ function AnimeDetailsContent() {
       hasContent={!!anime}
       onRetry={refresh}
     >
-      <View className="flex-1">
+      <View className="flex-1 bg-black">
         <ScrollView
           contentContainerStyle={{ paddingBottom: 116 }}
           showsVerticalScrollIndicator={false}
@@ -88,7 +88,7 @@ function AnimeDetailsContent() {
                 onPress={() => { handleEpisodePress(item); }}
               >
                 <View className="rounded-lg bg-[#0A0A0A] flex-row items-center justify-between border border-[#1F1F1F] py-4 px-3">
-                  <Text className="font-semibold">
+                  <Text className="font-semibold text-white">
                     Episodio {item.number}
                   </Text>
                   <Feather name="play" size={16} color="#A855F7" />
