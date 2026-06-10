@@ -18,7 +18,12 @@ Expo 55 + React Native 0.83 app. File-based routing via `expo-router`.
 - **State:** Zustand stores in `src/lib/store/`
 - **Source:** AnimeLatinoHD via `src/lib/infrastructure/providers/AnimeLatinoProvider.ts`
 - **Stream:** WebView-based extraction via `src/lib/infrastructure/services/WebViewBridge.ts`
-- **DI:** `src/lib/di.ts` wires all concrete implementations
+- **DI:** `src/lib/di.ts` wires app services; `src/lib/core/infrastructure.ts` composes low-level singletons (storage, sessionManager, webViewBridge)
+- **Provider:** Singleton via `providerRegistry.ts` (`setProvider`/`getProvider`). Currently `AnimeLatinoProvider`. Extends `AbstractProvider` which provides `fetchWithSession()` — auto-attaches cookies/UA/Referer, retries 403 once, throws `AUTH_ERROR` on auth failure.
+- **Session refresh:** `refreshSession()` navigates hidden WebView to session wash URL, waits for cookies via `SessionManager.waitForCookies()`
+- **Cancellation:** `AbortControllerManager` in stores; call `abortManager.getController("name")` to get `AbortSignal`
+- **Styles:** NativeWind v5 + Tailwind CSS v4 via `global.css` (tailwindcss theme/preflight/utilities layers + nativewind theme)
+- **Boot:** `useUserInitializationStore.initialize()` hydrates history, search history, episode order from AsyncStorage
 
 ## Path Alias
 
