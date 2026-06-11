@@ -1,4 +1,3 @@
-import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 import { TIMEOUTS } from "../../config/timeouts";
 import type { ISession, IWebViewBridge, WebViewMessageData } from "../../domain/interfaces";
 import { InjectionService } from "./bridge/InjectionService";
@@ -119,7 +118,7 @@ export class WebViewBridge implements IWebViewBridge {
   }
 
   private extractOrigin(url: string): string {
-    try { return new URL(url).origin; } catch { return ANIMELATINO_CONFIG.sessionWashUrl; }
+    try { return new URL(url).origin; } catch { return ""; }
   }
 
   private clearPendingRequests(): void {

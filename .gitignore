@@ -40,7 +40,6 @@ app-example
 /ios
 
 # test fixtures
-/animelatinohd/
 
 # signing
 release-key.jks

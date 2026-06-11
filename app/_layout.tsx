@@ -1,6 +1,7 @@
 import "../global.css";
 import { NetworkBanner } from "@/components/NetworkBanner";
 import { getDeps, initializeDeps } from "@/lib/di";
+import { getProvider } from "@/lib/core/providerRegistry";
 import { useNetworkStatus, type ConnectionType } from "@/lib/hooks/useNetworkStatus";
 import { refreshSession } from "@/lib/core/infrastructure";
 import { useDetailsStore } from "@/lib/store/detailsStore";
@@ -80,7 +81,7 @@ function RootInner() {
         useHomeStore.getState().prepareRefresh();
         useDetailsStore.getState().reset();
 
-        await refreshSession();
+        await refreshSession(getProvider);
         await getDeps().animeService.clearAnimeCache();
 
         void useHomeStore.getState().fetchHome(true);

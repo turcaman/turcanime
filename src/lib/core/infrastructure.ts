@@ -2,22 +2,23 @@
  * Composition root — instantiates infrastructure singletons.
  * This is the only place where concrete implementations are wired together.
  */
-import { ANIMELATINO_CONFIG } from "../config/providerConfigs";
 import { AsyncStorageRepo } from "../infrastructure/persistence/AsyncStorageRepo";
 import { SessionManager } from "../infrastructure/services/SessionManager";
 import { WebViewBridge } from "../infrastructure/services/WebViewBridge";
+import type { IContentProvider } from "../domain/interfaces";
 import { logger } from "../utils/logger";
 
 export const storage = new AsyncStorageRepo();
 export const sessionManager = new SessionManager(storage);
 export const webViewBridge = new WebViewBridge();
 
-export async function refreshSession(): Promise<void> {
+export async function refreshSession(getProvider: () => IContentProvider): Promise<void> {
   logger.info("infrastructure", "Refreshing session...");
 
   await sessionManager.invalidateCookies();
 
-  webViewBridge.navigateTo(ANIMELATINO_CONFIG.sessionWashUrl);
+  const { sessionWashUrl } = getProvider() as { sessionWashUrl?: string };
+  webViewBridge.navigateTo(sessionWashUrl ?? "about:blank");
 
   try {
     await sessionManager.waitForCookies();

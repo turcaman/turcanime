@@ -27,10 +27,6 @@ export const AnimeEpisodeModal = ({
 }: AnimeEpisodeModalProps) => {
   if (!visible) return null;
 
-  // Prefer delta servers (AnimeLatinoHD), fallback to all
-  const delta = servers.filter((s) => s.title.toLowerCase().includes("delta"));
-  const displayServers = delta.length > 0 ? delta : servers;
-
   return (
     <View className="absolute inset-0 bg-black/80 justify-end">
       <Pressable className="absolute inset-0" onPress={onClose} />
@@ -50,12 +46,12 @@ export const AnimeEpisodeModal = ({
         <View className="gap-2">
           {isLoading ? (
             <AppLoader variant="small" />
-          ) : displayServers.length === 0 ? (
+          ) : servers.length === 0 ? (
             <View className="h-48 justify-center items-center">
               <Text className="text-neutral-400 text-xs">No hay servidor disponible</Text>
             </View>
           ) : (
-            displayServers.map((server, index) => (
+            servers.map((server, index) => (
               <AnimatedPressable
                 key={server.id || `server-${index}`}
                 className="flex-row items-center bg-black p-4 rounded-xl"

@@ -8,7 +8,7 @@ Anime streaming app built with Expo 55 + React Native.
 - **Routing:** expo-router (file-based)
 - **State:** Zustand
 - **Video:** expo-video + WebView-based stream extraction
-- **Source:** AnimeLatinoHD
+- **Source:** Pluggable content provider via `IContentProvider` interface
 
 ## Quick Start
 

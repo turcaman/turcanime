@@ -4,9 +4,6 @@ import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { sessionManager, webViewBridge } from "../../core/infrastructure";
 import type { ISession } from "../../domain/interfaces";
 import { GLOBAL_BOOTSTRAP } from "../webview/bootstrap";
-import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
-
-const WORKER_URL = ANIMELATINO_CONFIG.sessionWashUrl;
 
 /**
  * Headless component that runs in the background to handle:
@@ -42,7 +39,7 @@ export const WebViewWorker = () => {
     <View style={{ width: 0, height: 0, position: 'absolute', opacity: 0 }}>
       <WebView
         ref={vRef}
-        source={{ uri: WORKER_URL }}
+        source={{ uri: "about:blank" }}
         injectedJavaScript={GLOBAL_BOOTSTRAP}
         onMessage={handleMessage}
         onLoadEnd={() => { webViewBridge.notifyPageLoaded(); }}
