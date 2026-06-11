@@ -1,6 +1,7 @@
 import CryptoJS from "crypto-js";
 import { parse } from "node-html-parser";
 import JsUnpacker from "js-unpacker";
+import { File, Paths } from "expo-file-system";
 import type { IContentProvider } from "../../domain/interfaces";
 import type { Anime, AnimeDetail, AutocompleteAnime, Episode, HomeData, VideoServer } from "../../domain/entities";
 import { logger } from "../../utils/logger";
@@ -181,19 +182,31 @@ export class KatanimeProvider implements IContentProvider {
         }
       }
 
-      if (bestVariant === "") return masterUrl;
+      const variantUrl = bestVariant === "" ? masterUrl : new URL(bestVariant, masterUrl).href;
+      const variantRes = await fetchWithTimeout(variantUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36",
+          "Referer": "https://luluvdo.com/",
+          "Origin": "https://luluvdo.com",
+        },
+      });
+      if (!variantRes.ok) return variantUrl;
+      const variantBody = await variantRes.text();
 
-      const resolvedVariant = new URL(bestVariant, masterUrl).href;
-      const masterUrlObj = new URL(masterUrl);
-      const qp = masterUrlObj.searchParams;
-      const variantUrlObj = new URL(resolvedVariant);
-      for (const [key, val] of qp.entries()) {
-        if (!variantUrlObj.searchParams.has(key)) {
-          variantUrlObj.searchParams.set(key, val);
-        }
-      }
+      const masterParams = new URL(masterUrl).searchParams.toString();
+      const variantLines = variantBody.split("\n");
+      const rewritten = variantLines.map((line) => {
+        const trimmed = line.trim();
+        if (trimmed === "" || trimmed.startsWith("#")) return line;
+        const absUrl = new URL(trimmed, variantUrl).href;
+        const glue = absUrl.includes("?") ? "&" : "?";
+        return `${absUrl}${glue}${masterParams}`;
+      }).join("\n");
 
-      return variantUrlObj.href;
+      const localFile = new File(Paths.cache, `lulu_${Date.now()}.m3u8`);
+      localFile.create();
+      localFile.write(rewritten);
+      return localFile.uri;
     } catch {
       return null;
     }
