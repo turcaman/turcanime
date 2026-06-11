@@ -20,7 +20,7 @@ function PlayerContent() {
   }, [clearStream, playerUIService]);
 
   const videoSource = streamUrl !== null
-    ? { uri: streamUrl, headers: streamHeaders ?? undefined }
+    ? { uri: streamUrl, headers: streamHeaders ?? undefined, contentType: "hls" as const }
     : null;
 
   const player = useVideoPlayer(videoSource, (instance) => {

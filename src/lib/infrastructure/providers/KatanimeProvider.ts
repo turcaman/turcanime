@@ -27,6 +27,30 @@ interface EpisodePage {
 }
 
 const DECRYPTION_PASSWORD = "hanabi";
+const FETCH_TIMEOUT_MS = 15_000;
+
+async function fetchWithTimeout(url: string, options?: RequestInit & { timeout?: number }): Promise<Response> {
+  const timeout = options?.timeout ?? FETCH_TIMEOUT_MS;
+  const ctrl = new AbortController();
+  const id = setTimeout(() => { ctrl.abort(); }, timeout);
+  try {
+    const { timeout: _t, ...fetchOpts } = options ?? {};
+    const combinedSignal = fetchOpts.signal != null ? signalAny(fetchOpts.signal, ctrl.signal) : ctrl.signal;
+    const res = await fetch(url, { ...fetchOpts, signal: combinedSignal });
+    return res;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+function signalAny(...signals: AbortSignal[]): AbortSignal {
+  const ctrl = new AbortController();
+  for (const sig of signals) {
+    if (sig.aborted) { ctrl.abort(sig.reason); return ctrl.signal; }
+    sig.addEventListener("abort", () => { ctrl.abort(sig.reason); }, { once: true });
+  }
+  return ctrl.signal;
+}
 
 export class KatanimeProvider implements IContentProvider {
   name = "Katanime";
@@ -77,7 +101,7 @@ export class KatanimeProvider implements IContentProvider {
 
   private async extractMp4Video(embedUrl: string): Promise<string | null> {
     try {
-      const res = await fetch(embedUrl, {
+      const res = await fetchWithTimeout(embedUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36",
           "Referer": "https://mp4upload.com/",
@@ -100,7 +124,7 @@ export class KatanimeProvider implements IContentProvider {
 
   private async extractLuluVideo(embedUrl: string): Promise<string | null> {
     try {
-      const res = await fetch(embedUrl, {
+      const res = await fetchWithTimeout(embedUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36",
           "Referer": "https://luluvdo.com/",
@@ -320,7 +344,7 @@ export class KatanimeProvider implements IContentProvider {
 
     const episodeUrl = match.url.startsWith("http") ? match.url : `${this.baseUrl}/${match.url.replace(/^\//, "")}`;
 
-    const epRes = await fetch(episodeUrl, {
+    const epRes = await fetchWithTimeout(episodeUrl, {
       headers: {
         ...this.getHeaders(),
         "Cookie": cookies,
@@ -344,7 +368,7 @@ export class KatanimeProvider implements IContentProvider {
 
   async resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<{ url: string; headers?: Record<string, string> } | null> {
     try {
-      const reproRes = await fetch(`${this.baseUrl}/reproductor?url=${encodeURIComponent(videoUrl)}`, {
+      const reproRes = await fetchWithTimeout(`${this.baseUrl}/reproductor?url=${encodeURIComponent(videoUrl)}`, {
         headers: {
           ...this.getHeaders(),
           "Referer": `${this.baseUrl}/`,
