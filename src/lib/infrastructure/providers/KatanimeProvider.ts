@@ -1,7 +1,13 @@
+import CryptoJS from "crypto-js";
 import { parse } from "node-html-parser";
 import type { IContentProvider } from "../../domain/interfaces";
 import type { Anime, AnimeDetail, AutocompleteAnime, Episode, HomeData, VideoServer } from "../../domain/entities";
 import { logger } from "../../utils/logger";
+
+interface CryptoDto {
+  ct: string;
+  s: string;
+}
 
 interface EpisodePage {
   ep?: {
@@ -19,6 +25,8 @@ interface EpisodePage {
   };
 }
 
+const DECRYPTION_PASSWORD = "hanabi";
+
 export class KatanimeProvider implements IContentProvider {
   name = "Katanime";
   requiresSession = false;
@@ -26,27 +34,93 @@ export class KatanimeProvider implements IContentProvider {
 
   private getHeaders(): Record<string, string> {
     return {
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Mobile Safari/537.36",
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
       "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
       "Referer": `${this.baseUrl}/`,
     };
   }
 
+  private decryptKatanime(ct: string, saltHex: string, password: string): string {
+    const salt = CryptoJS.enc.Hex.parse(saltHex);
+    const ctWords = CryptoJS.enc.Base64.parse(ct);
+
+    const KEY_SIZE = 8;
+    const IV_SIZE = 4;
+    const TOTAL_SIZE = KEY_SIZE + IV_SIZE;
+
+    const derived = CryptoJS.lib.WordArray.create([]);
+    let last = CryptoJS.lib.WordArray.create([]);
+
+    while (derived.sigBytes / 4 < TOTAL_SIZE) {
+      const hashInput = CryptoJS.lib.WordArray.create([]);
+      hashInput.concat(last);
+      hashInput.concat(CryptoJS.enc.Utf8.parse(password));
+      hashInput.concat(salt);
+      last = CryptoJS.MD5(hashInput);
+      derived.concat(last);
+    }
+
+    const allWords = derived.words.slice(0, TOTAL_SIZE);
+    const key = CryptoJS.lib.WordArray.create(allWords.slice(0, KEY_SIZE), KEY_SIZE * 4);
+    const iv = CryptoJS.lib.WordArray.create(allWords.slice(KEY_SIZE), IV_SIZE * 4);
+
+    const decrypted = CryptoJS.AES.decrypt(
+      CryptoJS.lib.CipherParams.create({ ciphertext: ctWords }),
+      key,
+      { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 },
+    );
+
+    return decrypted.toString(CryptoJS.enc.Utf8);
+  }
+
+  private async extractMp4Video(embedUrl: string): Promise<string | null> {
+    try {
+      const res = await fetch(embedUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36",
+          "Referer": "https://mp4upload.com/",
+        },
+      });
+      if (!res.ok) return null;
+      const html = await res.text();
+
+      const playerSrcMatch = html.match(/player\.src\(\{[^}]*src:\s*["']((https?|ftp)[^"']+)["']/);
+      if (playerSrcMatch) return playerSrcMatch[1] ?? null;
+
+      const srcMatch = html.match(/src:\s*["']((https?|ftp)[^"']+\.mp4[^"']*)["']/);
+      if (srcMatch) return srcMatch[1] ?? null;
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   private async fetchText(url: string, options?: { signal?: AbortSignal }): Promise<string> {
-    const headers = this.getHeaders();
-    const res = await fetch(url, { headers, signal: options?.signal });
+    const res = await fetch(url, { headers: this.getHeaders(), signal: options?.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
     return res.text();
   }
 
-  private async fetchJSON<T>(url: string, body: string, options?: { signal?: AbortSignal }): Promise<T> {
-    const headers = this.getHeaders();
+  private async fetchWithCookies(url: string, options?: { signal?: AbortSignal }): Promise<{ text: string; cookies: string }> {
+    const res = await fetch(url, { headers: this.getHeaders(), signal: options?.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    const cookies = (typeof res.headers.getSetCookie === "function" ? res.headers.getSetCookie() : [])
+    .map((c: string) => c.split(";")[0]).join("; ");
+    return { text: await res.text(), cookies };
+  }
+
+  private async fetchJSONWithCookies<T>(
+    url: string, body: string, cookies: string, options?: { signal?: AbortSignal },
+  ): Promise<T> {
     const res = await fetch(url, {
       method: "POST",
       headers: {
-        ...headers,
+        ...this.getHeaders(),
         "Content-Type": "application/x-www-form-urlencoded",
-        "Origin": this.baseUrl,
+        "X-Requested-With": "XMLHttpRequest",
+        "Cookie": cookies,
       },
       body,
       signal: options?.signal,
@@ -102,7 +176,7 @@ export class KatanimeProvider implements IContentProvider {
   async getDetails(slug: string, options?: { signal?: AbortSignal }): Promise<AnimeDetail | null> {
     if (slug === "") return null;
 
-    const html = await this.fetchText(`${this.baseUrl}/anime/${slug}`, options);
+    const { text: html, cookies } = await this.fetchWithCookies(`${this.baseUrl}/anime/${slug}`, options);
     const root = parse(html);
 
     const titleEl = root.querySelector(".comics-title");
@@ -119,7 +193,7 @@ export class KatanimeProvider implements IContentProvider {
     const posterImg = root.querySelector("#animeinfo > img");
     const poster = this.getImageUrl(posterImg);
 
-    const episodes = await this.fetchEpisodes(root, slug, options);
+    const episodes = await this.fetchEpisodes(root, cookies, options);
 
     return {
       title,
@@ -134,7 +208,9 @@ export class KatanimeProvider implements IContentProvider {
     };
   }
 
-  private async fetchEpisodes(root: ReturnType<typeof parse>, _slug: string, options?: { signal?: AbortSignal }): Promise<Episode[]> {
+  private async fetchEpisodes(
+    root: ReturnType<typeof parse>, cookies: string, options?: { signal?: AbortSignal },
+  ): Promise<Episode[]> {
     const pagination = root.querySelector("._pagination");
     if (pagination == null) return [];
 
@@ -144,12 +220,12 @@ export class KatanimeProvider implements IContentProvider {
     const token = root.querySelector("[name=\"csrf-token\"]")?.getAttribute("content") ?? "";
     if (token === "") return [];
 
-    const firstPage = await this.fetchEpisodePage(paginationUrl, token, "1", options);
+    const firstPage = await this.fetchEpisodePage(paginationUrl, token, "1", cookies, options);
     const allEpisodes = [...firstPage.episodes];
 
     if (firstPage.pages > 1) {
       for (let p = 2; p <= firstPage.pages; p++) {
-        const pageData = await this.fetchEpisodePage(paginationUrl, token, String(p), options);
+        const pageData = await this.fetchEpisodePage(paginationUrl, token, String(p), cookies, options);
         allEpisodes.push(...pageData.episodes);
       }
     }
@@ -158,14 +234,11 @@ export class KatanimeProvider implements IContentProvider {
   }
 
   private async fetchEpisodePage(
-    url: string,
-    token: string,
-    page: string,
-    options?: { signal?: AbortSignal },
+    url: string, token: string, page: string, cookies: string, options?: { signal?: AbortSignal },
   ): Promise<{ episodes: Episode[]; pages: number }> {
     try {
       const body = `_token=${encodeURIComponent(token)}&pagina=${page}`;
-      const data = await this.fetchJSON<EpisodePage>(url, body, options);
+      const data = await this.fetchJSONWithCookies<EpisodePage>(url, body, cookies, options);
       const ep = data.ep;
       if (ep?.data == null) return { episodes: [], pages: 1 };
 
@@ -186,11 +259,79 @@ export class KatanimeProvider implements IContentProvider {
     }
   }
 
-  async getEpisodeServers(_slug: string, _number: string, _options?: { signal?: AbortSignal }): Promise<VideoServer[]> {
-    return [];
+  async getEpisodeServers(slug: string, number: string, options?: { signal?: AbortSignal }): Promise<VideoServer[]> {
+    const { cookies } = await this.fetchWithCookies(`${this.baseUrl}/anime/${slug}`, options);
+    const detailHtml = await this.fetchText(`${this.baseUrl}/anime/${slug}`, options);
+    const detailRoot = parse(detailHtml);
+
+    const paginationUrl = detailRoot.querySelector("._pagination")?.getAttribute("data-url") ?? "";
+    const token = detailRoot.querySelector("[name=\"csrf-token\"]")?.getAttribute("content") ?? "";
+    if (!paginationUrl || !token) return [];
+
+    const firstPage = await this.fetchEpisodePage(paginationUrl, token, "1", cookies, options);
+    const allEps: { number: string; url: string }[] = [...firstPage.episodes];
+
+    if (firstPage.pages > 1) {
+      for (let p = 2; p <= firstPage.pages; p++) {
+        const pageData = await this.fetchEpisodePage(paginationUrl, token, String(p), cookies, options);
+        allEps.push(...pageData.episodes);
+      }
+    }
+
+    const match = allEps.find((e) => e.number === number);
+    if (!match) return [];
+
+    const episodeUrl = match.url.startsWith("http") ? match.url : `${this.baseUrl}/${match.url.replace(/^\//, "")}`;
+
+    const epRes = await fetch(episodeUrl, {
+      headers: {
+        ...this.getHeaders(),
+        "Cookie": cookies,
+        "Referer": `${this.baseUrl}/anime/${slug}/`,
+      },
+      signal: options?.signal,
+    });
+    if (!epRes.ok) return [];
+    const epHtml = await epRes.text();
+    const epRoot = parse(epHtml);
+
+    const players = epRoot.querySelectorAll('[data-player]:not([data-player-name="Mega"])');
+
+    return players.map((p, i) => ({
+      id: `mp4_${i}`,
+      title: p.getAttribute("data-player-name") ?? "Unknown",
+      url: p.getAttribute("data-player") ?? "",
+      language: "sub",
+    }));
   }
 
-  async resolveStreamUrl(_videoUrl: string, _options?: { signal?: AbortSignal }): Promise<string | null> {
-    return null;
+  async resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<string | null> {
+    try {
+      const reproRes = await fetch(`${this.baseUrl}/reproductor?url=${encodeURIComponent(videoUrl)}`, {
+        headers: {
+          ...this.getHeaders(),
+          "Referer": `${this.baseUrl}/`,
+        },
+        signal: options?.signal,
+      });
+      if (!reproRes.ok) return null;
+      const reproHtml = await reproRes.text();
+
+      const match = reproHtml.match(/var e = '([^']+)'/);
+      if (!match) return null;
+
+      const encrypted: CryptoDto = JSON.parse(match[1]!);
+      const decrypted = this.decryptKatanime(encrypted.ct, encrypted.s, DECRYPTION_PASSWORD);
+      const embedUrl = decrypted.replace(/\\\//g, "/").replace(/^"|"$/g, "");
+
+      if (embedUrl.includes("mp4upload.com")) {
+        return this.extractMp4Video(embedUrl);
+      }
+
+      return embedUrl;
+    } catch (e) {
+      logger.error("KatanimeProvider", "resolveStreamUrl failed", e);
+      return null;
+    }
   }
 }
