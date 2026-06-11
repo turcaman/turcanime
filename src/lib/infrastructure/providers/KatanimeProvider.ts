@@ -305,7 +305,7 @@ export class KatanimeProvider implements IContentProvider {
     }));
   }
 
-  async resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<string | null> {
+  async resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<{ url: string; headers?: Record<string, string> } | null> {
     try {
       const reproRes = await fetch(`${this.baseUrl}/reproductor?url=${encodeURIComponent(videoUrl)}`, {
         headers: {
@@ -325,10 +325,12 @@ export class KatanimeProvider implements IContentProvider {
       const embedUrl = decrypted.replace(/\\\//g, "/").replace(/^"|"$/g, "");
 
       if (embedUrl.includes("mp4upload.com")) {
-        return this.extractMp4Video(embedUrl);
+        const videoUrlResult = await this.extractMp4Video(embedUrl);
+        if (videoUrlResult == null) return null;
+        return { url: videoUrlResult, headers: { "Referer": "https://mp4upload.com/" } };
       }
 
-      return embedUrl;
+      return { url: embedUrl };
     } catch (e) {
       logger.error("KatanimeProvider", "resolveStreamUrl failed", e);
       return null;

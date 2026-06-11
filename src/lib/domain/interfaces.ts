@@ -8,7 +8,7 @@ export interface IContentProvider {
   getSuggestions(query: string, options?: { signal?: AbortSignal }): Promise<AutocompleteAnime[]>;
   getDetails(slug: string, options?: { signal?: AbortSignal }): Promise<AnimeDetail | null>;
   getEpisodeServers(slug: string, number: string, options?: { signal?: AbortSignal }): Promise<VideoServer[]>;
-  resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<string | null>;
+  resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<{ url: string; headers?: Record<string, string> } | null>;
 }
 
 /** Key-value storage abstraction (AsyncStorage wrapper). */

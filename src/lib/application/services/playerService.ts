@@ -76,14 +76,15 @@ export class PlayerService {
 
     logger.debug("playerService", `resolving stream for ${server.url}`);
     try {
-      const streamUrl = await this.getProvider().resolveStreamUrl(server.url);
-      if (streamUrl == null) {
+      const result = await this.getProvider().resolveStreamUrl(server.url);
+      if (result == null) {
         return { stream: null, error: new Error("Failed to extract stream URL"), fromCache: false };
       }
       logger.debug("playerService", `resolved stream URL: OK`);
 
       const resolved: ResolvedStream = {
-        url: streamUrl,
+        url: result.url,
+        headers: result.headers,
       };
 
       await this.cache.set(cKey, resolved, PLAYER_CACHE.STREAM_URL);
