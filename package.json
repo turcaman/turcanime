@@ -17,6 +17,7 @@
     "@shopify/flash-list": "2.0.2",
     "crypto-js": "^4.2.0",
     "expo": "~55.0.24",
+    "expo-av": "^16.0.8",
     "expo-build-properties": "~55.0.14",
     "expo-constants": "~55.0.9",
     "expo-font": "~55.0.4",

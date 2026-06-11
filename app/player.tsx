@@ -2,13 +2,14 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useServices } from "@/lib/hooks/useServices";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { StatusBar } from "expo-status-bar";
-import { useVideoPlayer, VideoView } from "expo-video";
-import React, { useEffect } from "react";
+import { Video, ResizeMode } from "expo-av";
+import React, { useEffect, useRef } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 function PlayerContent() {
   const { streamUrl, streamHeaders, reset: clearStream } = usePlayerStore();
   const { playerUIService } = useServices();
+  const videoRef = useRef<Video>(null);
 
   useEffect(() => {
     void playerUIService.setupImmersiveMode();
@@ -19,26 +20,18 @@ function PlayerContent() {
     };
   }, [clearStream, playerUIService]);
 
-  const videoSource = streamUrl !== null
-    ? { uri: streamUrl, headers: streamHeaders ?? undefined, contentType: "hls" as const }
-    : null;
-
-  const player = useVideoPlayer(videoSource, (instance) => {
-    if (videoSource) {
-      instance.loop = false;
-      instance.play();
-    }
-  });
-
   return (
     <View className="flex-1 bg-black">
       <StatusBar hidden />
       {streamUrl !== null ? (
-        <VideoView
-          player={player}
+        <Video
+          ref={videoRef}
+          source={{ uri: streamUrl, headers: streamHeaders ?? undefined }}
           style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-          nativeControls
-          buttonOptions={{ showSettings: false, showSubtitles: false }}
+          resizeMode={ResizeMode.CONTAIN}
+          shouldPlay
+          useNativeControls
+          isLooping={false}
         />
       ) : (
         <View className="flex-1 justify-center items-center">
