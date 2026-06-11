@@ -150,9 +150,50 @@ export class KatanimeProvider implements IContentProvider {
       const unpacked = unpacker.unpack();
 
       const fileMatch = unpacked.match(/file:\s*"([^"]+)"/);
-      if (fileMatch) return fileMatch[1] ?? null;
+      if (!fileMatch) return null;
+      const masterUrl = fileMatch[1]!;
 
-      return null;
+      const masterRes = await fetchWithTimeout(masterUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36",
+          "Referer": "https://luluvdo.com/",
+          "Origin": "https://luluvdo.com",
+        },
+      });
+      if (!masterRes.ok) return masterUrl;
+
+      const masterBody = await masterRes.text();
+      let bestQuality = 0;
+      let bestVariant = "";
+
+      const lines = masterBody.split("\n");
+      for (let li = 0; li < lines.length; li++) {
+        const streamInfMatch = lines[li]!.match(/#EXT-X-STREAM-INF:[^\n]*RESOLUTION=(\d+)x(\d+)/);
+        if (streamInfMatch) {
+          const width = Number.parseInt(streamInfMatch[1]!, 10);
+          if (width > bestQuality && li + 1 < lines.length) {
+            const nextLine = lines[li + 1]!.trim();
+            if (nextLine !== "" && !nextLine.startsWith("#")) {
+              bestQuality = width;
+              bestVariant = nextLine;
+            }
+          }
+        }
+      }
+
+      if (bestVariant === "") return masterUrl;
+
+      const resolvedVariant = new URL(bestVariant, masterUrl).href;
+      const masterUrlObj = new URL(masterUrl);
+      const qp = masterUrlObj.searchParams;
+      const variantUrlObj = new URL(resolvedVariant);
+      for (const [key, val] of qp.entries()) {
+        if (!variantUrlObj.searchParams.has(key)) {
+          variantUrlObj.searchParams.set(key, val);
+        }
+      }
+
+      return variantUrlObj.href;
     } catch {
       return null;
     }
