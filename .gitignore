@@ -47,3 +47,6 @@ key.properties
 
 # pre-indexed knowledge graph
 .codegraph
+
+# opencode state
+.opencode/
