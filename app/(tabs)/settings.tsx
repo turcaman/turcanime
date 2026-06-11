@@ -1,6 +1,8 @@
 import { ActionRow } from "@/components/ui/ActionRow";
 import { SectionTitle } from "@/components/ui/SectionTitle";
-import { useUIStore } from "@/lib/store/uiStore";
+import { getDeps } from "@/lib/di";
+import { useHomeStore } from "@/lib/store/homeStore";
+import { useSettingsStore } from "@/lib/store/user";
 import * as Haptics from "expo-haptics";
 import React from "react";
 import { Alert, Text, View } from "react-native";
@@ -15,8 +17,10 @@ export default function SettingsScreen() {
       { 
         text: "Actualizar", 
         style: "default", 
-        onPress: () => {
-          useUIStore.getState().triggerSessionRefresh();
+        onPress: async () => {
+          await getDeps().animeService.clearAnimeCache();
+          void useHomeStore.getState().fetchHome(true);
+          useSettingsStore.getState().invalidateCache();
           void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
       }

@@ -1,0 +1,69 @@
+<output>
+<compartments>
+<compartment start="1" end="25" title="Activate caveman mode and remove AnimeLatinoHD provider" episode_type="refactor,feature" importance="75">
+<p1>
+User activated "ultra" caveman mode for terse, technical responses. Conducted deep dive to identify all logic related to `AnimeLatinoHD` (ALHD) provider for complete removal. 
+
+Identified and executed removal across multiple layers:
+- **Config/DI:** Removed `ANIMELATINO_CONFIG` from `src/lib/config/providerConfigs.ts` and wiped ALHD-specific imports/instantiations from `src/lib/di.ts`.
+- **Infrastructure:** Generalized `src/lib/core/infrastructure.ts` (`refreshSession`) and `src/lib/infrastructure/services/WebViewBridge.ts` to remove ALHD hardcoding. Parametrized `src/lib/infrastructure/components/WebViewWorker.tsx` to use `about:blank` as initial source.
+- **Parsers:** Deleted ALHD-specific HTML and RSC parsers: `src/lib/infrastructure/parsers/HtmlParser.ts`, `src/lib/infrastructure/parsers/RscParser.ts`, `src/lib/infrastructure/parsers/AnimeOrchestrator.ts`, `src/lib/infrastructure/parsers/strategies/BaseParser.ts`, and `src/lib/infrastructure/parsers/strategies/HomeParser.ts`.
+- **WebView/UI:** Cleaned `src/lib/infrastructure/webview/bootstrap.js` by removing ALHD-specific AES-GCM decryption and custom router. Removed Delta server filter from `src/components/AnimeEpisodeModal.tsx`.
+- **Cleanup:** Updated `.gitignore`, `AGENTS.md`, and `README.md`.
+
+App now boots without a provider; `getProvider()` throws an error until a new one is registered. The architecture is now a "shell" ready for the next provider. Commit 7f9c6fc.
+</p1>
+<p2>
+Activated ultra caveman mode. Identified and removed all AnimeLatinoHD (ALHD) specific logic to leave a generic provider shell. Removed ALHD config, provider, parsers (HTML/RSC), DI wiring, and WebView bootstrap decryption. Generalized infrastructure (WebViewBridge, WebViewWorker, infrastructure.ts) and cleaned up UI (AnimeEpisodeModal Delta filter) and docs. App now boots with a generic provider registry, ready for next implementation. Commit 7f9c6fc.
+</p2>
+<p3>
+Removed AnimeLatinoHD provider and all associated specific logic (parsers, config, DI, WebView decryption) to create a generic provider shell. App now supports registering new `IContentProvider` implementations. Commit 7f9c6fc.
+</p3>
+<p4>Removed AnimeLatinoHD provider; created generic provider shell; commit 7f9c6fc</p4>
+</compartment>
+<compartment start="58" end="86" title="Analyze Katanime repo for new provider integration" episode_type="investigation" importance="65">
+<p1>
+Investigated the `anime-extensions` repository (cloned to `/tmp/katanime`) to plan the integration of `Katanime` as the new provider. 
+
+**Key differences from ALHD:**
+- **Auth/Session:** Katanime uses direct HTTP instead of WebView-based session washing/cookie management. No Cloudflare/anti-bot bypass via WebView needed.
+- **Encryption:** Uses AES-CBC with a salt (JS-based) instead of ALHD's AES-GCM.
+- **Parsing:** Uses direct HTML and POST JSON pagination.
+- **Video:** Supports servers like VidGuard, StreamWish, Filemoon, and DoodStream.
+
+**Data Mapping to existing App State:**
+- **Home/Search:** Maps to `GET /animes` and `GET /buscar` endpoints (title, image, URL).
+- **Details:** Maps to `GET /slug` (title, synopsis, genres, status, poster, episodes).
+- **Episodes:** Extracted via POST to pagination URL (JSON: number, created_at, url).
+- **Video Servers:** Extracted from `[data-player]` elements in episode HTML.
+- **Stream URL:** Requires AES-CBC decryption of script variables and specific server extraction.
+
+U: "podriamos dejar el tema de reproduccion una vez hayamos poblado la app no?"
+
+Plan: Focus on populating the app (Home, Search, Details, Episodes) first, deferring complex video stream resolution/decryption to a later phase.
+</p1>
+<p2>
+Analyzed `katanime` repo in `/tmp/katanime` for integration. Katanime uses direct HTTP and AES-CBC (JS) instead of WebView/AES-GCM. Mapped Katanime endpoints to app requirements: Home/Search (GET), Details (GET), and Episodes (POST JSON pagination). Stream URL resolution requires AES-CBC decryption of player scripts. U: "podriamos dejar el tema de reproduccion una vez hayamos poblado la app no?" -> Decided to prioritize content population (Home, Search, Details, Episodes) before implementing video playback/decryption.
+</p2>
+<p3>
+Analyzed Katanime for replacement of ALHD. Katanime uses direct HTTP and AES-CBC. Mapped its endpoints to Home, Search, Details, and Episode data. Plan is to implement content population first and defer video stream resolution.
+</p3>
+<p4>Katanime analysis; direct HTTP + AES-CBC; priority: content population over video playback</p4>
+</compartment>
+</compartments>
+<facts>
+<PROJECT_RULES>
+* The app architecture is designed as a generic shell using `IContentProvider` and `AbstractProvider` to allow swapping providers without changing core application services (animeService, playerService).
+</PROJECT_RULES>
+<ARCHITECTURE>
+* The provider system relies on a `providerRegistry` (singleton) that manages the active `IContentProvider`.
+</ARCHITECTURE>
+<CONFIG_VALUES>
+* Katanime stream resolution requires AES-CBC decryption (password: "hanabi") of player scripts.
+</CONFIG_VALUES>
+</facts>
+<meta>
+<messages_processed>1-86</messages_processed>
+<unprocessed_from>87</unprocessed_from>
+</meta>
+</output>

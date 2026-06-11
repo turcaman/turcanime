@@ -1,7 +1,7 @@
 import { ANIME_CACHE } from "../../config/cacheTTLs";
 import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { TIMEOUTS } from "../../config/timeouts";
-import type { IContentProvider, ISessionManager } from "../../domain/interfaces";
+import type { IContentProvider } from "../../domain/interfaces";
 import type { Anime, AnimeDetail, AppError, AutocompleteAnime, HomeData } from "../../domain/entities";
 import { type CacheEntry, CacheRepo } from "../../domain/repositories/cacheRepo";
 import { ImageService } from "../../infrastructure/services/ImageService";
@@ -30,7 +30,6 @@ export class AnimeService {
   constructor(
     private cache: CacheRepo,
     private getProvider: () => IContentProvider,
-    private sessionManager: ISessionManager,
     private imageService: ImageService,
   ) {}
 
@@ -47,7 +46,7 @@ export class AnimeService {
     }
   }
 
-  private async handleAuthError<T>(
+  private async retryAfterAuthError<T>(
     cacheKey: string,
     fetchFn: (signal: AbortSignal) => Promise<T>,
     cacheTtl: number,
@@ -55,27 +54,15 @@ export class AnimeService {
   ): Promise<FetchResult<T>> {
     try {
       await this.cache.clearWithPrefix(cacheKey);
-      await this.sessionManager.invalidateCookies();
-
-      const retryController = new AbortController();
-      try {
-        const data = await fetchFn(retryController.signal);
-        await this.cache.set(cacheKey, data, cacheTtl);
-        onSuccess?.(data);
-        return { data, error: null, fromCache: false };
-      } catch (error) {
-        logger.error("animeService", `Error handling authentication error for key ${cacheKey}`, error);
-        return {
-          data: null,
-          error: createGenericError(error, "Error handling authentication error"),
-          fromCache: false,
-        };
-      }
-    } catch (authError) {
-      logger.error("animeService", `Authentication error handling failed for key ${cacheKey}`, authError);
+      const data = await fetchFn(new AbortController().signal);
+      await this.cache.set(cacheKey, data, cacheTtl);
+      onSuccess?.(data);
+      return { data, error: null, fromCache: false };
+    } catch (error) {
+      logger.error("animeService", "Error retrying after auth error for key ${cacheKey}", error);
       return {
         data: null,
-        error: { type: "AUTH_ERROR", message: "Error al recuperar sesión. Intenta recargar." },
+        error: createGenericError(error, "Error handling authentication error"),
         fromCache: false,
       };
     }
@@ -121,7 +108,7 @@ export class AnimeService {
       }
 
       if (err.type === "AUTH_ERROR") {
-        return await this.handleAuthError(cacheKey, fetchFn, cacheTtl, onSuccess);
+        return await this.retryAfterAuthError(cacheKey, fetchFn, cacheTtl, onSuccess);
       }
 
       if (err.type === "NETWORK_ERROR") {

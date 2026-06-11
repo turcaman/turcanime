@@ -1,98 +1,17 @@
 import "../global.css";
 import { NetworkBanner } from "@/components/NetworkBanner";
-import { getDeps, initializeDeps } from "@/lib/di";
-import { getProvider } from "@/lib/core/providerRegistry";
-import { useNetworkStatus, type ConnectionType } from "@/lib/hooks/useNetworkStatus";
-import { refreshSession } from "@/lib/core/infrastructure";
-import { useDetailsStore } from "@/lib/store/detailsStore";
-import { useHomeStore } from "@/lib/store/homeStore";
-import { useUIStore } from "@/lib/store/uiStore";
-import { useSettingsStore, useUserInitializationStore } from "@/lib/store/user";
-import { WebViewWorker } from "@/lib/infrastructure/components/WebViewWorker";
+import { initializeDeps } from "@/lib/di";
+import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
+import { useUserInitializationStore } from "@/lib/store/user";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useRef, useState } from "react";
-import { AppState, View } from "react-native";
+import { useEffect, useState } from "react";
+import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 function RootInner() {
   const [ready, setReady] = useState(false);
-  const { isInternetReachable, connectionType } = useNetworkStatus();
-  const { sessionRefreshTrigger, triggerSessionRefresh, setSessionRefreshing } = useUIStore();
-  const prevConnectionType = useRef<ConnectionType>(null);
-  const prevReachable = useRef<boolean | null>(null);
-  const lastRefreshTime = useRef(0);
-  const hasBeenActive = useRef(false);
-
-  // Detect network type change (wifi ↔ cellular) → auto session refresh
-  useEffect(() => {
-    const prev = prevConnectionType.current;
-    prevConnectionType.current = connectionType;
-
-    if (prev !== null && prev !== connectionType &&
-        prev !== 'unknown' && connectionType !== 'unknown') {
-      const timer = setTimeout(() => {
-        triggerSessionRefresh();
-      }, 2000);
-      return () => { clearTimeout(timer); };
-    }
-
-    return undefined;
-  }, [connectionType, triggerSessionRefresh]);
-
-  // Detect reachability restore → any reconnection (WiFi→WiFi, data→data, airplane mode off, VPN)
-  useEffect(() => {
-    const prev = prevReachable.current;
-    prevReachable.current = isInternetReachable;
-
-    if (prev === false && isInternetReachable === true) {
-      const timer = setTimeout(() => {
-        triggerSessionRefresh();
-      }, 2000);
-      return () => { clearTimeout(timer); };
-    }
-
-    return undefined;
-  }, [isInternetReachable, triggerSessionRefresh]);
-
-  // Detect app returning to foreground after network changes in background
-  useEffect(() => {
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state !== "active") return;
-      if (!hasBeenActive.current) {
-        hasBeenActive.current = true;
-        return;
-      }
-      const elapsed = Date.now() - lastRefreshTime.current;
-      if (elapsed < 5 * 60 * 1000) return;
-      triggerSessionRefresh();
-    });
-    return () => { sub.remove(); };
-  }, [triggerSessionRefresh]);
-
-  useEffect(() => {
-    if (sessionRefreshTrigger === 0) return;
-
-    const doRefresh = async () => {
-      try {
-        lastRefreshTime.current = Date.now();
-
-        // Show loading state immediately before slow operations
-        useHomeStore.getState().prepareRefresh();
-        useDetailsStore.getState().reset();
-
-        await refreshSession(getProvider);
-        await getDeps().animeService.clearAnimeCache();
-
-        void useHomeStore.getState().fetchHome(true);
-        useSettingsStore.getState().invalidateCache();
-      } finally {
-        setSessionRefreshing(false);
-      }
-    };
-
-    void doRefresh();
-  }, [sessionRefreshTrigger, setSessionRefreshing]);
+  const { isInternetReachable } = useNetworkStatus();
 
   useEffect(() => {
     let cancelled = false;
@@ -139,7 +58,6 @@ function RootInner() {
           }}
         />
       </Stack>
-      <WebViewWorker />
     </View>
   );
 }

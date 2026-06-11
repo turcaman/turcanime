@@ -8,17 +8,15 @@
 import { AnimeService } from "./application/services/animeService";
 import { PlayerService } from "./application/services/playerService";
 import { PlayerUIService } from "./application/services/PlayerUIService";
-import { sessionManager, storage, webViewBridge } from "./core/infrastructure";
-import { getProvider } from "./core/providerRegistry";
-import type { ISessionManager, IStorage, IWebViewBridge } from "./domain/interfaces";
+import { storage } from "./core/infrastructure";
+import { getProvider, setProvider } from "./core/providerRegistry";
+import type { IStorage } from "./domain/interfaces";
 import { CacheRepo } from "./domain/repositories/cacheRepo";
 import { ImageService } from "./infrastructure/services/ImageService";
-import { logger } from "./utils/logger";
+import { KatanimeProvider } from "./infrastructure/providers/KatanimeProvider";
 
 export interface AppDependencies {
   storage: IStorage;
-  webViewBridge: IWebViewBridge;
-  sessionManager: ISessionManager;
   getProvider: typeof getProvider;
   animeService: AnimeService;
   playerService: PlayerService;
@@ -51,22 +49,18 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
 
   deps = {
     storage,
-    webViewBridge,
-    sessionManager,
     getProvider,
-    animeService: new AnimeService(cacheRepo, getProvider, sessionManager, imageService),
-    playerService: new PlayerService(cacheRepo, getProvider, webViewBridge),
+    animeService: new AnimeService(cacheRepo, getProvider, imageService),
+    playerService: new PlayerService(cacheRepo, getProvider),
     playerUIService: new PlayerUIService(),
     imageService,
     cacheRepo,
   };
 
-  initPromise = Promise.resolve().then(async () => {
-    logger.setStorage(storage);
-    await sessionManager.initialize();
-  }).catch(e => {
-    logger.error("DI", "Initialization failed", e);
-  }).finally(() => {
+  const provider = new KatanimeProvider();
+  setProvider(provider);
+
+  initPromise = Promise.resolve().finally(() => {
     isInitializing = false;
   });
 
