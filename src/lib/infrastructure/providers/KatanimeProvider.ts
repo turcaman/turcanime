@@ -295,7 +295,7 @@ export class KatanimeProvider implements IContentProvider {
     const epHtml = await epRes.text();
     const epRoot = parse(epHtml);
 
-    const players = epRoot.querySelectorAll('[data-player]:not([data-player-name="Mega"])');
+    const players = epRoot.querySelectorAll('[data-player-name="Mp4Upload"]');
 
     return players.map((p, i) => ({
       id: `mp4_${i}`,
