@@ -109,7 +109,7 @@ export class KatanimeProvider implements IContentProvider {
     if (titleEl == null) return null;
     const title = titleEl.text.trim();
 
-    const synopsis = root.querySelector("#sinopsis p")?.text.trim() ?? "";
+    const synopsis = root.querySelector("#sinopsis p")?.text.trim().replace(/\s*\(Fuente:\s*[^)]*\)\s*$/, "") ?? "";
     const genreEls = root.querySelectorAll(".anime-genres a");
     const genres = genreEls.map((el) => el.text.trim()).filter((g) => g !== "");
 
