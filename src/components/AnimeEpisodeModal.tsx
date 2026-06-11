@@ -14,14 +14,6 @@ interface AnimeEpisodeModalProps {
   onServerSelect: (server: VideoServer) => void;
 }
 
-const mapLanguage = (lang: string) => {
-  const code = (lang || "").toUpperCase();
-  if (code.includes("SUB")) return "Subtitulado";
-  if (code.includes("LAT")) return "Latino";
-  if (code.includes("CAS")) return "Castellano";
-  return lang || "Desconocido";
-};
-
 export const AnimeEpisodeModal = ({
   visible, onClose, episode, servers, isLoading, onServerSelect
 }: AnimeEpisodeModalProps) => {
@@ -40,7 +32,7 @@ export const AnimeEpisodeModal = ({
         </View>
 
         <Text className="text-neutral-400 text-xs mb-2">
-          Selecciona un idioma
+          Selecciona un servidor
         </Text>
 
         <View className="gap-2">
@@ -61,7 +53,7 @@ export const AnimeEpisodeModal = ({
                   <Feather name="play" size={14} color="#A855F7" />
                 </View>
                 <Text className="text-white font-bold flex-1">
-                  {mapLanguage(server.language)}
+                  {server.title}
                 </Text>
               </AnimatedPressable>
             ))

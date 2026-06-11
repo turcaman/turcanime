@@ -1,5 +1,6 @@
 import CryptoJS from "crypto-js";
 import { parse } from "node-html-parser";
+import JsUnpacker from "js-unpacker";
 import type { IContentProvider } from "../../domain/interfaces";
 import type { Anime, AnimeDetail, AutocompleteAnime, Episode, HomeData, VideoServer } from "../../domain/entities";
 import { logger } from "../../utils/logger";
@@ -90,6 +91,42 @@ export class KatanimeProvider implements IContentProvider {
 
       const srcMatch = html.match(/src:\s*["']((https?|ftp)[^"']+\.mp4[^"']*)["']/);
       if (srcMatch) return srcMatch[1] ?? null;
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async extractLuluVideo(embedUrl: string): Promise<string | null> {
+    try {
+      const res = await fetch(embedUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36",
+          "Referer": "https://luluvdo.com/",
+        },
+      });
+      if (!res.ok) return null;
+      const html = await res.text();
+
+      const evalStart = html.indexOf("eval(function");
+      if (evalStart === -1) return null;
+
+      let depth = 0;
+      let i = evalStart;
+      while (i < html.length) {
+        if (html[i] === "(") depth++;
+        if (html[i] === ")") { depth--; if (depth === 0) break; }
+        i++;
+      }
+      const evalCode = html.slice(evalStart, i + 1);
+      const packedJs = evalCode.replace(/^eval/, "");
+
+      const unpacker = new JsUnpacker(packedJs);
+      const unpacked = unpacker.unpack();
+
+      const fileMatch = unpacked.match(/file:\s*"([^"]+)"/);
+      if (fileMatch) return fileMatch[1] ?? null;
 
       return null;
     } catch {
@@ -295,7 +332,7 @@ export class KatanimeProvider implements IContentProvider {
     const epHtml = await epRes.text();
     const epRoot = parse(epHtml);
 
-    const players = epRoot.querySelectorAll('[data-player-name="Mp4Upload"]');
+    const players = epRoot.querySelectorAll('[data-player-name="Mp4Upload"], [data-player-name="LuluStream"]');
 
     return players.map((p, i) => ({
       id: `mp4_${i}`,
@@ -328,6 +365,12 @@ export class KatanimeProvider implements IContentProvider {
         const videoUrlResult = await this.extractMp4Video(embedUrl);
         if (videoUrlResult == null) return null;
         return { url: videoUrlResult, headers: { "Referer": "https://mp4upload.com/" } };
+      }
+
+      if (embedUrl.includes("lulu")) {
+        const videoUrlResult = await this.extractLuluVideo(embedUrl);
+        if (videoUrlResult == null) return null;
+        return { url: videoUrlResult, headers: { "Referer": "https://luluvdo.com/", "Origin": "https://luluvdo.com" } };
       }
 
       return { url: embedUrl };
