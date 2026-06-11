@@ -116,7 +116,7 @@ export class KatanimeProvider implements IContentProvider {
     const statusText = root.querySelector(".details-by #estado")?.text.trim() ?? "";
     const status = statusText.toLowerCase().includes("finalizado") ? "Completed" : "Ongoing";
 
-    const posterImg = root.querySelector(".Comics-detail-img img") ?? root.querySelector("img[alt]");
+    const posterImg = root.querySelector("#animeinfo > img");
     const poster = this.getImageUrl(posterImg);
 
     const episodes = await this.fetchEpisodes(root, slug, options);
