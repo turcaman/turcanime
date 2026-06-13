@@ -9,11 +9,10 @@ import { AnimeService } from "./application/services/animeService";
 import { PlayerService } from "./application/services/playerService";
 import { PlayerUIService } from "./application/services/PlayerUIService";
 import { storage } from "./core/infrastructure";
-import { getProvider, setProvider } from "./core/providerRegistry";
-import type { IStorage } from "./domain/interfaces";
+import { getProvider } from "./core/providerRegistry";
+import type { IContentProvider, IStorage } from "./domain/interfaces";
 import { CacheRepo } from "./domain/repositories/cacheRepo";
 import { ImageService } from "./infrastructure/services/ImageService";
-import { KatanimeProvider } from "./infrastructure/providers/KatanimeProvider";
 
 export interface AppDependencies {
   storage: IStorage;
@@ -50,15 +49,12 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
   deps = {
     storage,
     getProvider,
-    animeService: new AnimeService(cacheRepo, getProvider, imageService),
-    playerService: new PlayerService(cacheRepo, getProvider),
+    animeService: new AnimeService(cacheRepo, getProvider as () => IContentProvider, imageService),
+    playerService: new PlayerService(cacheRepo, getProvider as () => IContentProvider),
     playerUIService: new PlayerUIService(),
     imageService,
     cacheRepo,
   };
-
-  const provider = new KatanimeProvider();
-  setProvider(provider);
 
   initPromise = Promise.resolve().finally(() => {
     isInitializing = false;
