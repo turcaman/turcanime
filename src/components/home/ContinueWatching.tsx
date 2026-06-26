@@ -36,7 +36,7 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
   );
 
   return (
-    <View className="py-4">
+    <View>
         <SectionTitle>Continuar viendo</SectionTitle>
       <View className="mb-3" />
       <FlashList

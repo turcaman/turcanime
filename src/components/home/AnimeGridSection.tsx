@@ -22,7 +22,7 @@ export const AnimeGridSection = memo(({ label, items }: AnimeGridSectionProps) =
   if (items.length === 0) return null;
 
   return (
-    <View className="py-4">
+    <View>
         <SectionTitle>{label}</SectionTitle>
       <View className="mb-3" />
       <FlatList
