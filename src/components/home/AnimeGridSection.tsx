@@ -3,7 +3,14 @@ import type { Anime } from "@/lib/domain/entities";
 import React, { memo, useMemo } from "react";
 import AnimeCard from "../AnimeCard";
 import { SectionTitle } from "../ui/SectionTitle";
-import { calcCardWidth } from "@/lib/utils/layout";
+
+const CARD_WIDTH_CONFIG = { columns: 3, gap: 12, horizontalPad: 20, min: 80, max: 400 };
+
+function calcCardWidth(screenWidth: number): number {
+  const { columns, gap, horizontalPad, min, max } = CARD_WIDTH_CONFIG;
+  const available = screenWidth - horizontalPad * 2 - gap * (columns - 1);
+  return Math.max(min, Math.min(available / columns, max));
+}
 
 interface AnimeGridSectionProps {
   label: string;
@@ -23,8 +30,9 @@ export const AnimeGridSection = memo(({ label, items }: AnimeGridSectionProps) =
 
   return (
     <View className="py-4">
-      <SectionTitle>{label}</SectionTitle>
-      <View className="mb-3" />
+      <View className="mb-2">
+        <SectionTitle>{label}</SectionTitle>
+      </View>
       <FlatList
         data={items}
         numColumns={3}

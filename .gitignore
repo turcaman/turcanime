@@ -40,6 +40,7 @@ app-example
 /ios
 
 # test fixtures
+/animelatinohd/
 
 # signing
 release-key.jks
@@ -47,6 +48,3 @@ key.properties
 
 # pre-indexed knowledge graph
 .codegraph
-
-# opencode state
-.opencode/

@@ -1,4 +1,42 @@
-import type { Anime, AnimeDetail, AutocompleteAnime, HomeData, VideoServer } from "./entities";
+import type { Anime, AnimeDetail, AutocompleteAnime, Episode, HomeData, VideoServer } from "./entities";
+
+/** Result of parsing HTML content for anime cards. */
+export interface ParseResult {
+  cards: Anime[];
+  strategyUsed: string;
+  success: boolean;
+}
+
+/** Parses HTML responses from the anime site into structured data. */
+export interface IHtmlParser {
+  parseCards(html: string): ParseResult;
+  parseEpisodes(html: string, slug: string): Episode[];
+  parseEpisodesFromHtml(html: string, slug: string): Episode[];
+  extractMetaTags(html: string): { title: string | null; banner: string | null; description: string | null };
+  extractSynopsisFromDom(html: string): string | null;
+  extractTitleFromHtml(html: string): string;
+  extractStatusFromHtml(html: string): string;
+  extractSynopsisFromJsonLd(html: string): string | null;
+  extractImageFromJsonLd(html: string): string | null;
+}
+
+/** Parses React Server Component (RSC) payloads for streaming data. */
+export interface IRscParser {
+  parseRscPayload(text: string): string;
+  extractPosterUrl(rsc: string): string;
+  extractSynopsis(rsc: string, fullHtml: string): string | null;
+  parseAllFromScripts(html: string): { poster: string; synopsis: string | null };
+}
+
+/** Detects site structure changes and invalidates caches when needed. */
+export interface ISiteVersionManager {
+  checkAndInvalidateIfNeeded(html: string): Promise<boolean>;
+}
+
+/** Tracks parser strategy usage and success rates for metrics. */
+export interface IMetricsTracker {
+  record(strategy: string, success: boolean): void;
+}
 
 /** Primary content provider interface for fetching anime data. */
 export interface IContentProvider {
@@ -8,7 +46,7 @@ export interface IContentProvider {
   getSuggestions(query: string, options?: { signal?: AbortSignal }): Promise<AutocompleteAnime[]>;
   getDetails(slug: string, options?: { signal?: AbortSignal }): Promise<AnimeDetail | null>;
   getEpisodeServers(slug: string, number: string, options?: { signal?: AbortSignal }): Promise<VideoServer[]>;
-  resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<{ url: string; headers?: Record<string, string> } | null>;
+  resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<string | null>;
 }
 
 /** Key-value storage abstraction (AsyncStorage wrapper). */
@@ -18,4 +56,38 @@ export interface IStorage {
   remove(key: string): Promise<void>;
   getAllKeys(): Promise<string[]>;
   clear(): Promise<void>;
+}
+
+/** Browser session state for authenticated requests. */
+export interface ISession {
+  cookies: string;
+  userAgent: string;
+}
+
+/** Manages session lifecycle: initialization, refresh, and invalidation. */
+export interface ISessionManager {
+  initialize(): Promise<void>;
+  getSession(): Promise<ISession | null>;
+  setSession(session: ISession): Promise<void>;
+  refreshCookies(): Promise<void>;
+  waitForCookies(): Promise<void>;
+  invalidateCookies(): Promise<void>;
+}
+
+/** WebView message types for stream extraction communication. */
+export type WebViewMessageData =
+  | { type: "DECRYPTION_RESULT"; id: string; data: string | null; error?: string }
+  | { type: "EMBED_VIDEO_URL"; url: string }
+  | { type: "SESSION"; session: ISession }
+  | { type: "RAW"; data: string };
+
+/** Bridges React Native with WebView for stream URL extraction. */
+export interface IWebViewBridge {
+  resolveStreamUrl(videoUrl: string): Promise<string | null>;
+  resolveEmbedStreamUrl(embedUrl: string): Promise<string | null>;
+  handleMessage(message: string): { type: string; data: WebViewMessageData } | null;
+  registerNavigation(fn: (uri: string) => void): void;
+  registerInjection(fn: (code: string) => void): void;
+  navigateTo(uri: string): void;
+  notifyPageLoaded(): void;
 }

@@ -20,7 +20,7 @@ function PlayerContent() {
   }, [clearStream, playerUIService]);
 
   const videoSource = streamUrl !== null
-    ? { uri: streamUrl, headers: streamHeaders ?? undefined, contentType: "hls" as const }
+    ? { uri: streamUrl, headers: streamHeaders ?? undefined }
     : null;
 
   const player = useVideoPlayer(videoSource, (instance) => {
@@ -38,6 +38,7 @@ function PlayerContent() {
           player={player}
           style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
           nativeControls
+          buttonOptions={{ showSettings: false, showSubtitles: false }}
         />
       ) : (
         <View className="flex-1 justify-center items-center">

@@ -6,7 +6,6 @@ import { EpisodeRangeSelector } from "@/components/EpisodeRangeSelector";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAnimeDetailScreen } from "@/lib/hooks/useAnimeDetailScreen";
 import { navigateBack, navigateToPlayer } from "@/lib/utils/navigation";
-import { TAB_BAR_OFFSET } from "@/lib/utils/layout";
 import { useHistoryStore } from "@/lib/store/user";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
@@ -55,7 +54,7 @@ function AnimeDetailsContent() {
     >
       <View className="flex-1 bg-black">
         <ScrollView
-          contentContainerStyle={{ paddingBottom: TAB_BAR_OFFSET }}
+          contentContainerStyle={{ paddingBottom: 116 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl

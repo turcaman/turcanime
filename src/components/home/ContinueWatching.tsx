@@ -24,11 +24,11 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
         uri={item.image}
         style={{ width: "100%", height: "100%" }}
       />
-      <View className="absolute bottom-0 left-0 right-0 bg-neutral-950/80 p-2">
-        <Text className="text-xs font-semibold text-neutral-400 mb-0.5">
+      <View className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">
+        <Text className="text-xs font-semibold text-purple-500 mb-0.5">
           Ep. {item.number}
         </Text>
-        <Text numberOfLines={1} className="text-sm font-bold text-white">
+        <Text numberOfLines={1} className="text-sm font-bold text-purple-500">
           {item.title}
         </Text>
       </View>
@@ -37,8 +37,9 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
 
   return (
     <View className="py-4">
-      <SectionTitle>Continuar viendo</SectionTitle>
-      <View className="mb-3" />
+      <View className="mb-3">
+        <SectionTitle>Continuar viendo</SectionTitle>
+      </View>
       <FlashList
         horizontal
         data={items}

@@ -14,10 +14,22 @@ interface AnimeEpisodeModalProps {
   onServerSelect: (server: VideoServer) => void;
 }
 
+const mapLanguage = (lang: string) => {
+  const code = (lang || "").toUpperCase();
+  if (code.includes("SUB")) return "Subtitulado";
+  if (code.includes("LAT")) return "Latino";
+  if (code.includes("CAS")) return "Castellano";
+  return lang || "Desconocido";
+};
+
 export const AnimeEpisodeModal = ({
   visible, onClose, episode, servers, isLoading, onServerSelect
 }: AnimeEpisodeModalProps) => {
   if (!visible) return null;
+
+  // Prefer delta servers (AnimeLatinoHD), fallback to all
+  const delta = servers.filter((s) => s.title.toLowerCase().includes("delta"));
+  const displayServers = delta.length > 0 ? delta : servers;
 
   return (
     <View className="absolute inset-0 bg-black/80 justify-end">
@@ -32,18 +44,18 @@ export const AnimeEpisodeModal = ({
         </View>
 
         <Text className="text-neutral-400 text-xs mb-2">
-          Selecciona un servidor
+          Selecciona un idioma
         </Text>
 
         <View className="gap-2">
           {isLoading ? (
             <AppLoader variant="small" />
-          ) : servers.length === 0 ? (
+          ) : displayServers.length === 0 ? (
             <View className="h-48 justify-center items-center">
               <Text className="text-neutral-400 text-xs">No hay servidor disponible</Text>
             </View>
           ) : (
-            servers.map((server, index) => (
+            displayServers.map((server, index) => (
               <AnimatedPressable
                 key={server.id || `server-${index}`}
                 className="flex-row items-center bg-black p-4 rounded-xl"
@@ -53,7 +65,7 @@ export const AnimeEpisodeModal = ({
                   <Feather name="play" size={14} color="#A855F7" />
                 </View>
                 <Text className="text-white font-bold flex-1">
-                  {server.title}
+                  {mapLanguage(server.language)}
                 </Text>
               </AnimatedPressable>
             ))

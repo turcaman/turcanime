@@ -26,6 +26,13 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => <Feather name="search" size={24} color={color} />,
           }}
         />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: "Ajustes",
+            tabBarIcon: ({ color }) => <Feather name="settings" size={24} color={color} />,
+          }}
+        />
       </Tabs>
     </ErrorBoundary>
   );

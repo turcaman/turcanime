@@ -8,14 +8,24 @@
 import { AnimeService } from "./application/services/animeService";
 import { PlayerService } from "./application/services/playerService";
 import { PlayerUIService } from "./application/services/PlayerUIService";
-import { storage } from "./core/infrastructure";
-import { getProvider } from "./core/providerRegistry";
-import type { IContentProvider, IStorage } from "./domain/interfaces";
+import { sessionManager, storage, webViewBridge } from "./core/infrastructure";
+import { getProvider, setProvider } from "./core/providerRegistry";
+import type { ISessionManager, IStorage, IWebViewBridge } from "./domain/interfaces";
 import { CacheRepo } from "./domain/repositories/cacheRepo";
+import { AnimeLatinoProvider } from "./infrastructure/providers/AnimeLatinoProvider";
+import { HtmlParser } from "./infrastructure/parsers/HtmlParser";
+import { RscParser } from "./infrastructure/parsers/RscParser";
+import { AnimeOrchestrator } from "./infrastructure/parsers/AnimeOrchestrator";
+import { SiteVersionManager } from "./infrastructure/version/SiteVersionManager";
+import { MetricsTracker } from "./infrastructure/metrics/MetricsTracker";
 import { ImageService } from "./infrastructure/services/ImageService";
+import { ANIMELATINO_CONFIG } from "./config/providerConfigs";
+import { logger } from "./utils/logger";
 
 export interface AppDependencies {
   storage: IStorage;
+  webViewBridge: IWebViewBridge;
+  sessionManager: ISessionManager;
   getProvider: typeof getProvider;
   animeService: AnimeService;
   playerService: PlayerService;
@@ -44,19 +54,42 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
   isInitializing = true;
 
   const cacheRepo = new CacheRepo(storage);
+  const htmlParser = new HtmlParser();
+  const rscParser = new RscParser();
+  const orchestrator = new AnimeOrchestrator(htmlParser, rscParser);
+  const versionManager = new SiteVersionManager(sessionManager, cacheRepo);
+  const metrics = new MetricsTracker(cacheRepo);
   const imageService = new ImageService();
 
   deps = {
     storage,
+    webViewBridge,
+    sessionManager,
     getProvider,
-    animeService: new AnimeService(cacheRepo, getProvider as () => IContentProvider, imageService),
-    playerService: new PlayerService(cacheRepo, getProvider as () => IContentProvider),
+    animeService: new AnimeService(cacheRepo, getProvider, sessionManager, imageService),
+    playerService: new PlayerService(cacheRepo, getProvider, webViewBridge),
     playerUIService: new PlayerUIService(),
     imageService,
     cacheRepo,
   };
 
-  initPromise = Promise.resolve().finally(() => {
+  const provider = new AnimeLatinoProvider(
+    sessionManager,
+    ANIMELATINO_CONFIG.baseUrl,
+    orchestrator,
+    htmlParser,
+    rscParser,
+    versionManager,
+    metrics,
+  );
+  setProvider(provider);
+
+  initPromise = Promise.resolve().then(async () => {
+    logger.setStorage(storage);
+    await sessionManager.initialize();
+  }).catch(e => {
+    logger.error("DI", "Initialization failed", e);
+  }).finally(() => {
     isInitializing = false;
   });
 

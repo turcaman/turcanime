@@ -1,6 +1,7 @@
 import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { PLAYER_CACHE } from "../../config/cacheTTLs";
-import type { IContentProvider } from "../../domain/interfaces";
+import { getRequiredReferer } from "../../config/embedServers";
+import type { IContentProvider, IWebViewBridge } from "../../domain/interfaces";
 import type { VideoServer } from "../../domain/entities";
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import { logger } from "../../utils/logger";
@@ -29,6 +30,7 @@ export class PlayerService {
   constructor(
     private cache: CacheRepo,
     private getProvider: () => IContentProvider,
+    private webViewBridge: IWebViewBridge,
   ) {}
 
   /** Fetches available video servers for an episode with caching. */
@@ -76,15 +78,25 @@ export class PlayerService {
 
     logger.debug("playerService", `resolving stream for ${server.url}`);
     try {
-      const result = await this.getProvider().resolveStreamUrl(server.url);
-      if (result == null) {
-        return { stream: null, error: new Error("Failed to extract stream URL"), fromCache: false };
+      const iframeUrl = await this.getProvider().resolveStreamUrl(server.url);
+      if (iframeUrl == null) {
+        return { stream: null, error: new Error("Failed to extract iframe URL"), fromCache: false };
       }
-      logger.debug("playerService", `resolved stream URL: OK`);
+      logger.debug("playerService", `extracted iframe URL: ${iframeUrl}`);
+
+      const hlsUrl = await this.webViewBridge.resolveEmbedStreamUrl(iframeUrl);
+      if (hlsUrl == null) {
+        return { stream: null, error: new Error("Failed to resolve HLS stream"), fromCache: false };
+      }
+      logger.debug("playerService", `resolved HLS stream: OK`);
+
+      const referer = getRequiredReferer(hlsUrl);
+      const headers: Record<string, string> = {};
+      if (referer) headers["Referer"] = referer;
 
       const resolved: ResolvedStream = {
-        url: result.url,
-        headers: result.headers,
+        url: hlsUrl,
+        headers: Object.keys(headers).length > 0 ? headers : undefined,
       };
 
       await this.cache.set(cKey, resolved, PLAYER_CACHE.STREAM_URL);
