@@ -29,6 +29,7 @@ export default function SettingsScreen() {
       
       <View className="mt-4">
         <SectionTitle>Datos</SectionTitle>
+        <View className="mb-3" />
         <View className="rounded-lg border border-neutral-800 bg-neutral-900">
           <ActionRow
             icon="refresh-cw"
