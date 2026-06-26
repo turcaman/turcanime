@@ -7,6 +7,7 @@ import { AppLoader } from "@/components/ui/AppLoader";
 import type { Anime } from "@/lib/domain/entities";
 import { useSearchScreen } from "@/lib/hooks/useSearchScreen";
 import { useTabBarManager } from "@/lib/hooks/useTabBarManager";
+import { TAB_BAR_OFFSET, calcCardWidth } from "@/lib/utils/layout";
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import {
@@ -17,14 +18,6 @@ import {
     View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-const CARD_WIDTH_CONFIG = { columns: 3, gap: 12, horizontalPad: 20, min: 80, max: 400 };
-
-function calcCardWidth(screenWidth: number): number {
-  const { columns, gap, horizontalPad, min, max } = CARD_WIDTH_CONFIG;
-  const available = screenWidth - horizontalPad * 2 - gap * (columns - 1);
-  return Math.max(min, Math.min(available / columns, max));
-}
 
 function SearchScreenContent() {
   const {
@@ -107,7 +100,7 @@ function SearchScreenContent() {
             suggestions={suggestions}
             onSelect={handleSelectSuggestion}
             onScroll={handleScroll}
-            tabBarOffset={116}
+            tabBarOffset={TAB_BAR_OFFSET}
           />
         )}
 
@@ -127,7 +120,7 @@ function SearchScreenContent() {
             )}
             columnWrapperClassName="justify-start gap-3"
             contentContainerClassName="pt-4"
-            contentContainerStyle={{ paddingBottom: 116 }}
+            contentContainerStyle={{ paddingBottom: TAB_BAR_OFFSET }}
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}

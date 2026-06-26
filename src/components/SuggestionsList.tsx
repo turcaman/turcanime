@@ -3,6 +3,7 @@ import { type NativeScrollEvent, type NativeSyntheticEvent, Text, View } from "r
 import { FlashList } from "@shopify/flash-list";
 import type { AutocompleteAnime } from "../lib/domain/entities";
 import { TMDB_POSTER_W92 } from "../lib/config/images";
+import { TAB_BAR_OFFSET } from "../lib/utils/layout";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ImageWithLoader } from "./ui/ImageWithLoader";
 
@@ -27,7 +28,7 @@ export const SuggestionsList = memo(({ suggestions, onSelect, onScroll, tabBarOf
       <FlashList
         data={suggestions}
         keyExtractor={(item) => item.slug}
-        contentContainerStyle={{ paddingBottom: tabBarOffset ?? 128 }}
+        contentContainerStyle={{ paddingBottom: tabBarOffset ?? TAB_BAR_OFFSET }}
         onScroll={onScroll}
         scrollEventThrottle={16}
         renderItem={({ item }) => (

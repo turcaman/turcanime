@@ -16,6 +16,7 @@ export const RecentSearches = memo(({ searches, onSelect, onRemove }: RecentSear
   return (
     <View className="mt-3 pb-20">
       <SectionTitle>Búsquedas recientes</SectionTitle>
+      <View className="mb-3" />
       <FlatList
         data={searches}
         keyExtractor={(item) => item}

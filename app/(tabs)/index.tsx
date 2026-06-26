@@ -5,6 +5,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import { type SectionItem, useHomeScreen } from "@/lib/hooks/useHomeScreen";
 import { useTabBarManager } from "@/lib/hooks/useTabBarManager";
+import { TAB_BAR_OFFSET } from "@/lib/utils/layout";
 import React, { useEffect } from "react";
 import { FlatList, RefreshControl, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -44,7 +45,7 @@ const HomeContent = React.memo(function HomeContent() {
           keyExtractor={(item: SectionItem, index: number) => `${item.type}-${index}`}
           renderItem={renderItem}
           ItemSeparatorComponent={() => <View className="h-5" />}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: 116 + insets.bottom }}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: insets.top + 16, paddingBottom: TAB_BAR_OFFSET + insets.bottom }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={null}
           onScroll={handleScroll}

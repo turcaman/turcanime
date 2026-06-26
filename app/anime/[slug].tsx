@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAnimeDetailScreen } from "@/lib/hooks/useAnimeDetailScreen";
 import { navigateBack, navigateToPlayer } from "@/lib/utils/navigation";
 import { useHistoryStore } from "@/lib/store/user";
+import { TAB_BAR_OFFSET } from "@/lib/utils/layout";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import React from "react";
@@ -54,7 +55,7 @@ function AnimeDetailsContent() {
     >
       <View className="flex-1 bg-black">
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 116 }}
+          contentContainerStyle={{ paddingBottom: TAB_BAR_OFFSET }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
