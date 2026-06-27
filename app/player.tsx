@@ -2,10 +2,9 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PlayerControls } from "@/components/PlayerControls";
 import { orderEpisodes } from "@/lib/domain/services/episodeService";
 import { getDeps } from "@/lib/di";
-import type { Episode, VideoServer } from "@/lib/domain/entities";
 import { useAnimeData } from "@/lib/hooks/useAnimeData";
+import { useEpisodeNavigation } from "@/lib/hooks/useEpisodeNavigation";
 import { usePlayerStore } from "@/lib/store/playerStore";
-import { useHistoryStore } from "@/lib/store/user";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useLocalSearchParams, router } from "expo-router";
@@ -35,15 +34,23 @@ function PlayerContent() {
   const image = params.image ?? "";
   const insets = useSafeAreaInsets();
 
-  const { streamUrl, streamHeaders, setStream, setLastLanguage, lastLanguage, reset: clearStream } = usePlayerStore();
-  const { addToHistory } = useHistoryStore();
+  const { streamUrl, streamHeaders, reset: clearStream } = usePlayerStore();
   const deps = getDeps();
   const { anime } = useAnimeData(slug);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [currentEpNumber, setCurrentEpNumber] = useState(number);
   const [playState, setPlayState] = useState({ currentTime: 0, duration: 0, isPlaying: false });
+
+  const player = useVideoPlayer(null, (instance) => {
+    instance.loop = false;
+  });
+
+  const {
+    resolveAndPlay, loading, error, currentEpNumber, setCurrentEpNumber,
+  } = useEpisodeNavigation(player, title, image);
+
+  useEffect(() => {
+    setCurrentEpNumber(number);
+  }, [number, setCurrentEpNumber]);
 
   useEffect(() => {
     void deps.playerUIService.setupImmersiveMode();
@@ -73,10 +80,6 @@ function PlayerContent() {
     return episodes[currentIdx + 1];
   }, [episodes, currentIdx]);
 
-  const player = useVideoPlayer(null, (instance) => {
-    instance.loop = false;
-  });
-
   useEffect(() => {
     if (streamUrl != null) {
       player.replace({ uri: streamUrl, headers: streamHeaders ?? undefined });
@@ -94,50 +97,6 @@ function PlayerContent() {
     }, 250);
     return () => { clearInterval(interval); };
   }, [player]);
-
-  const resolveAndPlay = useCallback(async (targetSlug: string, targetEp: Episode) => {
-    setLoading(true);
-    setError(null);
-
-    const attempt = async (retried: boolean): Promise<void> => {
-      const result = await deps.playerService.fetchEpisodeServers(targetSlug, targetEp.number, true);
-      if (result.error && result.errorType === "AUTH_ERROR" && !retried) {
-        await deps.sessionManager.refreshCookies();
-        return attempt(true);
-      }
-      if (result.error) throw result.error;
-
-      const server: VideoServer | undefined = (
-        lastLanguage != null
-          ? (result.servers.find((s) => s.language === lastLanguage) ?? result.servers[0])
-          : result.servers[0]
-      );
-      if (server == null) throw new Error("No hay servidor disponible");
-
-      const streamResult = await deps.playerService.resolveStreamUrl(server, targetEp.url);
-      if (streamResult.stream == null) throw new Error("No se pudo resolver el stream");
-
-      player.replace({ uri: streamResult.stream.url, headers: streamResult.stream.headers ?? undefined });
-      player.play();
-      setCurrentEpNumber(targetEp.number);
-      setStream(streamResult.stream.url, streamResult.stream.headers ?? null);
-      setLastLanguage(server.language);
-      addToHistory({
-        title,
-        url: targetSlug,
-        image,
-        number: targetEp.number,
-        timestamp: Date.now(),
-      }).catch(() => {});
-    };
-
-    try {
-      await attempt(false);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error desconocido");
-    }
-    setLoading(false);
-  }, [deps, setStream, setLastLanguage, lastLanguage, player, addToHistory, title, image]);
 
   const handlePrev = useCallback(() => {
     if (prevEpisode) { void resolveAndPlay(slug, prevEpisode); }
