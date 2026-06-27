@@ -8,9 +8,9 @@
 import { AnimeService } from "./application/services/animeService";
 import { PlayerService } from "./application/services/playerService";
 import { PlayerUIService } from "./application/services/PlayerUIService";
-import { sessionManager, storage, webViewBridge } from "./core/infrastructure";
+import { sessionManager, storage } from "./core/infrastructure";
 import { getProvider, setProvider } from "./core/providerRegistry";
-import type { ISessionManager, IStorage, IWebViewBridge } from "./domain/interfaces";
+import type { ISessionManager, IStorage } from "./domain/interfaces";
 import { CacheRepo } from "./domain/repositories/cacheRepo";
 import { AnimeLatinoProvider } from "./infrastructure/providers/AnimeLatinoProvider";
 import { HtmlParser } from "./infrastructure/parsers/HtmlParser";
@@ -24,7 +24,6 @@ import { logger } from "./utils/logger";
 
 export interface AppDependencies {
   storage: IStorage;
-  webViewBridge: IWebViewBridge;
   sessionManager: ISessionManager;
   getProvider: typeof getProvider;
   animeService: AnimeService;
@@ -63,11 +62,10 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
 
   deps = {
     storage,
-    webViewBridge,
     sessionManager,
     getProvider,
     animeService: new AnimeService(cacheRepo, getProvider, sessionManager, imageService),
-    playerService: new PlayerService(cacheRepo, getProvider, webViewBridge),
+    playerService: new PlayerService(cacheRepo, getProvider),
     playerUIService: new PlayerUIService(),
     imageService,
     cacheRepo,

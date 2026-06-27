@@ -1,7 +1,7 @@
 import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { PLAYER_CACHE } from "../../config/cacheTTLs";
 import { getRequiredReferer } from "../../config/embedServers";
-import type { IContentProvider, IWebViewBridge } from "../../domain/interfaces";
+import type { IContentProvider } from "../../domain/interfaces";
 import type { VideoServer } from "../../domain/entities";
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import { logger } from "../../utils/logger";
@@ -30,7 +30,6 @@ export class PlayerService {
   constructor(
     private cache: CacheRepo,
     private getProvider: () => IContentProvider,
-    private webViewBridge: IWebViewBridge,
   ) {}
 
   /** Fetches available video servers for an episode with caching. */
@@ -66,7 +65,7 @@ export class PlayerService {
     }
   }
 
-  /** Resolves a video server URL to a playable stream URL via WebView extraction. */
+  /** Resolves a video server URL to a playable stream URL. */
   async resolveStreamUrl(server: VideoServer, episodeUrl?: string): Promise<ResolveStreamResult> {
     const cKey = episodeUrl != null ? streamKey(episodeUrl) : streamKey(server.url);
 
@@ -78,25 +77,20 @@ export class PlayerService {
 
     logger.debug("playerService", `resolving stream for ${server.url}`);
     try {
-      const iframeUrl = await this.getProvider().resolveStreamUrl(server.url);
-      if (iframeUrl == null) {
-        return { stream: null, error: new Error("Failed to extract iframe URL"), fromCache: false };
+      const streamResult = await this.getProvider().resolveStreamUrl(server.url);
+      if (streamResult == null) {
+        return { stream: null, error: new Error("Failed to resolve stream"), fromCache: false };
       }
-      logger.debug("playerService", `extracted iframe URL: ${iframeUrl}`);
 
-      const hlsUrl = await this.webViewBridge.resolveEmbedStreamUrl(iframeUrl);
-      if (hlsUrl == null) {
-        return { stream: null, error: new Error("Failed to resolve HLS stream"), fromCache: false };
+      let headers = streamResult.headers;
+      if (!headers) {
+        const referer = getRequiredReferer(streamResult.url);
+        if (referer) headers = { Referer: referer };
       }
-      logger.debug("playerService", `resolved HLS stream: OK`);
-
-      const referer = getRequiredReferer(hlsUrl);
-      const headers: Record<string, string> = {};
-      if (referer) headers["Referer"] = referer;
 
       const resolved: ResolvedStream = {
-        url: hlsUrl,
-        headers: Object.keys(headers).length > 0 ? headers : undefined,
+        url: streamResult.url,
+        headers,
       };
 
       await this.cache.set(cKey, resolved, PLAYER_CACHE.STREAM_URL);

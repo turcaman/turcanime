@@ -107,9 +107,9 @@ function AnimeDetailsContent() {
           episode={selectedEpisode}
           servers={servers}
           isLoading={serverLoading}
-        onServerSelect={(server) => {
+        onServerSelect={async (server) => {
           if (selectedEpisode) {
-            void resolveStream(server, selectedEpisode.url);
+            await resolveStream(server, selectedEpisode.url);
           }
           setSelectedEpisode(null);
           if (selectedEpisode && anime) {

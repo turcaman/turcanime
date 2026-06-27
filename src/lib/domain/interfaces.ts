@@ -38,6 +38,12 @@ export interface IMetricsTracker {
   record(strategy: string, success: boolean): void;
 }
 
+/** Result of resolving a stream URL — includes optional browser-like headers. */
+export interface StreamUrlResult {
+  url: string;
+  headers?: Record<string, string>;
+}
+
 /** Primary content provider interface for fetching anime data. */
 export interface IContentProvider {
   name: string;
@@ -46,7 +52,7 @@ export interface IContentProvider {
   getSuggestions(query: string, options?: { signal?: AbortSignal }): Promise<AutocompleteAnime[]>;
   getDetails(slug: string, options?: { signal?: AbortSignal }): Promise<AnimeDetail | null>;
   getEpisodeServers(slug: string, number: string, options?: { signal?: AbortSignal }): Promise<VideoServer[]>;
-  resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<string | null>;
+  resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<StreamUrlResult | null>;
 }
 
 /** Key-value storage abstraction (AsyncStorage wrapper). */

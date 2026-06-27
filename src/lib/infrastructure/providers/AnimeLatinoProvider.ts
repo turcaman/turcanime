@@ -6,7 +6,7 @@ import type {
     HomeData,
     VideoServer
 } from "../../domain/entities";
-import type { IContentProvider, IHtmlParser, IMetricsTracker, IRscParser, ISessionManager, ISiteVersionManager } from "../../domain/interfaces";
+import type { IContentProvider, IHtmlParser, IMetricsTracker, IRscParser, ISessionManager, ISiteVersionManager, StreamUrlResult } from "../../domain/interfaces";
 import { ProviderError } from "../../utils/errors";
 import { log } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";
@@ -14,6 +14,7 @@ import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 import { ParserUtils } from "../parsers/ParserUtils";
 import { AnimeOrchestrator } from "../parsers/AnimeOrchestrator";
 import { TMDB_IMAGE_BASE } from "../../config/images";
+import { extractBest } from "../services/ByseExtractor";
 
 /**
  * AnimeLatinoProvider - Content provider for AnimeLatinoHD
@@ -179,7 +180,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     throw new ProviderError(`No Delta servers extracted for ${slug} ep ${number}`, "UNKNOWN");
   }
 
-  async resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<string | null> {
+  async resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<StreamUrlResult | null> {
     const res = await this.fetchWithSession(videoUrl, options ?? {});
     if (!res.ok) {
       throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
@@ -192,8 +193,19 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
       throw new ProviderError("No iframe found in bridge page", "UNKNOWN");
     }
 
-    log("resolveStreamUrl", `Extracted iframe URL: ${iframeMatch[1]}`);
-    return iframeMatch[1]!;
+    const iframeUrl = iframeMatch[1]!;
+    log("resolveStreamUrl", `Extracted iframe URL: ${iframeUrl}`);
+
+    if (iframeUrl.includes("/e/")) {
+      const session = await this.sessionManager.getSession();
+      const result = await extractBest(iframeUrl, {
+        signal: options?.signal,
+        userAgent: session?.userAgent,
+      });
+      if (result) return result;
+    }
+
+    return { url: iframeUrl };
   }
 
   private parseCardsWithMetrics(html: string): Anime[] {
