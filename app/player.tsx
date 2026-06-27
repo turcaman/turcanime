@@ -5,10 +5,11 @@ import { getDeps } from "@/lib/di";
 import { useAnimeData } from "@/lib/hooks/useAnimeData";
 import { useEpisodeNavigation } from "@/lib/hooks/useEpisodeNavigation";
 import { usePlayerStore } from "@/lib/store/playerStore";
+import { useHistoryStore } from "@/lib/store/user";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useLocalSearchParams, router } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -35,6 +36,7 @@ function PlayerContent() {
   const insets = useSafeAreaInsets();
 
   const { streamUrl, streamHeaders, reset: clearStream } = usePlayerStore();
+  const { addToHistory, lastViewed } = useHistoryStore();
   const deps = getDeps();
   const { anime } = useAnimeData(slug);
 
@@ -107,6 +109,50 @@ function PlayerContent() {
   }, [nextEpisode, slug, resolveAndPlay]);
 
   const handleBack = useCallback(() => { router.back(); }, []);
+
+  const initialSeekDone = useRef(false);
+
+  useEffect(() => {
+    if (streamUrl != null && !initialSeekDone.current && playState.duration > 0) {
+      const match = lastViewed.find(
+        (h) => h.url === slug && h.number === currentEpNumber && (h.progress ?? 0) > 10,
+      );
+      if (match?.progress != null) {
+        player.currentTime = match.progress;
+      }
+      initialSeekDone.current = true;
+    }
+  }, [streamUrl, playState.duration, lastViewed, slug, currentEpNumber, player]);
+
+  const historyCtx = useRef({ title: "", url: "", image: "", number: "" });
+
+  useEffect(() => {
+    historyCtx.current = { title, url: slug, image, number };
+  }, [slug, title, image, number]);
+
+  const saveProgress = useCallback(() => {
+    const ct = player.currentTime;
+    const dur = player.duration;
+    if (ct > 0 && dur > 0) {
+      void addToHistory({
+        ...historyCtx.current,
+        progress: ct,
+        duration: dur,
+        timestamp: Date.now(),
+      });
+    }
+  }, [player, addToHistory]);
+
+  useEffect(() => {
+    if (streamUrl == null) return;
+
+    const interval = setInterval(saveProgress, 10000);
+
+    return () => {
+      clearInterval(interval);
+      saveProgress();
+    };
+  }, [streamUrl, saveProgress]);
 
   if (streamUrl == null) {
     return <PlayerLoading padTop={insets.top} />;

@@ -43,6 +43,8 @@ export interface HistoryItem {
   image: string;
   url: string;
   number: string;
+  progress?: number;
+  duration?: number;
   timestamp: number;
 }
 

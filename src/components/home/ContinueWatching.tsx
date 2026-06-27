@@ -11,6 +11,17 @@ interface ContinueWatchingProps {
   items: HistoryItem[];
 }
 
+function ProgressBar({ progress, duration }: { progress?: number; duration?: number }) {
+  if (progress == null || duration == null || duration <= 0) return null;
+  const pct = Math.min(progress / duration, 1);
+
+  return (
+    <View className="h-0.5 bg-neutral-800 mt-1">
+      <View className="h-full bg-purple-500" style={{ width: `${pct * 100}%` }} />
+    </View>
+  );
+}
+
 export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
   if (items.length === 0) return null;
 
@@ -24,13 +35,14 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
         uri={item.image}
         style={{ width: "100%", height: "100%" }}
       />
-      <View className="absolute bottom-0 left-0 right-0 bg-neutral-950/80 p-2">
+      <View className="absolute bottom-0 left-0 right-0 bg-neutral-950/80 px-2 pb-2 pt-1.5">
         <Text className="text-xs font-semibold text-neutral-400 mb-0.5">
           Ep. {item.number}
         </Text>
         <Text numberOfLines={1} className="text-sm font-bold text-white">
           {item.title}
         </Text>
+        <ProgressBar progress={item.progress} duration={item.duration} />
       </View>
     </AnimatedPressable>
   );

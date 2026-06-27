@@ -15,6 +15,21 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
   const [currentEpNumber, setCurrentEpNumber] = useState<string>("");
 
   const resolveAndPlay = useCallback(async (targetSlug: string, targetEp: Episode) => {
+    const prevEpNumber = currentEpNumber;
+
+    const ct = player.currentTime;
+    if (ct > 10 && prevEpNumber && prevEpNumber !== targetEp.number) {
+      addToHistory({
+        title: animeTitle,
+        url: targetSlug,
+        image: animeImage,
+        number: prevEpNumber,
+        progress: ct,
+        duration: player.duration,
+        timestamp: Date.now(),
+      }).catch(() => {});
+    }
+
     setLoading(true);
     setError(null);
 
@@ -56,7 +71,7 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       setError(e instanceof Error ? e.message : "Error desconocido");
     }
     setLoading(false);
-  }, [deps, setStream, setLastLanguage, lastLanguage, player, addToHistory, animeTitle, animeImage]);
+  }, [deps, setStream, setLastLanguage, lastLanguage, player, addToHistory, animeTitle, animeImage, currentEpNumber]);
 
   return { resolveAndPlay, loading, error, currentEpNumber, setCurrentEpNumber, setError };
 }

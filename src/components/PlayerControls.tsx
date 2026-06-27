@@ -24,8 +24,10 @@ interface PlayerControlsProps {
 
 function formatTime(seconds: number): string {
   if (isNaN(seconds) || seconds < 0) return "0:00";
-  const m = Math.floor(seconds / 60);
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
@@ -34,6 +36,7 @@ export function PlayerControls({
   hasPrev, hasNext, loading, insetTop, onPrev, onNext, onBack,
 }: PlayerControlsProps) {
   const [visible, setVisible] = useState(true);
+  const [slidingValue, setSlidingValue] = useState<number | null>(null);
   const { restartTimer, clearTimer } = useAutoHide(visible, isPlaying, 3000, () => { setVisible(false); });
 
   const toggle = useCallback(() => {
@@ -55,6 +58,9 @@ export function PlayerControls({
     if (player.playing) { player.pause(); } else { player.play(); }
     restartTimer();
   }, [player, restartTimer]);
+
+  const displayTime = slidingValue ?? currentTime;
+  const isSliding = slidingValue != null;
 
   if (loading) {
     return (
@@ -122,8 +128,8 @@ export function PlayerControls({
 
               <View className="px-4 pb-6 pt-3">
                 <View className="flex-row items-center gap-2">
-                  <Text className="text-white text-xs w-12 text-right font-mono">
-                    {formatTime(currentTime)}
+                  <Text className={`text-xs w-12 text-right font-mono ${isSliding ? "text-purple-400" : "text-white"}`}>
+                    {formatTime(displayTime)}
                   </Text>
 
                   <View className="flex-1">
@@ -131,10 +137,14 @@ export function PlayerControls({
                       style={{ width: "100%", height: 20 }}
                       minimumValue={0}
                       maximumValue={duration > 0 ? duration : 1}
-                      value={currentTime > 0 ? currentTime : 0}
-                      onValueChange={clearTimer}
+                      value={displayTime}
+                      onValueChange={(v) => {
+                        clearTimer();
+                        setSlidingValue(v);
+                      }}
                       onSlidingComplete={(v) => {
                         player.currentTime = v;
+                        setSlidingValue(null);
                         restartTimer();
                       }}
                       minimumTrackTintColor="#A855F7"
