@@ -2,7 +2,7 @@
   "expo": {
     "name": "Turcanime",
     "slug": "turcanime",
-    "version": "1.9.3",
+    "version": "1.9.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "turcanime",
@@ -20,7 +20,7 @@
       },
       "package": "com.turcanime.app",
       "softwareKeyboardLayoutMode": "pan",
-      "versionCode": 193
+      "versionCode": 194
     },
     "plugins": [
       "expo-router",
