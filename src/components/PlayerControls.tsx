@@ -3,7 +3,7 @@ import { useAutoHide } from "@/lib/hooks/useAutoHide";
 import { Feather } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import type { VideoPlayer } from "expo-video";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, TouchableOpacity, View } from "react-native";
 
 interface PlayerControlsProps {
@@ -37,7 +37,17 @@ export function PlayerControls({
 }: PlayerControlsProps) {
   const [visible, setVisible] = useState(true);
   const [slidingValue, setSlidingValue] = useState<number | null>(null);
+  const [pendingSeek, setPendingSeek] = useState<number | null>(null);
   const { restartTimer, clearTimer } = useAutoHide(visible, isPlaying, 3000, () => { setVisible(false); });
+
+  const displayTime = slidingValue ?? pendingSeek ?? currentTime;
+  const isSliding = slidingValue != null;
+
+  useEffect(() => {
+    if (pendingSeek != null && Math.abs(currentTime - pendingSeek) < 1) {
+      setPendingSeek(null);
+    }
+  }, [currentTime, pendingSeek]);
 
   const toggle = useCallback(() => {
     setVisible((v) => !v);
@@ -58,9 +68,6 @@ export function PlayerControls({
     if (player.playing) { player.pause(); } else { player.play(); }
     restartTimer();
   }, [player, restartTimer]);
-
-  const displayTime = slidingValue ?? currentTime;
-  const isSliding = slidingValue != null;
 
   if (loading) {
     return (
@@ -144,6 +151,7 @@ export function PlayerControls({
                       }}
                       onSlidingComplete={(v) => {
                         player.currentTime = v;
+                        setPendingSeek(v);
                         setSlidingValue(null);
                         restartTimer();
                       }}

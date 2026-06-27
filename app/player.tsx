@@ -131,15 +131,19 @@ function PlayerContent() {
   }, [slug, title, image, number]);
 
   const saveProgress = useCallback(() => {
-    const ct = player.currentTime;
-    const dur = player.duration;
-    if (ct > 0 && dur > 0) {
-      void addToHistory({
-        ...historyCtx.current,
-        progress: ct,
-        duration: dur,
-        timestamp: Date.now(),
-      });
+    try {
+      const ct = player.currentTime;
+      const dur = player.duration;
+      if (ct > 0 && dur > 0) {
+        void addToHistory({
+          ...historyCtx.current,
+          progress: ct,
+          duration: dur,
+          timestamp: Date.now(),
+        });
+      }
+    } catch {
+      // player was released (component unmounting)
     }
   }, [player, addToHistory]);
 
