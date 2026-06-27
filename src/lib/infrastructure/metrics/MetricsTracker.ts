@@ -1,6 +1,6 @@
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import type { IMetricsTracker } from "../../domain/interfaces";
-import { log } from "../../utils/logger";
+import { logger } from "../../utils/logger";
 
 export interface MetricData {
   success: number;
@@ -29,7 +29,7 @@ export class MetricsTracker implements IMetricsTracker {
         this.metrics = new Map(Object.entries(stored));
       }
     } catch (e: unknown) {
-      log("MetricsTracker", "Failed to load metrics", e);
+      logger.warn("MetricsTracker", "Failed to load metrics", e);
     }
   }
 
@@ -38,7 +38,7 @@ export class MetricsTracker implements IMetricsTracker {
       const obj = Object.fromEntries(this.metrics);
       await this.cache.set(this.METRICS_KEY, obj, 86400000); // 24 hours TTL
     } catch (e: unknown) {
-      log("MetricsTracker", "Failed to save metrics", e);
+      logger.warn("MetricsTracker", "Failed to save metrics", e);
     }
   }
 

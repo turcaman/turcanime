@@ -1,11 +1,6 @@
-import { log } from "../../utils/logger";
+import { logger } from "../../utils/logger";
 import { TMDB_IMAGE_BASE } from "../../config/images";
 import type { IRscParser } from "../../domain/interfaces";
-
-export interface RscExtractionResult {
-  poster: string;
-  synopsis: string | null;
-}
 
 export class RscParser implements IRscParser {
   parseRscPayload(text: string): string {
@@ -16,12 +11,12 @@ export class RscParser implements IRscParser {
       const slice = text.slice(s + 1, e + 1);
       const a = JSON.parse(slice);
       if (!Array.isArray(a) || typeof a[1] !== "string") {
-        log("RscParser", "Unexpected RSC array format");
+        logger.info("RscParser", "Unexpected RSC array format");
         return "";
       }
       return a[1];
     } catch (err: unknown) {
-      log("RscParser", "JSON parse failed", err);
+      logger.warn("RscParser", "JSON parse failed", err);
       return "";
     }
   }
@@ -75,6 +70,10 @@ export class RscParser implements IRscParser {
     return null;
   }
 
+  private unescapeRscValue(raw: string): string {
+    return raw.replace(/\\\\/g, "\\").replace(/\\"/g, '"').replace(/\\n/g, "\n");
+  }
+
   resolveRscReference(html: string, refId: string): string | null {
     try {
       const hexPattern = new RegExp(
@@ -82,9 +81,7 @@ export class RscParser implements IRscParser {
       );
       const hexMatch = html.match(hexPattern);
       if (hexMatch) {
-        let raw = hexMatch[1]!;
-        raw = raw.replace(/\\\\/g, "\\").replace(/\\"/g, '"').replace(/\\n/g, "\n");
-        return raw;
+        return this.unescapeRscValue(hexMatch[1]!);
       }
 
       const refPattern = new RegExp(
@@ -92,12 +89,10 @@ export class RscParser implements IRscParser {
       );
       const refMatch = html.match(refPattern);
       if (refMatch) {
-        let raw = refMatch[1]!;
-        raw = raw.replace(/\\\\/g, "\\").replace(/\\"/g, '"').replace(/\\n/g, "\n");
-        return raw;
+        return this.unescapeRscValue(refMatch[1]!);
       }
     } catch (e: unknown) {
-      log("RscParser", `Failed to resolve ref: ${refId}`, e);
+      logger.warn("RscParser", `Failed to resolve ref: ${refId}`, e);
     }
     return null;
   }

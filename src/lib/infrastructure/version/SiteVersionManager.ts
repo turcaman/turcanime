@@ -2,7 +2,8 @@ import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { PERF_LIMITS } from "../../config/limits";
 import type { ISession, ISessionManager, ISiteVersionManager } from "../../domain/interfaces";
 import { CacheRepo } from "../../domain/repositories/cacheRepo";
-import { log } from "../../utils/logger";
+import { unwrapCookies } from "../../utils/cookies";
+import { logger } from "../../utils/logger";
 
 export class SiteVersionManager implements ISiteVersionManager {
   private sessionManager: ISessionManager;
@@ -42,13 +43,16 @@ export class SiteVersionManager implements ISiteVersionManager {
       if (session?.cookies != null) {
         try {
           const parsed = JSON.parse(session.cookies);
-          return parsed.siteVersion ?? null;
+          if (parsed != null && typeof parsed === "object" && "siteVersion" in parsed) {
+            return parsed.siteVersion as string;
+          }
         } catch {
-          return null;
+          // cookies is a plain string, not JSON-wrapped
         }
+        return null;
       }
     } catch (e: unknown) {
-      log("SiteVersionManager", "Failed to get stored version", e);
+      logger.warn("SiteVersionManager", "Failed to get stored version", e);
     }
     return null;
   }
@@ -78,9 +82,9 @@ export class SiteVersionManager implements ISiteVersionManager {
         this.cache.clearWithPrefix(`${CACHE_PREFIXES.SEARCH}_`),
         this.cache.clearWithPrefix(`${CACHE_PREFIXES.SUGGESTIONS}_`),
       ]);
-      log("SiteVersionManager", "Cache invalidated successfully");
+      logger.info("SiteVersionManager", "Cache invalidated successfully");
     } catch (e: unknown) {
-      log("SiteVersionManager", "Failed to invalidate cache", e);
+      logger.warn("SiteVersionManager", "Failed to invalidate cache", e);
     }
   }
 
@@ -94,11 +98,7 @@ export class SiteVersionManager implements ISiteVersionManager {
       if (!session) return;
 
       let rawCookies = session.cookies || "";
-      try {
-        const parsed = JSON.parse(rawCookies);
-        rawCookies = parsed.raw ?? "";
-      } catch {
-      }
+      rawCookies = unwrapCookies(rawCookies);
 
       const cookieData = {
         raw: rawCookies,
@@ -112,7 +112,7 @@ export class SiteVersionManager implements ISiteVersionManager {
 
       await this.sessionManager.setSession(updatedSession);
     } catch (e: unknown) {
-      log("SiteVersionManager", "Failed to store version", e);
+      logger.warn("SiteVersionManager", "Failed to store version", e);
     }
   }
 
@@ -129,7 +129,7 @@ export class SiteVersionManager implements ISiteVersionManager {
     }
 
     if (changed) {
-      log(
+      logger.info(
         "SiteVersionManager",
         `Site structure changed from ${storedHash} to ${currentHash}, invalidating cache`
       );

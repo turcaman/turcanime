@@ -1,5 +1,5 @@
-import NetInfo from '@react-native-community/netinfo';
-import { useEffect, useState } from 'react';
+import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
+import { useCallback, useEffect, useState } from 'react';
 import { logger } from '../utils/logger';
 
 export type ConnectionType = 'wifi' | 'cellular' | 'none' | 'unknown' | null;
@@ -10,38 +10,39 @@ export interface NetworkStatus {
   connectionType: ConnectionType;
 }
 
+function toConnectionType(type: string): ConnectionType {
+  return (type === 'wifi' || type === 'cellular') ? type as ConnectionType : 'unknown';
+}
+
 export function useNetworkStatus(): NetworkStatus {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [isInternetReachable, setIsInternetReachable] = useState<boolean | null>(null);
   const [connectionType, setConnectionType] = useState<ConnectionType>(null);
 
+  const applyNetworkState = useCallback(
+    (state: NetInfoState) => {
+      setIsConnected(state.isConnected ?? false);
+      setIsInternetReachable(state.isInternetReachable ?? false);
+      setConnectionType(toConnectionType(state.type));
+    },
+    [],
+  );
+
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener(state => {
-      const newType = (state.type === 'wifi' || state.type === 'cellular')
-        ? state.type as ConnectionType
-        : 'unknown';
+    const unsubscribe = NetInfo.addEventListener(applyNetworkState);
 
-      setIsConnected(state.isConnected ?? false);
-      setIsInternetReachable(state.isInternetReachable ?? false);
-      setConnectionType(newType);
-    });
+    NetInfo.fetch()
+      .then(applyNetworkState)
+      .catch((error) => {
+        logger.error('useNetworkStatus', 'Failed to fetch network status', error);
+        setIsConnected(false);
+        setIsInternetReachable(false);
+      });
 
-    NetInfo.fetch().then(state => {
-      const initialType = (state.type === 'wifi' || state.type === 'cellular')
-        ? state.type as ConnectionType
-        : 'unknown';
-
-      setIsConnected(state.isConnected ?? false);
-      setIsInternetReachable(state.isInternetReachable ?? false);
-      setConnectionType(initialType);
-    }).catch(error => {
-      logger.error('useNetworkStatus', 'Failed to fetch network status', error);
-      setIsConnected(false);
-      setIsInternetReachable(false);
-    });
-
-    return () => { unsubscribe(); };
-  }, []);
+    return () => {
+      unsubscribe();
+    };
+  }, [applyNetworkState]);
 
   return { isConnected, isInternetReachable, connectionType };
 }

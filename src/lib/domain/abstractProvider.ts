@@ -4,7 +4,8 @@
  * session handling (User-Agent, cookies, referer) across all providers.
  */
 import { TIMEOUTS } from "../config/timeouts";
-import { log } from "../utils/logger";
+import { logger } from "../utils/logger";
+import { unwrapCookies } from "../utils/cookies";
 import type { ISessionManager } from "./interfaces";
 
 export abstract class AbstractProvider {
@@ -21,12 +22,7 @@ export abstract class AbstractProvider {
 
     const session = await this.sessionManager.getSession();
 
-    let rawCookies = session?.cookies ?? "";
-    try {
-      const parsed = JSON.parse(rawCookies);
-      rawCookies = parsed.raw ?? "";
-    } catch {
-    }
+    const rawCookies = unwrapCookies(session?.cookies ?? "");
 
     const headers: Record<string, string> = {
       ...(options.headers as Record<string, string>),
@@ -50,10 +46,10 @@ export abstract class AbstractProvider {
       const res = await fetch(url, { ...options, headers, signal: options.signal });
 
       if (!res.ok) {
-        log("fetch", `HTTP ${res.status} for ${url}`);
+        logger.info("fetch", `HTTP ${res.status} for ${url}`);
 
         if (this.isAuthError(res.status)) {
-          log("fetch", "Auth error detected, triggering session invalidation");
+          logger.info("fetch", "Auth error detected, triggering session invalidation");
           const error = new Error("Authentication failed - session invalid") as Error & { type: string };
           error.type = "AUTH_ERROR";
           throw error;
@@ -61,7 +57,7 @@ export abstract class AbstractProvider {
 
         // Retry 403/network errors once on any path (not just critical)
         if (retryCount < 1) {
-          log("fetch", `Smart retry (1/1) for HTTP ${res.status}: ${url}`);
+          logger.info("fetch", `Smart retry (1/1) for HTTP ${res.status}: ${url}`);
           await new Promise(resolve => setTimeout(resolve, TIMEOUTS.RETRY_DELAY));
           return this.fetchWithSession(path, options, retryCount + 1);
         }
@@ -72,9 +68,9 @@ export abstract class AbstractProvider {
         throw error;
       }
 
-      log("fetch", `Network error for ${url}`, error);
+      logger.warn("fetch", `Network error for ${url}`, error);
       if (retryCount < 1) {
-        log("fetch", `Smart retry (1/1) for network error: ${url}`);
+        logger.info("fetch", `Smart retry (1/1) for network error: ${url}`);
         await new Promise(resolve => setTimeout(resolve, TIMEOUTS.RETRY_DELAY));
         return this.fetchWithSession(path, options, retryCount + 1);
       }

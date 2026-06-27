@@ -1,6 +1,6 @@
 import type { Episode } from "../../domain/entities";
 import type { IHtmlParser, ParseResult } from "../../domain/interfaces";
-import { log } from "../../utils/logger";
+import { logger } from "../../utils/logger";
 import { ParserUtils } from "./ParserUtils";
 import { HomeParser } from "./strategies/HomeParser";
 
@@ -39,7 +39,7 @@ export class HtmlParser implements IHtmlParser {
 
     const rawJsonMatch = ParserUtils.extractJson(html, '"episodes":', "[", "]");
     if (rawJsonMatch) {
-      log("HtmlParser", `Extracted episodes via raw HTML for ${slug}`);
+      logger.info("HtmlParser", `Extracted episodes via raw HTML for ${slug}`);
       return parse(rawJsonMatch);
     }
 
@@ -48,12 +48,12 @@ export class HtmlParser implements IHtmlParser {
       const text = match[1]!.replace(/\\"/g, '"');
       const scriptJsonMatch = ParserUtils.extractJson(text, '"episodes":', "[", "]");
       if (scriptJsonMatch) {
-        log("HtmlParser", `Extracted episodes via script JSON for ${slug}`);
+        logger.info("HtmlParser", `Extracted episodes via script JSON for ${slug}`);
         return parse(scriptJsonMatch);
       }
     }
 
-    log("HtmlParser", `Falling back to HTML parsing for ${slug}`);
+    logger.info("HtmlParser", `Falling back to HTML parsing for ${slug}`);
     return this.parseEpisodesFromHtml(html, slug);
   }
 
@@ -122,7 +122,7 @@ export class HtmlParser implements IHtmlParser {
     }
 
     if (episodes.length === 0) {
-      log("HtmlParser", `No episodes extracted for ${slug} from HTML`);
+      logger.info("HtmlParser", `No episodes extracted for ${slug} from HTML`);
     }
 
     return episodes;

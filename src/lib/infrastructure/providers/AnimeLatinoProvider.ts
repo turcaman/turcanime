@@ -8,7 +8,7 @@ import type {
 } from "../../domain/entities";
 import type { IContentProvider, IHtmlParser, IMetricsTracker, IRscParser, ISessionManager, ISiteVersionManager, StreamUrlResult } from "../../domain/interfaces";
 import { ProviderError } from "../../utils/errors";
-import { log } from "../../utils/logger";
+import { logger } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";
 import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 import { ParserUtils } from "../parsers/ParserUtils";
@@ -61,7 +61,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     const recent = this.parseCardsWithMetrics(html);
 
     if (recent.length === 0) {
-      log("getHomeData", "No cards extracted — site structure may have changed");
+      logger.info("getHomeData", "No cards extracted — site structure may have changed");
     }
 
     return { recent };
@@ -173,7 +173,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
 
         return servers;
       } catch (e: unknown) {
-        log("getEpisodeServers", `JSON parse failed for ${slug} ep ${number}`, e);
+        logger.warn("getEpisodeServers", `JSON parse failed for ${slug} ep ${number}`, e);
       }
     }
 
@@ -194,7 +194,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     }
 
     const iframeUrl = iframeMatch[1]!;
-    log("resolveStreamUrl", `Extracted iframe URL: ${iframeUrl}`);
+    logger.info("resolveStreamUrl", `Extracted iframe URL: ${iframeUrl}`);
 
     if (iframeUrl.includes("/e/")) {
       const session = await this.sessionManager.getSession();
