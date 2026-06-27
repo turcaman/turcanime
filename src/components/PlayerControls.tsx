@@ -144,7 +144,7 @@ export function PlayerControls({
       >
         <View className="px-4 pb-6 pt-3">
           <View className="flex-row items-center gap-2">
-            <Text className={`text-xs w-12 text-right font-mono ${isSliding ? "text-purple-400" : "text-white"}`}>
+            <Text className={`text-xs text-right font-mono ${isSliding ? "text-purple-400" : "text-white"}`}>
               {formatTime(displayTime)}
             </Text>
 
@@ -170,7 +170,7 @@ export function PlayerControls({
               />
             </View>
 
-            <Text className="text-white text-xs w-12 font-mono">
+            <Text className="text-white text-xs font-mono">
               {formatTime(duration)}
             </Text>
           </View>
