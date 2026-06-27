@@ -18,6 +18,7 @@ export interface ResolvedStream {
 interface FetchServersResult {
   servers: VideoServer[];
   error: Error | null;
+  errorType?: "AUTH_ERROR";
 }
 
 interface ResolveStreamResult {
@@ -60,14 +61,19 @@ export class PlayerService {
       if (e instanceof Error && e.name === "AbortError") {
         return { servers: [], error: e };
       }
+      const isAuth = (e as Record<string, unknown> | null)?.type === "AUTH_ERROR";
       logger.error("playerService", "fetchEpisodeServers failed", e);
-      return { servers: [], error: e instanceof Error ? e : new Error(String(e)) };
+      return {
+        servers: [],
+        error: e instanceof Error ? e : new Error(String(e)),
+        errorType: isAuth ? "AUTH_ERROR" : undefined,
+      };
     }
   }
 
   /** Resolves a video server URL to a playable stream URL. */
-  async resolveStreamUrl(server: VideoServer, episodeUrl?: string): Promise<ResolveStreamResult> {
-    const cKey = episodeUrl != null ? streamKey(episodeUrl) : streamKey(server.url);
+  async resolveStreamUrl(server: VideoServer, _episodeUrl?: string): Promise<ResolveStreamResult> {
+    const cKey = streamKey(server.url);
 
     const cached = await this.cache.get<ResolvedStream>(cKey);
     if (cached) {

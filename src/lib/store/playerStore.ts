@@ -6,6 +6,7 @@ interface PlayerState {
   servers: VideoServer[];
   streamUrl: string | null;
   streamHeaders: Record<string, string> | null;
+  lastLanguage: string | null;
   isLoading: boolean;
   error: string | null;
 
@@ -16,6 +17,8 @@ interface PlayerState {
     signal?: AbortSignal,
   ) => Promise<void>;
   resolveStream: (server: VideoServer, episodeUrl: string) => Promise<void>;
+  setStream: (url: string, headers: Record<string, string> | null) => void;
+  setLastLanguage: (language: string) => void;
   reset: () => void;
   clearError: () => void;
 }
@@ -24,6 +27,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   servers: [],
   streamUrl: null,
   streamHeaders: null,
+  lastLanguage: null,
   isLoading: false,
   error: null,
 
@@ -38,7 +42,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   },
 
   resolveStream: async (server: VideoServer, episodeUrl: string) => {
-    set({ isLoading: true, streamUrl: null, streamHeaders: null, error: null });
+    set({ isLoading: true, streamUrl: null, streamHeaders: null, lastLanguage: server.language, error: null });
     const result = await getDeps().playerService.resolveStreamUrl(server, episodeUrl);
     if (result.stream) {
       set({
@@ -57,11 +61,20 @@ export const usePlayerStore = create<PlayerState>((set) => ({
     }
   },
 
+  setStream: (url: string, headers: Record<string, string> | null) => {
+    set({ streamUrl: url, streamHeaders: headers, error: null });
+  },
+
+  setLastLanguage: (language: string) => {
+    set({ lastLanguage: language });
+  },
+
   reset: () =>
     { set({
       servers: [],
       streamUrl: null,
       streamHeaders: null,
+      lastLanguage: null,
       isLoading: false,
       error: null,
     }); },
