@@ -5,7 +5,7 @@
  */
 import { TIMEOUTS } from "../config/timeouts";
 import { logger } from "../utils/logger";
-import { unwrapCookies } from "../utils/cookies";
+import { mergeCookies, unwrapCookies } from "../utils/cookies";
 import type { ISessionManager } from "./interfaces";
 
 export abstract class AbstractProvider {
@@ -44,6 +44,24 @@ export abstract class AbstractProvider {
 
     try {
       const res = await fetch(url, { ...options, headers, signal: options.signal });
+
+      const setCookies: string[] = [];
+      res.headers.forEach((value, key) => {
+        if (key.toLowerCase() === "set-cookie") {
+          setCookies.push(value);
+        }
+      });
+      if (setCookies.length > 0) {
+        try {
+          const session = await this.sessionManager.getSession();
+          if (session) {
+            const merged = mergeCookies(session.cookies, setCookies);
+            await this.sessionManager.setSession({ ...session, cookies: merged });
+          }
+        } catch {
+          // Don't let cookie capture fail the request
+        }
+      }
 
       if (!res.ok) {
         logger.info("fetch", `HTTP ${res.status} for ${url}`);

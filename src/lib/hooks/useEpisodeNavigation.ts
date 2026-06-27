@@ -7,7 +7,7 @@ import { useCallback, useState } from "react";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
   const { setStream, setLastLanguage, lastLanguage } = usePlayerStore();
-  const { addToHistory, lastViewed } = useHistoryStore();
+  const { addToHistory } = useHistoryStore();
   const deps = getDeps();
 
   const [loading, setLoading] = useState(false);
@@ -36,7 +36,7 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
     const attempt = async (retried: boolean): Promise<void> => {
       const result = await deps.playerService.fetchEpisodeServers(targetSlug, targetEp.number, true);
       if (result.error && result.errorType === "AUTH_ERROR" && !retried) {
-        await deps.sessionManager.refreshCookies();
+        await deps.refreshSession();
         return attempt(true);
       }
       if (result.error) throw result.error;
@@ -49,9 +49,13 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       if (server == null) throw new Error("No hay servidor disponible");
 
       const streamResult = await deps.playerService.resolveStreamUrl(server, targetEp.url);
-      if (streamResult.stream == null) throw new Error("No se pudo resolver el stream");
+      if (streamResult.stream == null && streamResult.errorType === "AUTH_ERROR" && !retried) {
+        await deps.refreshSession();
+        return attempt(true);
+      }
+      if (streamResult.stream == null) throw streamResult.error ?? new Error("No se pudo resolver el stream");
 
-      const existing = lastViewed.find(
+      const existing = useHistoryStore.getState().lastViewed.find(
         (h) => h.url === targetSlug && h.number === targetEp.number,
       );
 
@@ -75,7 +79,7 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       setError(e instanceof Error ? e.message : "Error desconocido");
     }
     setLoading(false);
-  }, [deps, setStream, setLastLanguage, lastLanguage, player, addToHistory, lastViewed, animeTitle, animeImage, currentEpNumber]);
+  }, [deps, setStream, setLastLanguage, lastLanguage, player, addToHistory, animeTitle, animeImage, currentEpNumber]);
 
   return { resolveAndPlay, loading, error, currentEpNumber, setCurrentEpNumber, setError };
 }

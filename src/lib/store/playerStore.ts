@@ -44,21 +44,34 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   resolveStream: async (server: VideoServer, episodeUrl: string) => {
     set({ isLoading: true, streamUrl: null, streamHeaders: null, lastLanguage: server.language, error: null });
     const result = await getDeps().playerService.resolveStreamUrl(server, episodeUrl);
-    if (result.stream) {
+    if (result.stream != null) {
       set({
         streamUrl: result.stream.url,
         streamHeaders: result.stream.headers ?? null,
         isLoading: false,
         error: null,
       });
-    } else {
-      set({
-        isLoading: false,
-        streamUrl: null,
-        streamHeaders: null,
-        error: result.error?.message ?? "Failed to resolve stream",
-      });
+      return;
     }
+    if (result.errorType === "AUTH_ERROR") {
+      await getDeps().refreshSession();
+      const retryResult = await getDeps().playerService.resolveStreamUrl(server, episodeUrl);
+      if (retryResult.stream != null) {
+        set({
+          streamUrl: retryResult.stream.url,
+          streamHeaders: retryResult.stream.headers ?? null,
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+    }
+    set({
+      isLoading: false,
+      streamUrl: null,
+      streamHeaders: null,
+      error: result.error?.message ?? "Failed to resolve stream",
+    });
   },
 
   setStream: (url: string, headers: Record<string, string> | null) => {

@@ -25,6 +25,7 @@ interface ResolveStreamResult {
   stream: ResolvedStream | null;
   error: Error | null;
   fromCache: boolean;
+  errorType?: "AUTH_ERROR";
 }
 
 export class PlayerService {
@@ -102,11 +103,13 @@ export class PlayerService {
       await this.cache.set(cKey, resolved, PLAYER_CACHE.STREAM_URL);
       return { stream: resolved, error: null, fromCache: false };
     } catch (e: unknown) {
+      const isAuth = (e as Record<string, unknown> | null)?.type === "AUTH_ERROR";
       logger.error("playerService", "resolveStreamUrl failed", e);
       return {
         stream: null,
         error: e instanceof Error ? e : new Error(String(e)),
         fromCache: false,
+        errorType: isAuth ? "AUTH_ERROR" : undefined,
       };
     }
   }

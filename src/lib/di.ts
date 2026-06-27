@@ -8,7 +8,7 @@
 import { AnimeService } from "./application/services/animeService";
 import { PlayerService } from "./application/services/playerService";
 import { PlayerUIService } from "./application/services/PlayerUIService";
-import { sessionManager, storage } from "./core/infrastructure";
+import { refreshSession, sessionManager, storage } from "./core/infrastructure";
 import { getProvider, setProvider } from "./core/providerRegistry";
 import type { ISessionManager, IStorage } from "./domain/interfaces";
 import { CacheRepo } from "./domain/repositories/cacheRepo";
@@ -31,6 +31,7 @@ export interface AppDependencies {
   playerUIService: PlayerUIService;
   imageService: ImageService;
   cacheRepo: CacheRepo;
+  refreshSession: () => Promise<void>;
 }
 
 let deps: AppDependencies | null = null;
@@ -69,6 +70,7 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
     playerUIService: new PlayerUIService(),
     imageService,
     cacheRepo,
+    refreshSession,
   };
 
   const provider = new AnimeLatinoProvider(
