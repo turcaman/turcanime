@@ -22,13 +22,6 @@
       "softwareKeyboardLayoutMode": "pan",
       "versionCode": 192
     },
-    "ios": {
-      "buildNumber": "1.9.2",
-      "infoPlist": {
-        "UIStatusBarStyle": "UIStatusBarStyleLightContent",
-        "UIViewControllerBasedStatusBarAppearance": true
-      }
-    },
     "plugins": [
       "expo-router",
       "expo-video",
