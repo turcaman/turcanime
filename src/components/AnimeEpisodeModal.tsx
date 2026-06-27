@@ -27,7 +27,6 @@ export const AnimeEpisodeModal = ({
 }: AnimeEpisodeModalProps) => {
   if (!visible) return null;
 
-  // Prefer delta servers (AnimeLatinoHD), fallback to all
   const delta = servers.filter((s) => s.title.toLowerCase().includes("delta"));
   const displayServers = delta.length > 0 ? delta : servers;
 

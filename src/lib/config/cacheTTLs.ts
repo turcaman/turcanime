@@ -10,7 +10,4 @@ export const ANIME_CACHE = {
   DETAILS: 12 * 60 * 60 * 1000,
 } as const;
 
-export const PLAYER_CACHE = {
-  SERVERS: 2 * 60 * 60 * 1000,
-  STREAM_URL: 2 * 60 * 60 * 1000,
-} as const;
+

@@ -6,7 +6,7 @@ import type {
     HomeData,
     VideoServer
 } from "../../domain/entities";
-import type { IContentProvider, IHtmlParser, IMetricsTracker, IRscParser, ISessionManager, ISiteVersionManager, StreamUrlResult } from "../../domain/interfaces";
+import type { IContentProvider, IHtmlParser, IMetricsTracker, IRscParser, ISessionManager, ISiteVersionManager, IWebViewBridge, StreamUrlResult } from "../../domain/interfaces";
 import { ProviderError } from "../../utils/errors";
 import { logger } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";
@@ -28,6 +28,7 @@ import { extractBest } from "../services/ByseExtractor";
 export class AnimeLatinoProvider extends AbstractProvider implements IContentProvider {
   readonly name = "AnimeLatinoHD";
 
+  private webViewBridge: IWebViewBridge;
   private orchestrator: AnimeOrchestrator;
   private htmlParser: IHtmlParser;
   private rscParser: IRscParser;
@@ -37,6 +38,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
   constructor(
     sessionManager: ISessionManager,
     baseUrl: string,
+    webViewBridge: IWebViewBridge,
     orchestrator: AnimeOrchestrator,
     htmlParser: IHtmlParser,
     rscParser: IRscParser,
@@ -44,6 +46,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     metrics: IMetricsTracker,
   ) {
     super(sessionManager, baseUrl);
+    this.webViewBridge = webViewBridge;
     this.orchestrator = orchestrator;
     this.htmlParser = htmlParser;
     this.rscParser = rscParser;
@@ -181,28 +184,64 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
   }
 
   async resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<StreamUrlResult | null> {
-    const res = await this.fetchWithSession(videoUrl, options ?? {});
-    if (!res.ok) {
-      throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
+    logger.info("resolveStreamUrl", `Bridge URL: ${videoUrl.slice(0, 80)}`);
+
+    let iframeUrl: string | null = null;
+    let currentUrl = videoUrl;
+    const parsed = currentUrl.match(/\/v\/(.+)-episodio-(\d+)\//);
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        logger.info("resolveStreamUrl", `WebView bridge attempt ${attempt + 1}: ${currentUrl.slice(0, 80)}`);
+        iframeUrl = await this.webViewBridge.fetchViaWebView(currentUrl, 10000);
+        logger.info("resolveStreamUrl", `WebView bridge OK: ${iframeUrl.slice(0, 100)}`);
+        break;
+      } catch (e: unknown) {
+        logger.warn("resolveStreamUrl", `Attempt ${attempt + 1} failed: ${e instanceof Error ? e.message : String(e)}`);
+        if (attempt === 0 && parsed) {
+          logger.info("resolveStreamUrl", "Re-fetching servers for fresh cookies...");
+          try {
+            await this.getEpisodeServers(parsed[1]!, parsed[2]!, options ?? {});
+            continue;
+          } catch (e2: unknown) {
+            logger.warn("resolveStreamUrl", `Re-fetch servers failed: ${e2 instanceof Error ? e2.message : String(e2)}`);
+          }
+        }
+        break;
+      }
     }
 
-    const html = await res.text();
-
-    const iframeMatch = html.match(/<iframe[^>]*src="([^"]+)"[^>]*>/);
-    if (!iframeMatch) {
-      throw new ProviderError("No iframe found in bridge page", "UNKNOWN");
+    if (iframeUrl == null) {
+      logger.info("resolveStreamUrl", "Fallback: fetchWithSession");
+      try {
+        const res = await this.fetchWithSession(currentUrl, options ?? {});
+        logger.info("resolveStreamUrl", `fetchWithSession status: ${res.status}`);
+        if (!res.ok) {
+          throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
+        }
+        const html = await res.text();
+        const m = html.match(/<iframe[^>]*src="([^"]+)"[^>]*>/);
+        if (!m) throw new ProviderError("No iframe in bridge page", "UNKNOWN");
+        iframeUrl = m[1]!;
+      } catch (e: unknown) {
+        logger.error("resolveStreamUrl", "Fallback failed", e);
+        throw e;
+      }
     }
 
-    const iframeUrl = iframeMatch[1]!;
-    logger.info("resolveStreamUrl", `Extracted iframe URL: ${iframeUrl}`);
+    logger.info("resolveStreamUrl", `Iframe URL: ${iframeUrl.slice(0, 100)}`);
 
     if (iframeUrl.includes("/e/")) {
+      logger.info("resolveStreamUrl", "/e/ detected, calling extractBest...");
       const session = await this.sessionManager.getSession();
       const result = await extractBest(iframeUrl, {
         signal: options?.signal,
         userAgent: session?.userAgent,
       });
-      if (result) return result;
+      if (result) {
+        logger.info("resolveStreamUrl", `extractBest OK: ${result.url.slice(0, 80)}`);
+        return result;
+      }
     }
 
     return { url: iframeUrl };

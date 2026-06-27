@@ -8,7 +8,7 @@
 import { AnimeService } from "./application/services/animeService";
 import { PlayerService } from "./application/services/playerService";
 import { PlayerUIService } from "./application/services/PlayerUIService";
-import { refreshSession, sessionManager, storage } from "./core/infrastructure";
+import { refreshSession, sessionManager, storage, webViewBridge } from "./core/infrastructure";
 import { getProvider, setProvider } from "./core/providerRegistry";
 import type { ISessionManager, IStorage } from "./domain/interfaces";
 import { CacheRepo } from "./domain/repositories/cacheRepo";
@@ -66,7 +66,7 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
     sessionManager,
     getProvider,
     animeService: new AnimeService(cacheRepo, getProvider, sessionManager, imageService),
-    playerService: new PlayerService(cacheRepo, getProvider),
+    playerService: new PlayerService(getProvider),
     playerUIService: new PlayerUIService(),
     imageService,
     cacheRepo,
@@ -76,6 +76,7 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
   const provider = new AnimeLatinoProvider(
     sessionManager,
     ANIMELATINO_CONFIG.baseUrl,
+    webViewBridge,
     orchestrator,
     htmlParser,
     rscParser,

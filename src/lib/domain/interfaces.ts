@@ -85,7 +85,8 @@ export type WebViewMessageData =
   | { type: "DECRYPTION_RESULT"; id: string; data: string | null; error?: string }
   | { type: "EMBED_VIDEO_URL"; url: string }
   | { type: "SESSION"; session: ISession }
-  | { type: "RAW"; data: string };
+  | { type: "RAW"; data: string }
+  | { type: "LOG"; data: string };
 
 /** Bridges React Native with WebView for session management. */
 export interface IWebViewBridge {
@@ -93,4 +94,9 @@ export interface IWebViewBridge {
   registerNavigation(fn: (uri: string) => void): void;
   navigateTo(uri: string): void;
   notifyPageLoaded(): void;
+  /** Navigate the WebView to a URL and wait for the extracted iframe/video URL. */
+  fetchViaWebView(url: string, timeout?: number): Promise<string>;
+  hasPendingBridgeRequest(): boolean;
+  resolveBridge(url: string): void;
+  rejectBridge(error: string): void;
 }

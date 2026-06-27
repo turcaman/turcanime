@@ -135,7 +135,7 @@ exports.GLOBAL_BOOTSTRAP = [
   "  // We use a small delay here too to ensure the page context is fully loaded",
   "  setTimeout(function() {",
   "    var path = window.location.pathname;",
-  "    if (path.indexOf('/v/') !== -1 || path.indexOf('/e/') !== -1 || path.indexOf('/video/') !== -1) {",
+    "    if (path.indexOf('/e/') !== -1 || path.indexOf('/video/') !== -1) {",
   "      handleDecryption('stream_auto');",
   "    }",
   "  }, 500);",

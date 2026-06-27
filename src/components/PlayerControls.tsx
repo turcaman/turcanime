@@ -150,7 +150,7 @@ export function PlayerControls({
 
             <View className="flex-1">
               <Slider
-                style={{ width: "100%", height: 20 }}
+                style={{ width: "100%", height: 20, opacity: duration > 0 ? 1 : 0 }}
                 minimumValue={0}
                 maximumValue={duration > 0 ? duration : 1}
                 value={displayTime}
