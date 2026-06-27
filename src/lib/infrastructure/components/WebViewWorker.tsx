@@ -9,21 +9,14 @@ import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 const WORKER_URL = ANIMELATINO_CONFIG.sessionWashUrl;
 
 /**
- * Headless component that runs in the background to handle:
- * 1. Session capture (Cookies/User-Agent).
- * 2. Crypto operations (AES-GCM decryption).
+ * Headless component that runs in the background for session capture.
  */
 export const WebViewWorker = () => {
   const vRef = useRef<WebView>(null);
 
-  // Register navigation and injection capabilities so WebViewBridge can trigger decryption
   useEffect(() => {
     webViewBridge.registerNavigation((uri: string) => {
       vRef.current?.injectJavaScript(`window.location.href = ${JSON.stringify(uri)};`);
-    });
-
-    webViewBridge.registerInjection((code: string) => {
-      vRef.current?.injectJavaScript(code);
     });
   }, []);
 

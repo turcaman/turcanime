@@ -87,13 +87,10 @@ export type WebViewMessageData =
   | { type: "SESSION"; session: ISession }
   | { type: "RAW"; data: string };
 
-/** Bridges React Native with WebView for stream URL extraction. */
+/** Bridges React Native with WebView for session management. */
 export interface IWebViewBridge {
-  resolveStreamUrl(videoUrl: string): Promise<string | null>;
-  resolveEmbedStreamUrl(embedUrl: string): Promise<string | null>;
   handleMessage(message: string): { type: string; data: WebViewMessageData } | null;
   registerNavigation(fn: (uri: string) => void): void;
-  registerInjection(fn: (code: string) => void): void;
   navigateTo(uri: string): void;
   notifyPageLoaded(): void;
 }
