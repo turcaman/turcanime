@@ -36,7 +36,7 @@ function PlayerContent() {
   const insets = useSafeAreaInsets();
 
   const { streamUrl, streamHeaders, reset: clearStream } = usePlayerStore();
-  const { addToHistory, lastViewed } = useHistoryStore();
+  const { addToHistory } = useHistoryStore();
   const deps = getDeps();
   const { anime } = useAnimeData(slug);
 
@@ -83,13 +83,6 @@ function PlayerContent() {
   }, [episodes, currentIdx]);
 
   useEffect(() => {
-    if (streamUrl != null) {
-      player.replace({ uri: streamUrl, headers: streamHeaders ?? undefined });
-      player.play();
-    }
-  }, [streamUrl, streamHeaders, player]);
-
-  useEffect(() => {
     const interval = setInterval(() => {
       setPlayState({
         currentTime: player.currentTime,
@@ -113,25 +106,29 @@ function PlayerContent() {
   const lastSeekKey = useRef("");
 
   useEffect(() => {
-    if (streamUrl != null && playState.duration > 0) {
-      const seekKey = `${slug}_${currentEpNumber}`;
-      if (seekKey !== lastSeekKey.current) {
-        lastSeekKey.current = seekKey;
-        const match = lastViewed.find(
-          (h) => h.url === slug && h.number === currentEpNumber && (h.progress ?? 0) > 10,
-        );
-        if (match?.progress != null) {
-          try { player.currentTime = match.progress; } catch {}
-        }
+    if (streamUrl == null) return;
+
+    player.replace({ uri: streamUrl, headers: streamHeaders ?? undefined });
+
+    const seekKey = `${slug}_${currentEpNumber}`;
+    if (seekKey !== lastSeekKey.current) {
+      lastSeekKey.current = seekKey;
+      const match = useHistoryStore.getState().lastViewed.find(
+        (h) => h.url === slug && h.number === currentEpNumber && (h.progress ?? 0) > 10,
+      );
+      if (match?.progress != null) {
+        try { player.currentTime = match.progress; } catch {}
       }
     }
-  }, [streamUrl, playState.duration, lastViewed, slug, currentEpNumber, player]);
+
+    player.play();
+  }, [streamUrl, streamHeaders, player, slug, currentEpNumber]);
 
   const historyCtx = useRef({ title: "", url: "", image: "", number: "" });
 
   useEffect(() => {
-    historyCtx.current = { title, url: slug, image, number };
-  }, [slug, title, image, number]);
+    historyCtx.current = { title, url: slug, image, number: currentEpNumber };
+  }, [slug, title, image, currentEpNumber]);
 
   const saveProgress = useCallback(() => {
     try {
