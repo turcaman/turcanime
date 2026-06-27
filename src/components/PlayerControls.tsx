@@ -1,8 +1,10 @@
+import { DarkOverlay } from "@/components/DarkOverlay";
+import { useAutoHide } from "@/lib/hooks/useAutoHide";
 import { Feather } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import type { VideoPlayer } from "expo-video";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, Text, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useState } from "react";
+import { ActivityIndicator, Pressable, Text, TouchableOpacity, View } from "react-native";
 
 interface PlayerControlsProps {
   player: VideoPlayer;
@@ -32,35 +34,7 @@ export function PlayerControls({
   hasPrev, hasNext, loading, insetTop, onPrev, onNext, onBack,
 }: PlayerControlsProps) {
   const [visible, setVisible] = useState(true);
-  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  const clearTimer = useCallback(() => {
-    if (hideTimer.current) {
-      clearTimeout(hideTimer.current);
-      hideTimer.current = undefined;
-    }
-  }, []);
-
-  const restartTimer = useCallback(() => {
-    clearTimer();
-    if (isPlaying && visible) {
-      hideTimer.current = setTimeout(() => { setVisible(false); }, 3000);
-    }
-  }, [clearTimer, isPlaying, visible]);
-
-  useEffect(() => {
-    if (visible && isPlaying) {
-      clearTimer();
-      hideTimer.current = setTimeout(() => { setVisible(false); }, 3000);
-    } else {
-      clearTimer();
-    }
-    return clearTimer;
-  }, [visible, isPlaying, clearTimer]);
-
-  useEffect(() => {
-    return clearTimer;
-  }, [clearTimer]);
+  const { restartTimer, clearTimer } = useAutoHide(visible, isPlaying, 3000, () => { setVisible(false); });
 
   const toggle = useCallback(() => {
     setVisible((v) => !v);
@@ -85,13 +59,7 @@ export function PlayerControls({
   if (loading) {
     return (
       <View className="absolute inset-0">
-        <View
-          style={{
-            position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-          pointerEvents="none"
-        />
+        <DarkOverlay />
         <View className="absolute inset-0 justify-center items-center">
           <ActivityIndicator size="large" color="#A855F7" />
         </View>
@@ -108,15 +76,7 @@ export function PlayerControls({
 
       {visible && (
         <>
-          <View
-            style={{
-              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.5)",
-              zIndex: 1,
-              elevation: Platform.OS === "android" ? 1 : undefined,
-            }}
-            pointerEvents="none"
-          />
+          <DarkOverlay zIndex={1} elevation={1} />
 
           <View
             className="absolute inset-0"
