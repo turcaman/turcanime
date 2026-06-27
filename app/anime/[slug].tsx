@@ -113,11 +113,16 @@ function AnimeDetailsContent() {
           }
           setSelectedEpisode(null);
           if (selectedEpisode && anime) {
-              addToHistory({
+            const existing = useHistoryStore.getState().lastViewed.find(
+              (h) => h.url === slug && h.number === selectedEpisode.number,
+            );
+            addToHistory({
                 title: anime.title,
                 image: anime.image,
                 url: slug as string,
                 number: selectedEpisode.number,
+                progress: existing?.progress,
+                duration: existing?.duration,
                 timestamp: Date.now(),
               }).catch(() => {});
               navigateToPlayer({

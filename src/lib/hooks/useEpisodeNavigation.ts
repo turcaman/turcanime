@@ -7,7 +7,7 @@ import { useCallback, useState } from "react";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
   const { setStream, setLastLanguage, lastLanguage } = usePlayerStore();
-  const { addToHistory } = useHistoryStore();
+  const { addToHistory, lastViewed } = useHistoryStore();
   const deps = getDeps();
 
   const [loading, setLoading] = useState(false);
@@ -53,6 +53,14 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
 
       player.replace({ uri: streamResult.stream.url, headers: streamResult.stream.headers ?? undefined });
       player.play();
+
+      const existing = lastViewed.find(
+        (h) => h.url === targetSlug && h.number === targetEp.number,
+      );
+      if (existing?.progress != null && existing.progress > 10) {
+        player.currentTime = existing.progress;
+      }
+
       setCurrentEpNumber(targetEp.number);
       setStream(streamResult.stream.url, streamResult.stream.headers ?? null);
       setLastLanguage(server.language);
@@ -61,6 +69,8 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
         url: targetSlug,
         image: animeImage,
         number: targetEp.number,
+        progress: existing?.progress,
+        duration: existing?.duration,
         timestamp: Date.now(),
       }).catch(() => {});
     };
@@ -71,7 +81,7 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       setError(e instanceof Error ? e.message : "Error desconocido");
     }
     setLoading(false);
-  }, [deps, setStream, setLastLanguage, lastLanguage, player, addToHistory, animeTitle, animeImage, currentEpNumber]);
+  }, [deps, setStream, setLastLanguage, lastLanguage, player, addToHistory, lastViewed, animeTitle, animeImage, currentEpNumber]);
 
   return { resolveAndPlay, loading, error, currentEpNumber, setCurrentEpNumber, setError };
 }

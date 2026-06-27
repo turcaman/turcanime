@@ -110,17 +110,20 @@ function PlayerContent() {
 
   const handleBack = useCallback(() => { router.back(); }, []);
 
-  const initialSeekDone = useRef(false);
+  const lastSeekKey = useRef("");
 
   useEffect(() => {
-    if (streamUrl != null && !initialSeekDone.current && playState.duration > 0) {
-      const match = lastViewed.find(
-        (h) => h.url === slug && h.number === currentEpNumber && (h.progress ?? 0) > 10,
-      );
-      if (match?.progress != null) {
-        player.currentTime = match.progress;
+    if (streamUrl != null && playState.duration > 0) {
+      const seekKey = `${slug}_${currentEpNumber}`;
+      if (seekKey !== lastSeekKey.current) {
+        lastSeekKey.current = seekKey;
+        const match = lastViewed.find(
+          (h) => h.url === slug && h.number === currentEpNumber && (h.progress ?? 0) > 10,
+        );
+        if (match?.progress != null) {
+          try { player.currentTime = match.progress; } catch {}
+        }
       }
-      initialSeekDone.current = true;
     }
   }, [streamUrl, playState.duration, lastViewed, slug, currentEpNumber, player]);
 

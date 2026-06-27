@@ -87,89 +87,91 @@ export function PlayerControls({
     <View className="absolute inset-0">
       <Pressable className="absolute inset-0" onPress={toggle} />
 
-      {visible && (
-        <>
-          <DarkOverlay zIndex={1} elevation={1} />
+      <View
+        className="absolute inset-0"
+        pointerEvents={visible ? "box-none" : "none"}
+        style={{ opacity: visible ? 1 : 0 }}
+      >
+        <DarkOverlay zIndex={1} elevation={1} />
 
-          <View
-            className="absolute inset-0"
-            pointerEvents="box-none"
-            style={{ zIndex: 2 }}
-          >
-            <View className="flex-1">
-              <View className="flex-row items-start px-4" style={{ paddingTop: insetTop + 8 }}>
-                <TouchableOpacity onPress={onBack} hitSlop={8} style={{ paddingTop: 2 }}>
-                  <Feather name="chevron-left" size={24} color="white" />
-                </TouchableOpacity>
-                <View className="ml-3 flex-1">
-                  <Text className="text-white font-semibold text-sm" numberOfLines={1}>
-                    {animeTitle}
-                  </Text>
-                  <Text className="text-neutral-400 text-xs">
-                    Episodio {episodeNumber}
-                  </Text>
-                </View>
+        <View
+          className="absolute inset-0"
+          pointerEvents="box-none"
+          style={{ zIndex: 2 }}
+        >
+          <View className="flex-1">
+            <View className="flex-row items-start px-4" style={{ paddingTop: insetTop + 8 }}>
+              <TouchableOpacity onPress={onBack} hitSlop={8} style={{ paddingTop: 2 }}>
+                <Feather name="chevron-left" size={24} color="white" />
+              </TouchableOpacity>
+              <View className="ml-3 flex-1">
+                <Text className="text-white font-semibold text-sm" numberOfLines={1}>
+                  {animeTitle}
+                </Text>
+                <Text className="text-neutral-400 text-xs">
+                  Episodio {episodeNumber}
+                </Text>
               </View>
+            </View>
 
-              <View className="flex-1" />
+            <View className="flex-1" />
 
-              <View className="flex-row items-center justify-center gap-6 px-8">
-                <TouchableOpacity onPress={onPrev} disabled={!hasPrev} className={`${btn} w-12 h-12 ${!hasPrev ? "opacity-40" : ""}`}>
-                  <Feather name="skip-back" size={22} color="white" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={seekBack} className={`${btn} w-12 h-12`}>
-                  <Feather name="rotate-ccw" size={22} color="white" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={togglePlay} className={`${btn} ${btnBig}`}>
-                  <Feather name={isPlaying ? "pause" : "play"} size={28} color="white" style={{ paddingLeft: 2 }} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={seekForward} className={`${btn} w-12 h-12`}>
-                  <Feather name="rotate-cw" size={22} color="white" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={onNext} disabled={!hasNext} className={`${btn} w-12 h-12 ${!hasNext ? "opacity-40" : ""}`}>
-                  <Feather name="skip-forward" size={22} color="white" />
-                </TouchableOpacity>
-              </View>
+            <View className="flex-row items-center justify-center gap-6 px-8">
+              <TouchableOpacity onPress={onPrev} disabled={!hasPrev} className={`${btn} w-12 h-12 ${!hasPrev ? "opacity-40" : ""}`}>
+                <Feather name="skip-back" size={22} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={seekBack} className={`${btn} w-12 h-12`}>
+                <Feather name="rotate-ccw" size={22} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={togglePlay} className={`${btn} ${btnBig}`}>
+                <Feather name={isPlaying ? "pause" : "play"} size={28} color="white" style={{ paddingLeft: 2 }} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={seekForward} className={`${btn} w-12 h-12`}>
+                <Feather name="rotate-cw" size={22} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onNext} disabled={!hasNext} className={`${btn} w-12 h-12 ${!hasNext ? "opacity-40" : ""}`}>
+                <Feather name="skip-forward" size={22} color="white" />
+              </TouchableOpacity>
+            </View>
 
-              <View className="flex-1" />
+            <View className="flex-1" />
 
-              <View className="px-4 pb-6 pt-3">
-                <View className="flex-row items-center gap-2">
-                  <Text className={`text-xs w-12 text-right font-mono ${isSliding ? "text-purple-400" : "text-white"}`}>
-                    {formatTime(displayTime)}
-                  </Text>
+            <View className="px-4 pb-6 pt-3">
+              <View className="flex-row items-center gap-2">
+                <Text className={`text-xs w-12 text-right font-mono ${isSliding ? "text-purple-400" : "text-white"}`}>
+                  {formatTime(displayTime)}
+                </Text>
 
-                  <View className="flex-1">
-                    <Slider
-                      style={{ width: "100%", height: 20 }}
-                      minimumValue={0}
-                      maximumValue={duration > 0 ? duration : 1}
-                      value={displayTime}
-                      onValueChange={(v) => {
-                        clearTimer();
-                        setSlidingValue(v);
-                      }}
-                      onSlidingComplete={(v) => {
-                        player.currentTime = v;
-                        setPendingSeek(v);
-                        setSlidingValue(null);
-                        restartTimer();
-                      }}
-                      minimumTrackTintColor="#A855F7"
-                      maximumTrackTintColor="rgba(255,255,255,0.25)"
-                      thumbTintColor="#A855F7"
-                    />
-                  </View>
-
-                  <Text className="text-white text-xs w-12 font-mono">
-                    {formatTime(duration)}
-                  </Text>
+                <View className="flex-1">
+                  <Slider
+                    style={{ width: "100%", height: 20 }}
+                    minimumValue={0}
+                    maximumValue={duration > 0 ? duration : 1}
+                    value={displayTime}
+                    onValueChange={(v) => {
+                      clearTimer();
+                      setSlidingValue(v);
+                    }}
+                    onSlidingComplete={(v) => {
+                      player.currentTime = v;
+                      setPendingSeek(v);
+                      setSlidingValue(null);
+                      restartTimer();
+                    }}
+                    minimumTrackTintColor="#A855F7"
+                    maximumTrackTintColor="rgba(255,255,255,0.25)"
+                    thumbTintColor="#A855F7"
+                  />
                 </View>
+
+                <Text className="text-white text-xs w-12 font-mono">
+                  {formatTime(duration)}
+                </Text>
               </View>
             </View>
           </View>
-        </>
-      )}
+        </View>
+      </View>
     </View>
   );
 }
