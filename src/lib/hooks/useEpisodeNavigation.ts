@@ -51,15 +51,9 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       const streamResult = await deps.playerService.resolveStreamUrl(server, targetEp.url);
       if (streamResult.stream == null) throw new Error("No se pudo resolver el stream");
 
-      player.replace({ uri: streamResult.stream.url, headers: streamResult.stream.headers ?? undefined });
-      player.play();
-
       const existing = lastViewed.find(
         (h) => h.url === targetSlug && h.number === targetEp.number,
       );
-      if (existing?.progress != null && existing.progress > 10) {
-        player.currentTime = existing.progress;
-      }
 
       setCurrentEpNumber(targetEp.number);
       setStream(streamResult.stream.url, streamResult.stream.headers ?? null);
