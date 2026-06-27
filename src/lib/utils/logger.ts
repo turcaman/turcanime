@@ -120,12 +120,3 @@ class Logger {
 }
 
 export const logger = new Logger();
-
-// Backward compatibility with existing code
-export function log(tag: string, msg: string, error?: unknown): void {
-  if (error != null) {
-    logger.warn(tag, msg, error);
-  } else {
-    logger.info(tag, msg);
-  }
-}

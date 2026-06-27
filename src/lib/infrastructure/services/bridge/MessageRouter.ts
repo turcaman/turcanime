@@ -1,5 +1,9 @@
 import { logger } from "../../../utils/logger";
-import type { BridgeMessage } from "./types";
+
+interface BridgeMessage {
+  type: "STREAM_URL" | "ERROR" | "LOG" | "DECRYPTION_RESULT" | "EMBED_VIDEO_URL";
+  payload: unknown;
+}
 
 export class MessageRouter {
   constructor(

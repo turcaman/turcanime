@@ -25,9 +25,3 @@ export interface ProviderConfig {
   };
 }
 
-export interface ProviderMetadata {
-  config: ProviderConfig;
-  healthCheckUrl?: string;
-  isHealthy?: boolean;
-  lastHealthCheck?: number;
-}
