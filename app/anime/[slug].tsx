@@ -107,16 +107,16 @@ function AnimeDetailsContent() {
           episode={selectedEpisode}
           servers={servers}
           isLoading={serverLoading}
-        onServerSelect={(server) => {
-          if (selectedEpisode) {
-            void resolveStream(server, selectedEpisode.url);
-          }
-          setSelectedEpisode(null);
-          if (selectedEpisode && anime) {
-            const existing = useHistoryStore.getState().lastViewed.find(
-              (h) => h.url === slug && h.number === selectedEpisode.number,
-            );
-            addToHistory({
+          onServerSelect={(server) => {
+            if (selectedEpisode) {
+              void resolveStream(server, selectedEpisode.url);
+            }
+            setSelectedEpisode(null);
+            if (selectedEpisode && anime) {
+              const existing = useHistoryStore.getState().lastViewed.find(
+                (h) => h.url === slug && h.number === selectedEpisode.number,
+              );
+              addToHistory({
                 title: anime.title,
                 image: anime.image,
                 url: slug as string,

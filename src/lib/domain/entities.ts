@@ -18,12 +18,28 @@ export interface Episode {
   url: string;
 }
 
+export interface RelatedAnime {
+  id: number;
+  name: string;
+  poster: string;
+  slug: string;
+  type: string;
+  vote_average: number;
+}
+
+export interface AnimeRelations {
+  prequel: RelatedAnime[];
+  sequel: RelatedAnime[];
+  related: RelatedAnime[];
+}
+
 export interface AnimeDetail extends Anime {
   synopsis: string;
   banner: string;
   poster: string;
   genres: string[];
   episodes: Episode[];
+  relations: AnimeRelations | null;
 }
 
 export interface VideoServer {

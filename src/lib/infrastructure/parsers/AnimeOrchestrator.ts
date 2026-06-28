@@ -20,6 +20,7 @@ export class AnimeOrchestrator {
     const synopsis = rscData.synopsis ?? jsonLdSynopsis ?? domSynopsis ?? meta.description ?? "";
 
     const image = rscData.poster || (jsonLdImage ?? meta.banner ?? "");
+    const genres = this.htmlParser.extractGenresFromJsonLd(html);
 
     return {
       title: cleanTitle(title || (meta.title ?? "")),
@@ -28,8 +29,9 @@ export class AnimeOrchestrator {
       banner: meta.banner ?? image,
       poster: image,
       status,
-      genres: [],
+      genres,
       episodes,
+      relations: rscData.relations,
       url: slug,
     };
   }

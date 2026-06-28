@@ -18,14 +18,16 @@ export interface IHtmlParser {
   extractStatusFromHtml(html: string): string;
   extractSynopsisFromJsonLd(html: string): string | null;
   extractImageFromJsonLd(html: string): string | null;
+  extractGenresFromJsonLd(html: string): string[];
 }
 
 /** Parses React Server Component (RSC) payloads for streaming data. */
 export interface IRscParser {
   parseRscPayload(text: string): string;
   extractPosterUrl(rsc: string): string;
-  extractSynopsis(rsc: string, fullHtml: string): string | null;
-  parseAllFromScripts(html: string): { poster: string; synopsis: string | null };
+  extractSynopsis(rsc: string, fullHtml: string): string | null;  parseAllFromScripts(
+    html: string
+  ): { poster: string; synopsis: string | null; relations: import("./entities").AnimeRelations | null };
 }
 
 /** Detects site structure changes and invalidates caches when needed. */

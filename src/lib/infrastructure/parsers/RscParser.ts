@@ -1,6 +1,7 @@
-import { logger } from "../../utils/logger";
-import { TMDB_IMAGE_BASE } from "../../config/images";
+import type { AnimeRelations } from "../../domain/entities";
 import type { IRscParser } from "../../domain/interfaces";
+import { TMDB_IMAGE_BASE } from "../../config/images";
+import { logger } from "../../utils/logger";
 
 export class RscParser implements IRscParser {
   parseRscPayload(text: string): string {
@@ -97,9 +98,46 @@ export class RscParser implements IRscParser {
     return null;
   }
 
+  extractRelations(rsc: string): AnimeRelations | null {
+    // The RSC payload has already been JSON-parsed by parseRscPayload,
+    // so quotes are regular (not escaped with backslash).
+    const key = '"relations":{"prequel":';
+    const idx = rsc.indexOf(key);
+    if (idx === -1) return null;
+
+    const start = rsc.indexOf('{', idx);
+    if (start === -1) return null;
+
+    let depth = 1;
+    let end = start + 1;
+    while (depth > 0 && end < rsc.length) {
+      if (rsc[end] === '{') depth++;
+      else if (rsc[end] === '}') depth--;
+      end++;
+    }
+
+    const raw = rsc.slice(start, end);
+
+    try {
+      const parsed = JSON.parse(raw) as AnimeRelations;
+      const normalize = (item: { poster: string }) => {
+        if (item.poster && !item.poster.startsWith("http")) {
+          item.poster = `${TMDB_IMAGE_BASE}${item.poster}`;
+        }
+      };
+      parsed.prequel?.forEach(normalize);
+      parsed.sequel?.forEach(normalize);
+      parsed.related?.forEach(normalize);
+      return parsed;
+    } catch (e: unknown) {
+      logger.warn("RscParser", "Failed to parse relations", e);
+      return null;
+    }
+  }
+
   parseAllFromScripts(
     html: string
-  ): { poster: string; synopsis: string | null } {
+  ): { poster: string; synopsis: string | null; relations: AnimeRelations | null } {
     let poster = "";
     let synopsis: string | null = null;
     let synopsisLocked = false;
@@ -125,6 +163,27 @@ export class RscParser implements IRscParser {
       }
     }
 
-    return { poster, synopsis };
+    let relations: AnimeRelations | null = null;
+    let relationsLocked = false;
+
+    // Re-iterate to extract relations from RSC payload
+    const scripts2 = html.matchAll(/<script[^>]*>(.*?)<\/script>/gs);
+    for (const match of scripts2) {
+      const text = match[1]!;
+      if (!text.includes("self.__next_f.push")) continue;
+
+      if (!relationsLocked) {
+        const p = this.parseRscPayload(text);
+        if (p) {
+          const result = this.extractRelations(p);
+          if (result != null) {
+            relations = result;
+            relationsLocked = true;
+          }
+        }
+      }
+    }
+
+    return { poster, synopsis, relations };
   }
 }

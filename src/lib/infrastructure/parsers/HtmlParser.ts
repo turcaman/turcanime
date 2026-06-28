@@ -91,9 +91,19 @@ export class HtmlParser implements IHtmlParser {
   }
 
   extractStatusFromHtml(html: string): string {
-    const statusMatch = html.match(/<span[^>]*class="[^"]*text-primary[^"]*"[^>]*>([^<]+)<\/span>/);
+    // Look for a span with text-primary or text-muted-foreground class
+    // that contains status text ("En emision" / "Finalizado")
+    const statusRegex = /<span[^>]*class="[^"]*\b(?:text-primary|text-muted-foreground)\b[^"]*"[^>]*>([^<]+)<\/span>/gi;
+    const statusMatch = html.match(statusRegex);
     if (statusMatch) {
-      return statusMatch[1]!.trim();
+      for (const match of statusMatch) {
+        const textMatch = match.match(/>([^<]+)<\//);
+        if (textMatch) {
+          const text = textMatch[1]!.trim();
+          if (/^en\s*emisi[oó]n$/i.test(text)) return "En emisión";
+          if (/^finalizado$/i.test(text)) return "Finalizado";
+        }
+      }
     }
     return "";
   }
@@ -151,6 +161,20 @@ export class HtmlParser implements IHtmlParser {
       return null;
     } catch {
       return null;
+    }
+  }
+
+  extractGenresFromJsonLd(html: string): string[] {
+    const jsonLdMatch = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+    if (!jsonLdMatch) return [];
+    try {
+      const data = JSON.parse(jsonLdMatch[1]!);
+      if (Array.isArray(data.genre)) {
+        return data.genre.map(String);
+      }
+      return [];
+    } catch {
+      return [];
     }
   }
 }
