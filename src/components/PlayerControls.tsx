@@ -1,10 +1,11 @@
+import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { DarkOverlay } from "@/components/DarkOverlay";
 import { useAutoHide } from "@/lib/hooks/useAutoHide";
 import { Feather } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import type { VideoPlayer } from "expo-video";
-import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Animated, Pressable, Text, View } from "react-native";
 
 interface PlayerControlsProps {
   player: VideoPlayer;
@@ -40,6 +41,16 @@ export function PlayerControls({
   const [pendingSeek, setPendingSeek] = useState<number | null>(null);
   const { restartTimer, clearTimer } = useAutoHide(visible, isPlaying, 3000, () => { setVisible(false); });
 
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: visible ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [visible, fadeAnim]);
+
   const displayTime = slidingValue ?? pendingSeek ?? currentTime;
   const isSliding = slidingValue != null;
 
@@ -55,91 +66,92 @@ export function PlayerControls({
   }, [clearTimer]);
 
   const seekBack = useCallback(() => {
+    if (loading) return;
     player.currentTime = Math.max(0, player.currentTime - 10);
     restartTimer();
-  }, [player, restartTimer]);
+  }, [player, loading, restartTimer]);
 
   const seekForward = useCallback(() => {
+    if (loading) return;
     player.currentTime = Math.min(player.duration || 1, player.currentTime + 10);
     restartTimer();
-  }, [player, restartTimer]);
+  }, [player, loading, restartTimer]);
 
   const togglePlay = useCallback(() => {
+    if (loading) return;
     if (player.playing) { player.pause(); } else { player.play(); }
     restartTimer();
-  }, [player, restartTimer]);
-
-  if (loading) {
-    return (
-      <View className="absolute inset-0">
-        <DarkOverlay />
-        <View className="absolute inset-0 justify-center items-center">
-          <ActivityIndicator size="large" color="#A855F7" />
-        </View>
-      </View>
-    );
-  }
+  }, [player, loading, restartTimer]);
 
   const btn = "rounded-full justify-center items-center bg-white/10";
-  const btnBig = "w-16 h-16 bg-white/15";
+  const btnBig = "w-16 h-16";
 
   return (
     <View className="absolute inset-0">
       <Pressable className="absolute inset-0" onPress={toggle} />
 
-      {visible && (
-        <>
-          <DarkOverlay zIndex={1} elevation={1} />
+      <Animated.View
+        className="absolute inset-0"
+        pointerEvents={visible ? "box-none" : "none"}
+        style={{ opacity: fadeAnim }}
+      >
+        <DarkOverlay zIndex={1} elevation={1} />
 
-          <View
-            className="absolute inset-0"
-            pointerEvents="box-none"
-            style={{ zIndex: 2 }}
-          >
-            <View className="flex-1">
-              <View className="flex-row items-start px-4" style={{ paddingTop: insetTop + 8 }}>
-                <TouchableOpacity onPress={onBack} hitSlop={8} style={{ paddingTop: 2 }}>
-                  <Feather name="chevron-left" size={24} color="white" />
-                </TouchableOpacity>
-                <View className="ml-3 flex-1">
-                  <Text className="text-white font-semibold text-sm" numberOfLines={1}>
-                    {animeTitle}
-                  </Text>
-                  <Text className="text-neutral-400 text-xs">
-                    Episodio {episodeNumber}
-                  </Text>
-                </View>
+        <View
+          className="absolute inset-0"
+          pointerEvents="box-none"
+          style={{ zIndex: 2 }}
+        >
+          <View className="flex-1">
+            <View className="absolute top-0 left-0 right-0 flex-row items-start px-4" style={{ paddingTop: insetTop + 8, zIndex: 10 }}>
+              <AnimatedPressable onPress={onBack} hitSlop={8} style={{ paddingTop: 2 }}>
+                <Feather name="chevron-left" size={24} color="white" />
+              </AnimatedPressable>
+              <View className="ml-3 flex-1">
+                <Text className="text-white font-semibold text-sm" numberOfLines={1}>{animeTitle}</Text>
+                <Text className="text-neutral-400 text-xs">Episodio {episodeNumber}</Text>
               </View>
+            </View>
 
-              <View className="flex-1" />
-
+            <View className="flex-1 justify-center items-center">
               <View className="flex-row items-center justify-center gap-6 px-8">
-                <TouchableOpacity onPress={onPrev} disabled={!hasPrev} className={`${btn} w-12 h-12 ${!hasPrev ? "opacity-40" : ""}`}>
-                  <Feather name="skip-back" size={22} color="white" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={seekBack} className={`${btn} w-12 h-12`}>
-                  <Feather name="rotate-ccw" size={22} color="white" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={togglePlay} className={`${btn} ${btnBig}`}>
-                  <Feather name={isPlaying ? "pause" : "play"} size={28} color="white" style={{ paddingLeft: 2 }} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={seekForward} className={`${btn} w-12 h-12`}>
-                  <Feather name="rotate-cw" size={22} color="white" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={onNext} disabled={!hasNext} className={`${btn} w-12 h-12 ${!hasNext ? "opacity-40" : ""}`}>
-                  <Feather name="skip-forward" size={22} color="white" />
-                </TouchableOpacity>
-              </View>
+                <AnimatedPressable onPress={onPrev} disabled={!hasPrev || loading} className={`${btn} w-12 h-12`}>
+                  <Feather name="skip-back" size={22} color="white" style={(!hasPrev || loading) ? { opacity: 0.4 } : undefined} />
+                </AnimatedPressable>
 
-              <View className="flex-1" />
+                <AnimatedPressable onPress={seekBack} disabled={loading} className={`${btn} w-12 h-12`}>
+                  <Feather name="rotate-ccw" size={22} color="white" style={loading ? { opacity: 0.4 } : undefined} />
+                </AnimatedPressable>
+
+                <AnimatedPressable onPress={togglePlay} disabled={loading} className={`${btn} ${btnBig}`}>
+                  {loading ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Feather
+                      name={isPlaying ? "pause" : "play"}
+                      size={28}
+                      color="white"
+                      style={{ paddingLeft: isPlaying ? 0 : 2 }}
+                    />
+                  )}
+                </AnimatedPressable>
+
+                <AnimatedPressable onPress={seekForward} disabled={loading} className={`${btn} w-12 h-12`}>
+                  <Feather name="rotate-cw" size={22} color="white" style={loading ? { opacity: 0.4 } : undefined} />
+                </AnimatedPressable>
+
+                <AnimatedPressable onPress={onNext} disabled={!hasNext || loading} className={`${btn} w-12 h-12`}>
+                  <Feather name="skip-forward" size={22} color="white" style={(!hasNext || loading) ? { opacity: 0.4 } : undefined} />
+                </AnimatedPressable>
+              </View>
             </View>
           </View>
-        </>
-      )}
+        </View>
+      </Animated.View>
 
-      <View
+      <Animated.View
         className="absolute bottom-0 left-0 right-0"
-        style={{ opacity: visible ? 1 : 0, zIndex: 3 }}
+        style={{ opacity: fadeAnim, zIndex: 3 }}
         pointerEvents={visible ? "box-none" : "none"}
       >
         <View className="px-4 pb-6 pt-3">
@@ -159,6 +171,7 @@ export function PlayerControls({
                   setSlidingValue(v);
                 }}
                 onSlidingComplete={(v) => {
+                  if (loading) return;
                   player.currentTime = v;
                   setPendingSeek(v);
                   setSlidingValue(null);
@@ -175,7 +188,7 @@ export function PlayerControls({
             </Text>
           </View>
         </View>
-      </View>
+      </Animated.View>
     </View>
   );
 }

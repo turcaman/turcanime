@@ -10,17 +10,8 @@ import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useLocalSearchParams, router } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-function PlayerLoading({ padTop }: { padTop: number }) {
-  return (
-    <View className="flex-1 bg-black justify-center items-center" style={{ paddingTop: padTop }}>
-      <StatusBar hidden />
-      <ActivityIndicator size="large" color="#A855F7" />
-    </View>
-  );
-}
 
 function PlayerContent() {
   const params = useLocalSearchParams<{
@@ -158,17 +149,14 @@ function PlayerContent() {
     };
   }, [streamUrl, saveProgress]);
 
-  if (streamUrl == null) {
-    return <PlayerLoading padTop={insets.top} />;
-  }
-
   return (
     <View className="flex-1 bg-black">
       <StatusBar hidden />
 
       <VideoView
+        key={streamUrl ?? 'no-stream'}
         player={player}
-        style={{ position: "absolute", top: insets.top, left: 0, right: 0, bottom: 0 }}
+        style={StyleSheet.absoluteFill}
         nativeControls={false}
         contentFit="contain"
       />
@@ -182,7 +170,7 @@ function PlayerContent() {
         episodeNumber={currentEpNumber}
         hasPrev={prevEpisode != null}
         hasNext={nextEpisode != null}
-        loading={loading}
+        loading={loading || streamUrl == null}
         insetTop={insets.top}
         onPrev={handlePrev}
         onNext={handleNext}
