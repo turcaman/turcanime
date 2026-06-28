@@ -57,11 +57,11 @@ export const AnimeDetailsHeader = memo(
             </AnimatedPressable>
 
             <View
-              className={`absolute right-5 px-2 py-1 rounded-lg ${isAiring ? "bg-purple-600/90 ring-1 ring-purple-400/30" : "bg-black/60"}`}
+              className={`absolute right-5 px-2 py-1 rounded-lg bg-neutral-950 ring-1 ${isAiring ? "ring-purple-500/30" : "ring-white/10"}`}
               style={{ top: insets.top }}
             >
               <Text
-                className="text-[10px] font-bold tracking-wider leading-none text-white"
+                className={`text-[10px] font-bold tracking-wider leading-none ${isAiring ? "text-purple-400" : "text-neutral-400"}`}
               >
                 {(isAiring ? "En emisión" : "Finalizado").toUpperCase()}
               </Text>
