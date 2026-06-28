@@ -125,9 +125,9 @@ export class RscParser implements IRscParser {
           item.poster = `${TMDB_IMAGE_BASE}${item.poster}`;
         }
       };
-      parsed.prequel?.forEach(normalize);
-      parsed.sequel?.forEach(normalize);
-      parsed.related?.forEach(normalize);
+      parsed.prequel.forEach(normalize);
+      parsed.sequel.forEach(normalize);
+      parsed.related.forEach(normalize);
       return parsed;
     } catch (e: unknown) {
       logger.warn("RscParser", "Failed to parse relations", e);
