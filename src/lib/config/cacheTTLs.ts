@@ -6,8 +6,10 @@
 export const ANIME_CACHE = {
   HOME: 6 * 60 * 60 * 1000,
   SEARCH: 30 * 60 * 1000,
-  SUGGESTIONS: 30 * 60 * 1000,
+  SUGGESTIONS: 5 * 60 * 1000,
   DETAILS: 12 * 60 * 60 * 1000,
+  SERVERS: 10 * 60 * 1000,
+  STREAM: 5 * 60 * 1000,
 } as const;
 
 

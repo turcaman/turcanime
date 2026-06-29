@@ -4,4 +4,5 @@ export const CACHE_PREFIXES = {
   SUGGESTIONS: "suggestions",
   DETAILS: "anime",
   STREAM: "stream",
+  SERVERS: "servers",
 } as const;
