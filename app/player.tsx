@@ -178,8 +178,8 @@ function PlayerContent() {
       />
 
       {error != null && (
-        <View className="absolute bottom-20 left-4 right-4 bg-red-500/20 rounded-lg p-3">
-          <Text className="text-red-400 text-xs text-center">{error}</Text>
+        <View className="absolute bottom-20 left-4 right-4 bg-neutral-900 rounded-lg border border-neutral-800 p-3">
+          <Text className="text-neutral-400 text-xs text-center">{error}</Text>
         </View>
       )}
     </View>
