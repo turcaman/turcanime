@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { AnimeDetail, AppError } from "../domain/entities";
 import { useDetailsStore } from "../store/detailsStore";
-import { logger } from "../utils/logger";
 
 interface UseAnimeDataResult {
   anime: AnimeDetail | null;
@@ -23,12 +22,10 @@ export function useAnimeData(slug: string): UseAnimeDataResult {
 
   useEffect(() => {
     if (!anime || anime.url !== slug) {
-      fetchDetails(slug)
-        .catch((err) => {
-          logger.error("useAnimeData", "Failed to fetch anime details", err);
-        });
+      void fetchDetails(slug);
     }
-  }, [slug, fetchDetails, anime]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, fetchDetails]);
 
   useEffect(() => {
     if (anime) setHasLoaded(true);
