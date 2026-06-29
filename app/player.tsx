@@ -4,6 +4,7 @@ import { orderEpisodes } from "@/lib/domain/services/episodeService";
 import { getDeps } from "@/lib/di";
 import { useAnimeData } from "@/lib/hooks/useAnimeData";
 import { useEpisodeNavigation } from "@/lib/hooks/useEpisodeNavigation";
+import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
 import { usePlayerStore } from "@/lib/store/playerStore";
 import { useHistoryStore } from "@/lib/store/user";
 import { StatusBar } from "expo-status-bar";
@@ -30,12 +31,26 @@ function PlayerContent() {
   const { addToHistory } = useHistoryStore();
   const deps = getDeps();
   const { anime } = useAnimeData(slug);
-
+  const { isInternetReachable: networkOk } = useNetworkStatus();
+  const networkOkRef = useRef<boolean | null>(null);
+  networkOkRef.current = networkOk;
+  const prevNetworkOk = useRef<boolean | null>(null);
+  const saveProgressRef = useRef<() => void>(() => {});
   const [playState, setPlayState] = useState({ currentTime: 0, duration: 0, isPlaying: false });
 
   const player = useVideoPlayer(null, (instance) => {
     instance.loop = false;
   });
+
+  // Pause + save progress when network drops; root NetworkBanner handles blocking overlay
+  useEffect(() => {
+    const prev = prevNetworkOk.current;
+    prevNetworkOk.current = networkOk;
+    if (prev !== false && networkOk === false) {
+      saveProgressRef.current();
+      player.pause();
+    }
+  }, [networkOk, player]);
 
   const {
     resolveAndPlay, loading, error, currentEpNumber, setCurrentEpNumber,
@@ -57,17 +72,14 @@ function PlayerContent() {
     () => (anime?.episodes ? orderEpisodes(anime.episodes) : []),
     [anime?.episodes],
   );
-
   const currentIdx = useMemo(
     () => episodes.findIndex((e) => e.number === currentEpNumber),
     [episodes, currentEpNumber],
   );
-
   const prevEpisode = useMemo(() => {
     if (currentIdx < 1) return null;
     return episodes[currentIdx - 1];
   }, [episodes, currentIdx]);
-
   const nextEpisode = useMemo(() => {
     if (currentIdx < 0 || currentIdx >= episodes.length - 1) return null;
     return episodes[currentIdx + 1];
@@ -76,9 +88,7 @@ function PlayerContent() {
   useEffect(() => {
     const interval = setInterval(() => {
       setPlayState({
-        currentTime: player.currentTime,
-        duration: player.duration,
-        isPlaying: player.playing,
+        currentTime: player.currentTime, duration: player.duration, isPlaying: player.playing,
       });
     }, 250);
     return () => { clearInterval(interval); };
@@ -87,11 +97,9 @@ function PlayerContent() {
   const handlePrev = useCallback(() => {
     if (prevEpisode) { void resolveAndPlay(slug, prevEpisode); }
   }, [prevEpisode, slug, resolveAndPlay]);
-
   const handleNext = useCallback(() => {
     if (nextEpisode) { void resolveAndPlay(slug, nextEpisode); }
   }, [nextEpisode, slug, resolveAndPlay]);
-
   const handleBack = useCallback(() => { router.back(); }, []);
 
   const lastSeekKey = useRef("");
@@ -111,12 +119,11 @@ function PlayerContent() {
         try { player.currentTime = match.progress; } catch {}
       }
     }
-
-    player.play();
+    // Don't auto-play if offline — user taps play after reconnect
+    if (networkOkRef.current !== false) { player.play(); }
   }, [streamUrl, streamHeaders, player, slug, currentEpNumber]);
 
   const historyCtx = useRef({ title: "", url: "", image: "", number: "" });
-
   useEffect(() => {
     historyCtx.current = { title, url: slug, image, number: currentEpNumber };
   }, [slug, title, image, currentEpNumber]);
@@ -127,26 +134,17 @@ function PlayerContent() {
       const dur = player.duration;
       if (ct > 0 && dur > 0) {
         void addToHistory({
-          ...historyCtx.current,
-          progress: ct,
-          duration: dur,
-          timestamp: Date.now(),
+          ...historyCtx.current, progress: ct, duration: dur, timestamp: Date.now(),
         });
       }
-    } catch {
-      // player was released (component unmounting)
-    }
+    } catch { /* player was released (component unmounting) */ }
   }, [player, addToHistory]);
+  saveProgressRef.current = saveProgress;
 
   useEffect(() => {
     if (streamUrl == null) return;
-
     const interval = setInterval(saveProgress, 10000);
-
-    return () => {
-      clearInterval(interval);
-      saveProgress();
-    };
+    return () => { clearInterval(interval); saveProgress(); };
   }, [streamUrl, saveProgress]);
 
   return (
