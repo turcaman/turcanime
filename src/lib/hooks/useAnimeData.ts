@@ -24,8 +24,7 @@ export function useAnimeData(slug: string): UseAnimeDataResult {
     if (!anime || anime.url !== slug) {
       void fetchDetails(slug);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, fetchDetails]);
+  }, [slug, fetchDetails, anime]);
 
   useEffect(() => {
     if (anime) setHasLoaded(true);
