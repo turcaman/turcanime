@@ -3,9 +3,7 @@ import { NetworkBanner } from "@/components/NetworkBanner";
 import { getDeps, initializeDeps } from "@/lib/di";
 import { useNetworkStatus, type ConnectionType } from "@/lib/hooks/useNetworkStatus";
 import { refreshSession } from "@/lib/core/infrastructure";
-import { useDetailsStore } from "@/lib/store/detailsStore";
 import { useHomeStore } from "@/lib/store/homeStore";
-import { usePlayerStore } from "@/lib/store/playerStore";
 import { useUIStore } from "@/lib/store/uiStore";
 import { useSettingsStore, useUserInitializationStore } from "@/lib/store/user";
 import { WebViewWorker } from "@/lib/infrastructure/components/WebViewWorker";
@@ -79,8 +77,6 @@ function RootInner() {
 
         // Show loading state immediately before slow operations
         useHomeStore.getState().prepareRefresh();
-        useDetailsStore.getState().reset();
-        usePlayerStore.getState().reset();
 
         await refreshSession();
         await getDeps().animeService.clearAnimeCache();
