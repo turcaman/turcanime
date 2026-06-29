@@ -12,8 +12,9 @@ interface ContinueWatchingProps {
 }
 
 function ProgressBar({ progress, duration }: { progress?: number; duration?: number }) {
-  if (progress == null || duration == null || duration <= 0) return null;
-  const pct = Math.min(progress / duration, 1);
+  const pct = progress != null && duration != null && duration > 0
+    ? Math.min(progress / duration, 1)
+    : 0;
 
   return (
     <View className="h-0.5 bg-neutral-800 mt-1">
