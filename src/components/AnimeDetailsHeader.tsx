@@ -61,7 +61,7 @@ export const AnimeDetailsHeader = memo(
               style={{ top: insets.top }}
             >
               <Text
-                className={`text-[10px] font-bold tracking-wider leading-none ${isAiring ? "text-purple-400" : "text-neutral-400"}`}
+                className={`text-[11px] font-bold tracking-wider leading-none ${isAiring ? "text-purple-400" : "text-neutral-400"}`}
               >
                 {(isAiring ? "En emisión" : "Finalizado").toUpperCase()}
               </Text>
@@ -79,7 +79,7 @@ export const AnimeDetailsHeader = memo(
                       key={genre}
                       className="rounded-md bg-white/10 px-2.5 py-1"
                     >
-                      <Text className="text-[9px] font-bold uppercase tracking-wider text-white/80">
+                      <Text className="text-[10px] font-bold uppercase tracking-wider text-white/80">
                         {genre}
                       </Text>
                     </View>

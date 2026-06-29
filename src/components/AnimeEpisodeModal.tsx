@@ -34,8 +34,7 @@ export const AnimeEpisodeModal = ({
     <View className="absolute inset-0 bg-black/80 justify-end">
       <Pressable className="absolute inset-0" onPress={onClose} />
 
-      <View className="bg-neutral-900 rounded-t-2xl px-5 pt-2 pb-11">
-        <View className="w-9 h-1 rounded-full bg-neutral-800 self-center mb-2" />
+      <View className="bg-neutral-900 rounded-t-xl px-5 pt-5 pb-11">
 
         <View className="flex-row justify-between items-center mb-2">
           <Text className="text-white text-xl font-bold">Episodio {episode?.number}</Text>
