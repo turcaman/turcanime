@@ -1,6 +1,10 @@
+import { ANIME_CACHE } from "../../config/cacheTTLs";
+import { CACHE_PREFIXES } from "../../config/cacheKeys";
 import { getRequiredReferer } from "../../config/embedServers";
 import type { IContentProvider } from "../../domain/interfaces";
+import { CacheRepo } from "../../domain/repositories/cacheRepo";
 import type { VideoServer } from "../../domain/entities";
+import { createCacheKey } from "../../utils/CacheUtils";
 import { logger } from "../../utils/logger";
 
 export interface ResolvedStream {
@@ -23,20 +27,34 @@ interface ResolveStreamResult {
 export class PlayerService {
   constructor(
     private getProvider: () => IContentProvider,
+    private cache: CacheRepo,
   ) {}
 
   async fetchEpisodeServers(
     slug: string,
     number: string,
-    _force: boolean,
+    force: boolean,
     signal?: AbortSignal
   ): Promise<FetchServersResult> {
     if (signal?.aborted === true) {
       return { servers: [], error: new Error("Request aborted") };
     }
 
+    if (!force) {
+      const cacheKey = createCacheKey(CACHE_PREFIXES.SERVERS, `${slug}_${number}`);
+      try {
+        const cached = await this.cache.get<VideoServer[]>(cacheKey);
+        if (cached && Date.now() < cached.expiration) {
+          return { servers: cached.payload, error: null };
+        }
+      } catch {
+      }
+    }
+
     try {
       const data = await this.getProvider().getEpisodeServers(slug, number, { signal });
+      const cacheKey = createCacheKey(CACHE_PREFIXES.SERVERS, `${slug}_${number}`);
+      void this.cache.set(cacheKey, data, ANIME_CACHE.SERVERS);
       return { servers: data, error: null };
     } catch (e: unknown) {
       if (e instanceof Error && e.name === "AbortError") {
@@ -54,6 +72,16 @@ export class PlayerService {
 
   async resolveStreamUrl(server: VideoServer, _episodeUrl?: string): Promise<ResolveStreamResult> {
     logger.debug("playerService", `resolving stream for ${server.url}`);
+
+    const cacheKey = createCacheKey(CACHE_PREFIXES.STREAM, `${server.url}_${server.id}`);
+    try {
+      const cached = await this.cache.get<{ url: string; headers?: Record<string, string> }>(cacheKey);
+      if (cached && Date.now() < cached.expiration) {
+        return { stream: { url: cached.payload.url, headers: cached.payload.headers }, error: null };
+      }
+    } catch {
+    }
+
     try {
       const streamResult = await this.getProvider().resolveStreamUrl(server.url);
       if (streamResult == null) {
@@ -65,6 +93,8 @@ export class PlayerService {
         const referer = getRequiredReferer(streamResult.url);
         if (referer) headers = { Referer: referer };
       }
+
+      void this.cache.set(cacheKey, { url: streamResult.url, headers }, ANIME_CACHE.STREAM);
 
       return {
         stream: { url: streamResult.url, headers },

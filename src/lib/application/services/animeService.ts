@@ -81,30 +81,6 @@ export class AnimeService {
     }
   }
 
-  /** Returns cached home data if fresh (>30% TTL remaining), null otherwise. */
-  async peekHomeCache(): Promise<HomeData | null> {
-    const cacheKey = createCacheKey(CACHE_PREFIXES.HOME, '/');
-    return await this.peekCache<HomeData>(cacheKey, ANIME_CACHE.HOME);
-  }
-
-  /** Returns cached details data if fresh (>30% TTL remaining), null otherwise. */
-  async peekDetailsCache(slug: string): Promise<AnimeDetail | null> {
-    const cacheKey = createCacheKey(CACHE_PREFIXES.DETAILS, slug);
-    return await this.peekCache<AnimeDetail>(cacheKey, ANIME_CACHE.DETAILS);
-  }
-
-  private async peekCache<T>(cacheKey: string, ttl: number): Promise<T | null> {
-    try {
-      const entry = await this.cache.get<T>(cacheKey);
-      if (!entry) return null;
-      const isStale = (entry.expiration - Date.now()) < (ttl * 0.3);
-      if (isStale) return null;
-      return entry.payload;
-    } catch {
-      return null;
-    }
-  }
-
   private async fetchWithCache<T>(options: AnimeFetchOptions<T>, signal: AbortSignal): Promise<FetchResult<T>> {
     const { cacheKey, cacheTtl, errorMessage, fetchFn, force, onSuccess } = options;
 
@@ -184,7 +160,7 @@ export class AnimeService {
   }
 
   /** Fetches autocomplete suggestions (no caching). */
-  async fetchSuggestionsData(query: string, signal?: AbortSignal): Promise<AutocompleteAnime[]> {
+  async fetchSuggestionsData(query: string, signal: AbortSignal): Promise<AutocompleteAnime[]> {
     if (!query || query.length < 3) {
       return [];
     }
@@ -197,7 +173,7 @@ export class AnimeService {
         fetchFn: (sig: AbortSignal) => this.getProvider().getSuggestions(query, { signal: sig }),
         onSuccess: (data: AutocompleteAnime[]) => { this.prefetchImages(data.map(item => ({ image: item.poster }))); }
       },
-      signal ?? new AbortController().signal
+      signal
     );
     return result.data ?? [];
   }

@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { getDeps } from "../di";
 import type { AppError, HomeData } from "../domain/entities";
-import { abortManager } from "../utils/AbortControllerManager";
+
+let homeController: AbortController | null = null;
 
 interface HomeState {
   homeData: HomeData;
@@ -24,19 +25,9 @@ export const useHomeStore = create<HomeState>((set) => ({
   prepareRefresh: () => { set({ homeData: { recent: [] }, isHomeLoading: true, isRefreshing: true, error: null }); },
 
   fetchHome: async (force = false) => {
-    const controller = abortManager.getController("home");
-
-    // Serve cached data immediately to avoid loader flash
-    if (!force) {
-      try {
-        const cached = await getDeps().animeService.peekHomeCache();
-        if (cached) {
-          set({ homeData: cached, isHomeLoading: false, isRefreshing: false, error: null });
-          return;
-        }
-      } catch {
-      }
-    }
+    if (homeController) homeController.abort();
+    homeController = new AbortController();
+    const signal = homeController.signal;
 
     set({
       ...(force ? { homeData: { recent: [] } } : {}),
@@ -45,7 +36,9 @@ export const useHomeStore = create<HomeState>((set) => ({
       error: null
     });
 
-    const result = await getDeps().animeService.fetchHomeData(controller.signal, force);
+    const result = await getDeps().animeService.fetchHomeData(signal, force);
+
+    if (signal.aborted) return;
 
     const isSuccessful = !!result.data && result.data.recent.length > 0;
 

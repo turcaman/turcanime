@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { getDeps } from "../di";
 import type { AnimeDetail, AppError } from "../domain/entities";
-import { abortManager } from "../utils/AbortControllerManager";
+
+let detailsController: AbortController | null = null;
 
 interface DetailsState {
   activeAnime: AnimeDetail | null;
@@ -19,22 +20,14 @@ export const useDetailsStore = create<DetailsState>((set) => ({
   error: null,
 
   fetchDetails: async (slug: string, force = false) => {
-    const controller = abortManager.getController("details");
-
-    if (!force) {
-      const cached = await getDeps().animeService.peekDetailsCache(slug);
-      if (cached) {
-        set({ activeAnime: cached, isDetailsLoading: false, error: null });
-        const result = await getDeps().animeService.fetchDetailsData(slug, controller.signal, true);
-        if (result.data && useDetailsStore.getState().activeAnime?.url === slug) {
-          set({ activeAnime: result.data });
-        }
-        return;
-      }
-    }
+    if (detailsController) detailsController.abort();
+    detailsController = new AbortController();
+    const signal = detailsController.signal;
 
     set({ isDetailsLoading: true, error: null });
-    const result = await getDeps().animeService.fetchDetailsData(slug, controller.signal, force);
+    const result = await getDeps().animeService.fetchDetailsData(slug, signal, force);
+
+    if (signal.aborted) return;
 
     if (result.error) {
       set({ error: result.error, isDetailsLoading: false });

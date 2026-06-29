@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import { getDeps } from "../di";
 import type { Anime, AppError, AutocompleteAnime } from "../domain/entities";
-import { abortManager } from "../utils/AbortControllerManager";
+
+let searchController: AbortController | null = null;
+let suggestionsController: AbortController | null = null;
 
 interface SearchState {
   searchAnimes: Anime[];
@@ -32,10 +34,13 @@ export const useSearchStore = create<SearchState>((set) => ({
       set({ searchAnimes: [], suggestions: [], error: null });
       return;
     }
-    set({ suggestions: [], isSearchLoading: true, error: null });
+    if (searchController) searchController.abort();
+    searchController = new AbortController();
 
-    const controller = abortManager.getController("search");
-    const result = await getDeps().animeService.fetchSearchData(query, controller.signal, force);
+    set({ suggestions: [], isSearchLoading: true, error: null });
+    const result = await getDeps().animeService.fetchSearchData(query, searchController.signal, force);
+
+    if (searchController.signal.aborted) return;
 
     if (result.error) {
       set({ error: result.error, isSearchLoading: false });
@@ -45,23 +50,22 @@ export const useSearchStore = create<SearchState>((set) => ({
   },
 
   fetchSuggestions: async (query: string) => {
+    if (suggestionsController) suggestionsController.abort();
+    suggestionsController = new AbortController();
+
     set({ isSuggestionsLoading: true });
-    const controller = abortManager.getController("suggestions");
-    try {
-      const data = await getDeps().animeService.fetchSuggestionsData(query, controller.signal);
-      set({ suggestions: data, isSuggestionsLoading: false });
-    } finally {
-      abortManager.remove("suggestions");
-    }
+    const data = await getDeps().animeService.fetchSuggestionsData(query, suggestionsController.signal);
+    if (suggestionsController.signal.aborted) return;
+    set({ suggestions: data, isSuggestionsLoading: false });
   },
 
   cancelSearch: () => {
-    abortManager.abort("search");
+    if (searchController) searchController.abort();
     set({ isSearchLoading: false });
   },
 
   resetSearch: () => {
-    abortManager.abort("search");
+    if (searchController) searchController.abort();
     set({ searchAnimes: [], suggestions: [], error: null, isSearchLoading: false });
   },
 

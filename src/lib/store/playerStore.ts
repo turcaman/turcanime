@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import { getDeps } from "../di";
 import type { VideoServer } from "../domain/entities";
-import { ANIME_CACHE } from "../config/cacheTTLs";
-import { CACHE_PREFIXES } from "../config/cacheKeys";
-import { createCacheKey } from "../utils/CacheUtils";
 
 interface PlayerState {
   servers: VideoServer[];
@@ -35,23 +32,8 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   error: null,
 
   fetchServers: async (slug: string, number: string, force = false, signal?: AbortSignal) => {
-    if (!force) {
-      const cacheKey = createCacheKey(CACHE_PREFIXES.SERVERS, `${slug}_${number}`);
-      try {
-        const cached = await getDeps().cacheRepo.get<VideoServer[]>(cacheKey);
-        if (cached && Date.now() < cached.expiration) {
-          set({ servers: cached.payload, isLoading: false, error: null });
-          return;
-        }
-      } catch {
-      }
-    }
     set({ isLoading: true, servers: [], error: null });
     const result = await getDeps().playerService.fetchEpisodeServers(slug, number, force, signal);
-    if (result.servers.length > 0) {
-      const cacheKey = createCacheKey(CACHE_PREFIXES.SERVERS, `${slug}_${number}`);
-      void getDeps().cacheRepo.set(cacheKey, result.servers, ANIME_CACHE.SERVERS);
-    }
     set({
       servers: result.servers,
       isLoading: false,
@@ -60,19 +42,9 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   },
 
   resolveStream: async (server: VideoServer, episodeUrl: string) => {
-    const streamCacheKey = createCacheKey(CACHE_PREFIXES.STREAM, `${server.url}_${server.id}`);
-    try {
-      const cached = await getDeps().cacheRepo.get<{ url: string; headers?: Record<string, string> }>(streamCacheKey);
-      if (cached && Date.now() < cached.expiration) {
-        set({ streamUrl: cached.payload.url, streamHeaders: cached.payload.headers ?? null, lastLanguage: server.language, isLoading: false, error: null });
-        return;
-      }
-    } catch {
-    }
     set({ isLoading: true, streamUrl: null, streamHeaders: null, lastLanguage: server.language, error: null });
     const result = await getDeps().playerService.resolveStreamUrl(server, episodeUrl);
     if (result.stream != null) {
-      void getDeps().cacheRepo.set(streamCacheKey, { url: result.stream.url, headers: result.stream.headers }, ANIME_CACHE.STREAM);
       set({
         streamUrl: result.stream.url,
         streamHeaders: result.stream.headers ?? null,
@@ -85,7 +57,6 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       await getDeps().refreshSession();
       const retryResult = await getDeps().playerService.resolveStreamUrl(server, episodeUrl);
       if (retryResult.stream != null) {
-        void getDeps().cacheRepo.set(streamCacheKey, { url: retryResult.stream.url, headers: retryResult.stream.headers }, ANIME_CACHE.STREAM);
         set({
           streamUrl: retryResult.stream.url,
           streamHeaders: retryResult.stream.headers ?? null,
