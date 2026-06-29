@@ -82,7 +82,7 @@ function AnimeDetailsContent() {
             isRestoring={isRestoring}
           />
 
-          <View style={{ paddingHorizontal: 20, marginTop: 12, gap: 8 }}>
+          <View style={{ paddingHorizontal: 20, marginTop: 4, gap: 8 }}>
             {visibleEpisodes.map((item) => (
               <AnimatedPressable key={item.id} onPress={() => { handleEpisodePress(item); }}>
                 <View className="rounded-xl bg-neutral-950 flex-row items-center justify-between border border-neutral-800 p-4">

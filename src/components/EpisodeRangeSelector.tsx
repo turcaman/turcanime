@@ -49,7 +49,7 @@ export const EpisodeRangeSelector = memo(({
   if (ranges.length <= 1) return null;
 
   return (
-    <View className="mb-3">
+    <View className="mt-3 mb-2">
       <FlatList
         ref={listRef}
         horizontal
