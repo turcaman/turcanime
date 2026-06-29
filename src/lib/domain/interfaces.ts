@@ -1,15 +1,8 @@
 import type { Anime, AnimeDetail, AutocompleteAnime, Episode, HomeData, VideoServer } from "./entities";
 
-/** Result of parsing HTML content for anime cards. */
-export interface ParseResult {
-  cards: Anime[];
-  strategyUsed: string;
-  success: boolean;
-}
-
 /** Parses HTML responses from the anime site into structured data. */
 export interface IHtmlParser {
-  parseCards(html: string): ParseResult;
+  parseCards(html: string): Anime[];
   parseEpisodes(html: string, slug: string): Episode[];
   parseEpisodesFromHtml(html: string, slug: string): Episode[];
   extractMetaTags(html: string): { title: string | null; banner: string | null; description: string | null };
@@ -28,16 +21,6 @@ export interface IRscParser {
   extractSynopsis(rsc: string, fullHtml: string): string | null;  parseAllFromScripts(
     html: string
   ): { poster: string; synopsis: string | null; relations: import("./entities").AnimeRelations | null };
-}
-
-/** Detects site structure changes and invalidates caches when needed. */
-export interface ISiteVersionManager {
-  checkAndInvalidateIfNeeded(html: string): Promise<boolean>;
-}
-
-/** Tracks parser strategy usage and success rates for metrics. */
-export interface IMetricsTracker {
-  record(strategy: string, success: boolean): void;
 }
 
 /** Result of resolving a stream URL — includes optional browser-like headers. */

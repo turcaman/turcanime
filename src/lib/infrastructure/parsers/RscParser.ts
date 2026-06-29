@@ -140,7 +140,9 @@ export class RscParser implements IRscParser {
   ): { poster: string; synopsis: string | null; relations: AnimeRelations | null } {
     let poster = "";
     let synopsis: string | null = null;
+    let relations: AnimeRelations | null = null;
     let synopsisLocked = false;
+    let relationsLocked = false;
 
     const scripts = html.matchAll(/<script[^>]*>(.*?)<\/script>/gs);
     for (const match of scripts) {
@@ -151,35 +153,21 @@ export class RscParser implements IRscParser {
         poster = this.extractPosterUrl(text);
       }
 
-      if (!synopsisLocked) {
-        const p = this.parseRscPayload(text);
-        if (p) {
-          const result = this.extractSynopsis(p, html);
-          if (result != null) {
-            synopsis = result;
-            synopsisLocked = true;
-          }
+      const p = this.parseRscPayload(text);
+
+      if (!synopsisLocked && p) {
+        const result = this.extractSynopsis(p, html);
+        if (result != null) {
+          synopsis = result;
+          synopsisLocked = true;
         }
       }
-    }
 
-    let relations: AnimeRelations | null = null;
-    let relationsLocked = false;
-
-    // Re-iterate to extract relations from RSC payload
-    const scripts2 = html.matchAll(/<script[^>]*>(.*?)<\/script>/gs);
-    for (const match of scripts2) {
-      const text = match[1]!;
-      if (!text.includes("self.__next_f.push")) continue;
-
-      if (!relationsLocked) {
-        const p = this.parseRscPayload(text);
-        if (p) {
-          const result = this.extractRelations(p);
-          if (result != null) {
-            relations = result;
-            relationsLocked = true;
-          }
+      if (!relationsLocked && p) {
+        const result = this.extractRelations(p);
+        if (result != null) {
+          relations = result;
+          relationsLocked = true;
         }
       }
     }

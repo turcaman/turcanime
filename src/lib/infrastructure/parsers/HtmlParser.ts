@@ -1,23 +1,32 @@
-import type { Episode } from "../../domain/entities";
-import type { IHtmlParser, ParseResult } from "../../domain/interfaces";
+import type { Anime, Episode } from "../../domain/entities";
+import type { IHtmlParser } from "../../domain/interfaces";
 import { logger } from "../../utils/logger";
 import { ParserUtils } from "./ParserUtils";
-import { HomeParser } from "./strategies/HomeParser";
+import { cleanTitle } from "../../utils/text";
+
+const CARD_LINK_REGEX = /<a[^>]*class="group block"[^>]*href="\/anime\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*(?:src|data-src)="([^"]+)"[\s\S]*?alt="([^"]+)"/g;
+
+function createAnimeCard(url: string, image: string, title: string): Anime {
+  return {
+    title: cleanTitle(ParserUtils.sanitizeTitle(title)),
+    image,
+    url: ParserUtils.cleanUrl(url),
+    status: "",
+  };
+}
 
 export class HtmlParser implements IHtmlParser {
-  private homeParser: HomeParser;
-
-  constructor() {
-    this.homeParser = new HomeParser();
-  }
-
-  parseCards(html: string): ParseResult {
-    const result = this.homeParser.parse(html);
-    return {
-      cards: result.data,
-      strategyUsed: result.strategyUsed,
-      success: result.success,
-    };
+  parseCards(html: string): Anime[] {
+    const seen = new Set<string>();
+    const cards: Anime[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = CARD_LINK_REGEX.exec(html)) !== null) {
+      const url = match[1]!;
+      if (!url || seen.has(url)) continue;
+      seen.add(url);
+      cards.push(createAnimeCard(url, match[2]!, match[3]!));
+    }
+    return cards;
   }
 
   parseEpisodes(html: string, slug: string): Episode[] {

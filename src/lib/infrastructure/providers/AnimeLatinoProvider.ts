@@ -6,52 +6,36 @@ import type {
     HomeData,
     VideoServer
 } from "../../domain/entities";
-import type { IContentProvider, IHtmlParser, IMetricsTracker, IRscParser, ISessionManager, ISiteVersionManager, IWebViewBridge, StreamUrlResult } from "../../domain/interfaces";
+import type { IContentProvider, IHtmlParser, IRscParser, ISessionManager, IWebViewBridge, StreamUrlResult } from "../../domain/interfaces";
 import { ProviderError } from "../../utils/errors";
 import { logger } from "../../utils/logger";
 import { cleanTitle } from "../../utils/text";
 import { ANIMELATINO_CONFIG } from "../../config/providerConfigs";
 import { ParserUtils } from "../parsers/ParserUtils";
-import { AnimeOrchestrator } from "../parsers/AnimeOrchestrator";
 import { TMDB_IMAGE_BASE } from "../../config/images";
 import { extractBest } from "../services/ByseExtractor";
 
 /**
  * AnimeLatinoProvider - Content provider for AnimeLatinoHD
- *
- * Responsibilities:
- * - HTTP fetching (inherited from AbstractProvider)
- * - Orchestration of HTML/RSC parsing (delegated to parsers)
- * - Site version tracking (delegated to SiteVersionManager)
- * - Metrics tracking (delegated to MetricsTracker)
  */
 export class AnimeLatinoProvider extends AbstractProvider implements IContentProvider {
   readonly name = "AnimeLatinoHD";
 
   private webViewBridge: IWebViewBridge;
-  private orchestrator: AnimeOrchestrator;
   private htmlParser: IHtmlParser;
   private rscParser: IRscParser;
-  private versionManager: ISiteVersionManager;
-  private metrics: IMetricsTracker;
 
   constructor(
     sessionManager: ISessionManager,
     baseUrl: string,
     webViewBridge: IWebViewBridge,
-    orchestrator: AnimeOrchestrator,
     htmlParser: IHtmlParser,
     rscParser: IRscParser,
-    versionManager: ISiteVersionManager,
-    metrics: IMetricsTracker,
   ) {
     super(sessionManager, baseUrl);
     this.webViewBridge = webViewBridge;
-    this.orchestrator = orchestrator;
     this.htmlParser = htmlParser;
     this.rscParser = rscParser;
-    this.versionManager = versionManager;
-    this.metrics = metrics;
   }
 
   async getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData> {
@@ -59,9 +43,7 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     const res = await this.fetchWithSession(homeEndpoint, options ?? {});
     const html = await res.text();
 
-    await this.versionManager.checkAndInvalidateIfNeeded(html);
-
-    const recent = this.parseCardsWithMetrics(html);
+    const recent = this.htmlParser.parseCards(html);
 
     if (recent.length === 0) {
       logger.info("getHomeData", "No cards extracted — site structure may have changed");
@@ -122,20 +104,50 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
 
   async getDetails(slug: string, options?: { signal?: AbortSignal }): Promise<AnimeDetail | null> {
     const res = await this.fetchWithSession(`/anime/${slug}`, options ?? {});
-    
+
     if (res.status === 404) return null;
-    
+
     if (!res.ok) {
       throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
     }
 
     const html = await res.text();
-    return this.orchestrator.parseAnimeDetail(html, slug);
+    return this.parseAnimeDetail(html, slug);
+  }
+
+  private parseAnimeDetail(html: string, slug: string): AnimeDetail {
+    const meta = this.htmlParser.extractMetaTags(html);
+    const rscData = this.rscParser.parseAllFromScripts(html);
+
+    const title = this.htmlParser.extractTitleFromHtml(html);
+    const status = this.htmlParser.extractStatusFromHtml(html);
+    const episodes = this.htmlParser.parseEpisodes(html, slug);
+
+    const domSynopsis = this.htmlParser.extractSynopsisFromDom(html);
+    const jsonLdSynopsis = this.htmlParser.extractSynopsisFromJsonLd(html);
+    const jsonLdImage = this.htmlParser.extractImageFromJsonLd(html);
+    const synopsis = rscData.synopsis ?? jsonLdSynopsis ?? domSynopsis ?? meta.description ?? "";
+
+    const image = rscData.poster || (jsonLdImage ?? meta.banner ?? "");
+    const genres = this.htmlParser.extractGenresFromJsonLd(html);
+
+    return {
+      title: cleanTitle(title || (meta.title ?? "")),
+      image,
+      synopsis,
+      banner: meta.banner ?? image,
+      poster: image,
+      status,
+      genres,
+      episodes,
+      relations: rscData.relations,
+      url: slug,
+    };
   }
 
   async getEpisodeServers(slug: string, number: string, options?: { signal?: AbortSignal }): Promise<VideoServer[]> {
     const res = await this.fetchWithSession(`/ver/${slug}/${number}`, options ?? {});
-    
+
     if (!res.ok) {
       throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
     }
@@ -245,13 +257,5 @@ export class AnimeLatinoProvider extends AbstractProvider implements IContentPro
     }
 
     return { url: iframeUrl };
-  }
-
-  private parseCardsWithMetrics(html: string): Anime[] {
-    const result = this.htmlParser.parseCards(html);
-    if (result.strategyUsed !== "none") {
-      this.metrics.record(result.strategyUsed, result.success);
-    }
-    return result.cards;
   }
 }
