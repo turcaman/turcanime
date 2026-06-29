@@ -1,4 +1,4 @@
-import { FlatList, useWindowDimensions, View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 import type { Anime } from "@/lib/domain/entities";
 import React, { memo, useMemo } from "react";
 import AnimeCard from "../AnimeCard";
@@ -14,30 +14,31 @@ export const AnimeGridSection = memo(({ label, items }: AnimeGridSectionProps) =
   const { width } = useWindowDimensions();
   const cardWidth = calcCardWidth(width);
 
-  const columnWrapperStyle = useMemo(() => ({
-    justifyContent: "flex-start" as const,
-    gap: 12,
-  }), []);
+  const rows = useMemo(() => {
+    const result: Anime[][] = [];
+    for (let i = 0; i < items.length; i += 3) {
+      result.push(items.slice(i, i + 3));
+    }
+    return result;
+  }, [items]);
 
   if (items.length === 0) return null;
 
   return (
     <View>
-        <SectionTitle>{label}</SectionTitle>
+      <SectionTitle>{label}</SectionTitle>
       <View className="mb-3" />
-      <FlatList
-        data={items}
-        numColumns={3}
-        keyExtractor={(item) => item.url}
-        renderItem={({ item }) => (
-          <View style={{ width: cardWidth }} className="mb-3">
-            <AnimeCard anime={item} width={cardWidth} />
+      <View style={{ gap: 12 }}>
+        {rows.map((row, rowIdx) => (
+          <View key={rowIdx} style={{ flexDirection: "row", gap: 12 }}>
+            {row.map((item) => (
+              <View key={item.url} style={{ width: cardWidth }}>
+                <AnimeCard anime={item} width={cardWidth} />
+              </View>
+            ))}
           </View>
-        )}
-        columnWrapperStyle={columnWrapperStyle}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={false}
-      />
+        ))}
+      </View>
     </View>
   );
 });
