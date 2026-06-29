@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
     type GestureResponderEvent,
     type PressableProps,
@@ -22,11 +22,16 @@ interface AnimatedPressableProps extends Omit<PressableProps, 'style'> {
   accessibilityLabel?: string;
   accessibilityHint?: string;
   hapticFeedback?: boolean;
+  /** Duration in ms to ignore subsequent presses after the first one. */
+  debounceMs?: number;
 }
+
+const DEFAULT_DEBOUNCE_MS = 300;
 
 /**
  * Consistent press feedback across the app.
  * Fixed values ensure all interactive elements feel identical.
+ * Built-in debounce prevents double-tap navigation bugs.
  */
 export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   children,
@@ -37,8 +42,23 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   accessibilityLabel,
   accessibilityHint,
   hapticFeedback = true,
+  debounceMs = DEFAULT_DEBOUNCE_MS,
   ...rest
 }) => {
+  const lastPressTimeRef = useRef(0);
+
+  const handlePress = useCallback(
+    (e: GestureResponderEvent) => {
+      const now = Date.now();
+      if (now - lastPressTimeRef.current < debounceMs) {
+        return;
+      }
+      lastPressTimeRef.current = now;
+      onPress?.(e);
+    },
+    [onPress, debounceMs],
+  );
+
   const opacity = useSharedValue(1);
   const scale = useSharedValue(1);
 
@@ -68,7 +88,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     <AnimatedPressableComponent
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      onPress={onPress}
+      onPress={handlePress}
       style={[style, animatedStyle]}
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
