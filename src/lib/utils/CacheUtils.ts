@@ -9,10 +9,11 @@ export function encodeCacheKey(str: string): string {
     .replace(/[^a-z0-9]/g, '_')
     .replace(/_+/g, '_');
 
-  let hash = 0;
+  // FNV-1a 32-bit hash for better distribution
+  let hash = 0x811c9dc5;
   for (let i = 0; i < sanitized.length; i++) {
-    hash = ((hash << 5) - hash) + sanitized.charCodeAt(i);
-    hash |= 0;
+    hash ^= sanitized.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
   }
 
   return `${sanitized.slice(0, 40)}_${Math.abs(hash).toString(36)}`;
