@@ -8,14 +8,22 @@ interface RecentSearchesProps {
   searches: string[];
   onSelect: (term: string) => void;
   onRemove: (term: string) => void;
+  onClearAll?: () => void;
 }
 
-export const RecentSearches = memo(({ searches, onSelect, onRemove }: RecentSearchesProps) => {
+export const RecentSearches = memo(({ searches, onSelect, onRemove, onClearAll }: RecentSearchesProps) => {
   if (searches.length === 0) return null;
 
   return (
     <View className="mt-3 pb-20">
-      <SectionTitle>Búsquedas recientes</SectionTitle>
+      <View className="flex-row items-center justify-between">
+        <SectionTitle>Búsquedas recientes</SectionTitle>
+        {onClearAll && (
+          <AnimatedPressable onPress={onClearAll}>
+            <Text className="text-xs font-semibold text-purple-500">Limpiar</Text>
+          </AnimatedPressable>
+        )}
+      </View>
       <View className="mb-3" />
       <FlatList
         data={searches}

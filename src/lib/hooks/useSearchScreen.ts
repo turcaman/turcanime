@@ -24,7 +24,7 @@ export function useSearchScreen() {
     cancelSearch,
   } = useSearchStore();
 
-  const { recentSearches, saveRecentSearch, removeRecentSearch } = useSearchHistoryStore();
+  const { recentSearches, saveRecentSearch, removeRecentSearch, clearRecentSearches } = useSearchHistoryStore();
 
   const [state, setState] = useState<SearchState>({
     term: lastSearchTerm,
@@ -107,6 +107,7 @@ export function useSearchScreen() {
     resetSearch,
     retrySearch,
     removeRecentSearch,
+    clearRecentSearches,
     handleSelectSuggestion,
   };
 }

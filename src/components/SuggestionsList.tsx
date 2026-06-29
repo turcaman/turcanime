@@ -24,7 +24,7 @@ export const SuggestionsList = memo(({ suggestions, onSelect, onScroll, tabBarOf
   if (suggestions.length === 0) return null;
 
   return (
-    <View className="absolute inset-0 z-50 bg-black px-5">
+    <View className="flex-1">
       <FlashList
         data={suggestions}
         keyExtractor={(item) => item.slug}
