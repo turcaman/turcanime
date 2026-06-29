@@ -81,6 +81,8 @@ export class SiteVersionManager implements ISiteVersionManager {
         this.cache.clearWithPrefix(`${CACHE_PREFIXES.DETAILS}_`),
         this.cache.clearWithPrefix(`${CACHE_PREFIXES.SEARCH}_`),
         this.cache.clearWithPrefix(`${CACHE_PREFIXES.SUGGESTIONS}_`),
+        this.cache.clearWithPrefix(`${CACHE_PREFIXES.SERVERS}_`),
+        this.cache.clearWithPrefix(`${CACHE_PREFIXES.STREAM}_`),
       ]);
       logger.info("SiteVersionManager", "Cache invalidated successfully");
     } catch (e: unknown) {

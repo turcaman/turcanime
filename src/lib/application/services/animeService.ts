@@ -84,11 +84,20 @@ export class AnimeService {
   /** Returns cached home data if fresh (>30% TTL remaining), null otherwise. */
   async peekHomeCache(): Promise<HomeData | null> {
     const cacheKey = createCacheKey(CACHE_PREFIXES.HOME, '/');
+    return await this.peekCache<HomeData>(cacheKey, ANIME_CACHE.HOME);
+  }
+
+  /** Returns cached details data if fresh (>30% TTL remaining), null otherwise. */
+  async peekDetailsCache(slug: string): Promise<AnimeDetail | null> {
+    const cacheKey = createCacheKey(CACHE_PREFIXES.DETAILS, slug);
+    return await this.peekCache<AnimeDetail>(cacheKey, ANIME_CACHE.DETAILS);
+  }
+
+  private async peekCache<T>(cacheKey: string, ttl: number): Promise<T | null> {
     try {
-      const entry = await this.cache.get<HomeData>(cacheKey);
+      const entry = await this.cache.get<T>(cacheKey);
       if (!entry) return null;
-      // Check freshness: if less than 30% of TTL remains, it's stale
-      const isStale = (entry.expiration - Date.now()) < (ANIME_CACHE.HOME * 0.3);
+      const isStale = (entry.expiration - Date.now()) < (ttl * 0.3);
       if (isStale) return null;
       return entry.payload;
     } catch {
@@ -215,6 +224,7 @@ export class AnimeService {
       this.cache.clearWithPrefix(`${CACHE_PREFIXES.SEARCH}_`),
       this.cache.clearWithPrefix(`${CACHE_PREFIXES.SUGGESTIONS}_`),
       this.cache.clearWithPrefix(`${CACHE_PREFIXES.STREAM}_`),
+      this.cache.clearWithPrefix(`${CACHE_PREFIXES.SERVERS}_`),
     ]);
   }
 }

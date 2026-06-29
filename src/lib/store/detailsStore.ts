@@ -20,8 +20,20 @@ export const useDetailsStore = create<DetailsState>((set) => ({
 
   fetchDetails: async (slug: string, force = false) => {
     const controller = abortManager.getController("details");
-    set({ isDetailsLoading: true, error: null });
 
+    if (!force) {
+      const cached = await getDeps().animeService.peekDetailsCache(slug);
+      if (cached) {
+        set({ activeAnime: cached, isDetailsLoading: false, error: null });
+        const result = await getDeps().animeService.fetchDetailsData(slug, controller.signal, true);
+        if (result.data && useDetailsStore.getState().activeAnime?.url === slug) {
+          set({ activeAnime: result.data });
+        }
+        return;
+      }
+    }
+
+    set({ isDetailsLoading: true, error: null });
     const result = await getDeps().animeService.fetchDetailsData(slug, controller.signal, force);
 
     if (result.error) {
