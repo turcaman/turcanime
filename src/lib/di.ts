@@ -15,9 +15,6 @@ import { CacheRepo } from "./domain/repositories/cacheRepo";
 import { AnimeLatinoProvider } from "./infrastructure/providers/AnimeLatinoProvider";
 import { HtmlParser } from "./infrastructure/parsers/HtmlParser";
 import { RscParser } from "./infrastructure/parsers/RscParser";
-import { AnimeOrchestrator } from "./infrastructure/parsers/AnimeOrchestrator";
-import { SiteVersionManager } from "./infrastructure/version/SiteVersionManager";
-import { MetricsTracker } from "./infrastructure/metrics/MetricsTracker";
 import { ImageService } from "./infrastructure/services/ImageService";
 import { ANIMELATINO_CONFIG } from "./config/providerConfigs";
 import { logger } from "./utils/logger";
@@ -29,7 +26,6 @@ export interface AppDependencies {
   animeService: AnimeService;
   playerService: PlayerService;
   playerUIService: PlayerUIService;
-  imageService: ImageService;
   cacheRepo: CacheRepo;
   refreshSession: () => Promise<void>;
 }
@@ -56,9 +52,6 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
   const cacheRepo = new CacheRepo(storage);
   const htmlParser = new HtmlParser();
   const rscParser = new RscParser();
-  const orchestrator = new AnimeOrchestrator(htmlParser, rscParser);
-  const versionManager = new SiteVersionManager(sessionManager, cacheRepo);
-  const metrics = new MetricsTracker(cacheRepo);
   const imageService = new ImageService();
 
   deps = {
@@ -66,24 +59,19 @@ export function initializeDeps(): { deps: AppDependencies; ready: Promise<void> 
     sessionManager,
     getProvider,
     animeService: new AnimeService(cacheRepo, getProvider, sessionManager, imageService),
-    playerService: new PlayerService(getProvider),
+    playerService: new PlayerService(getProvider, cacheRepo),
     playerUIService: new PlayerUIService(),
-    imageService,
     cacheRepo,
     refreshSession,
   };
 
-  const provider = new AnimeLatinoProvider(
+  setProvider(new AnimeLatinoProvider(
     sessionManager,
     ANIMELATINO_CONFIG.baseUrl,
     webViewBridge,
-    orchestrator,
     htmlParser,
     rscParser,
-    versionManager,
-    metrics,
-  );
-  setProvider(provider);
+  ));
 
   initPromise = Promise.resolve().then(async () => {
     logger.setStorage(storage);
