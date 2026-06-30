@@ -62,9 +62,9 @@ export function computeEpisodePagination(
   episodes: Episode[] | undefined,
   order: "asc" | "desc",
   activeRangeIdx: number,
-): { orderedEpisodes: Episode[]; ranges: EpisodeRange[]; visibleEpisodes: Episode[] } {
-  const orderedEpisodes = episodes != null && episodes.length > 0 ? orderEpisodes(episodes) : [];
-  const ranges = buildRanges(orderedEpisodes);
-  const visibleEpisodes = getVisibleEpisodes(orderedEpisodes, ranges, activeRangeIdx, order === "asc");
-  return { orderedEpisodes, ranges, visibleEpisodes };
+): { ranges: EpisodeRange[]; visibleEpisodes: Episode[] } {
+  const ordered = episodes != null && episodes.length > 0 ? orderEpisodes(episodes) : [];
+  const ranges = buildRanges(ordered);
+  const visibleEpisodes = getVisibleEpisodes(ordered, ranges, activeRangeIdx, order === "asc");
+  return { ranges, visibleEpisodes };
 }

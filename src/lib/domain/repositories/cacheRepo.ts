@@ -1,7 +1,3 @@
-/**
- * Generic cache repository with TTL support.
- * Wraps raw storage with typed get/set/expiration logic.
- */
 import { LIMITS } from "../../config/limits";
 import { logger } from "../../utils/logger";
 

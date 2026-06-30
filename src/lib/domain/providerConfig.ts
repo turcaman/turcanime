@@ -4,7 +4,6 @@
  */
 
 export interface ProviderConfig {
-  id: string;
   name: string;
   baseUrl: string;
   sessionWashUrl: string;

@@ -124,9 +124,7 @@ function PlayerContent() {
   }, [streamUrl, streamHeaders, player, slug, currentEpNumber]);
 
   const historyCtx = useRef({ title: "", url: "", image: "", number: "" });
-  useEffect(() => {
-    historyCtx.current = { title, url: slug, image, number: currentEpNumber };
-  }, [slug, title, image, currentEpNumber]);
+  historyCtx.current = { title, url: slug, image, number: currentEpNumber };
 
   const saveProgress = useCallback(() => {
     try {
