@@ -87,10 +87,6 @@ export class SessionManager implements ISessionManager {
     }
   }
 
-  async refreshCookies(): Promise<void> {
-    logger.warn("SessionManager", "refreshCookies called but not implemented");
-  }
-
   async invalidateCookies(): Promise<void> {
     const session = await this.getSession();
     if (session) {
