@@ -1,14 +1,14 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import type { Episode } from "../domain/entities";
 import { usePlayerStore } from "../store/playerStore";
 import { useSettingsStore } from "../store/user";
 import { useAnimeData } from "./useAnimeData";
 import {
-    useEpisodePagination,
     usePersistedRange,
     useServerFetcher,
 } from "./useAnimeDetail";
 import { useEpisodeUI } from "./useEpisodeUI";
+import { computeEpisodePagination } from "../domain/services/episodeService";
 
 export function useAnimeDetailScreen(slug: string) {
   const { anime, isLoading: isAnimeLoading, error, hasLoaded, refresh } = useAnimeData(slug);
@@ -17,10 +17,9 @@ export function useAnimeDetailScreen(slug: string) {
   const episodeUI = useEpisodeUI();
 
   const [activeRangeIdx, setActiveRangeIdx, isRestoring] = usePersistedRange(slug);
-  const { ranges, visibleEpisodes } = useEpisodePagination(
-    anime?.episodes,
-    episodeOrder,
-    activeRangeIdx,
+  const { ranges, visibleEpisodes } = useMemo(
+    () => computeEpisodePagination(anime?.episodes, episodeOrder, activeRangeIdx),
+    [anime?.episodes, episodeOrder, activeRangeIdx],
   );
   const { serverLoading, fetchAndSet } = useServerFetcher(slug, fetchServers);
 

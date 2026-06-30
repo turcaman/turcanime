@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getDeps } from "../di";
 import type { Episode } from "../domain/entities";
-import {
-    buildRanges,
-    getVisibleEpisodes,
-    orderEpisodes,
-} from "../domain/services/episodeService";
 import { logger } from "../utils/logger";
 
 export function usePersistedRange(slug: string | undefined) {
@@ -51,26 +46,6 @@ export function usePersistedRange(slug: string | undefined) {
   );
 
   return [activeRangeIdx, setAndPersist, isRestoring] as const;
-}
-
-interface UseEpisodePaginationResult {
-  orderedEpisodes: Episode[];
-  ranges: { label: string; start: number; end: number }[];
-  visibleEpisodes: Episode[];
-}
-
-export function useEpisodePagination(
-  episodes: Episode[] | undefined,
-  order: "asc" | "desc",
-  activeRangeIdx: number,
-): UseEpisodePaginationResult {
-  const isAscending = order === "asc";
-
-  const orderedEpisodes = episodes != null && episodes.length > 0 ? orderEpisodes(episodes) : [];
-  const ranges = buildRanges(orderedEpisodes);
-  const visibleEpisodes = getVisibleEpisodes(orderedEpisodes, ranges, activeRangeIdx, isAscending);
-
-  return { orderedEpisodes, ranges, visibleEpisodes };
 }
 
 export function useServerFetcher(
