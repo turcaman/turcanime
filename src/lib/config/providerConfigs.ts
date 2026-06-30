@@ -8,7 +8,6 @@ export const ANIMELATINO_CONFIG: ProviderConfig = {
   sessionWashUrl: "https://www.animelatinohd.com/",
   endpoints: {
     home: "/directorio",
-    search: "/animes",
     suggestions: "/api/search",
   },
   features: {
@@ -17,7 +16,4 @@ export const ANIMELATINO_CONFIG: ProviderConfig = {
   },
 };
 
-/** Registry of all available provider configurations */
-export const PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
-  animelatino: ANIMELATINO_CONFIG,
-};
+
