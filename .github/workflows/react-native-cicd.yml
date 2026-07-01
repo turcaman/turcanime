@@ -2,13 +2,6 @@ name: React Native CI/CD
 
 on:
   workflow_dispatch:
-    inputs:
-      buildType:
-        type: choice
-        description: "Build type to run"
-        options:
-          - production
-          - all
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -42,7 +35,6 @@ jobs:
 
   build-android:
     needs: validate
-    if: ${{ github.event.inputs.buildType == 'production' || github.event.inputs.buildType == 'all' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -109,7 +101,6 @@ jobs:
 
   create-release:
     needs: build-android
-    if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'production'
     runs-on: ubuntu-latest
     permissions:
       contents: write
