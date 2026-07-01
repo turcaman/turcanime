@@ -38,7 +38,6 @@ app-example
 
 # generated native folders
 /android
-/ios
 
 # test fixtures
 /animelatinohd/
