@@ -92,9 +92,3 @@ export interface EpisodeRange {
   end: number;
 }
 
-export type WebViewMessageData =
-  | { type: "DECRYPTION_RESULT"; id: string; data: string | null; error?: string }
-  | { type: "EMBED_VIDEO_URL"; url: string }
-  | { type: "SESSION"; session: ISession }
-  | { type: "RAW"; data: string }
-  | { type: "LOG"; data: string };

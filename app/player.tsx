@@ -78,7 +78,7 @@ function PlayerContent() {
 
   useEffect(() => {
     if (streamUrl == null) return;
-    player.replace({ uri: streamUrl, headers: streamHeaders ?? undefined });
+    void player.replaceAsync({ uri: streamUrl, headers: streamHeaders ?? undefined });
 
     const seekKey = `${slug}_${currentEpNumber}`;
     if (seekKey !== lastSeekKey.current) {
