@@ -26,7 +26,7 @@ function AnimeDetailsContent() {
   } = useAnimeDetailScreen(slug as string);
 
   return (
-    <ScreenWrapper isLoading={isAnimeLoading && !anime} error={!!error} hasContent={!!anime} onRetry={refresh}>
+    <ScreenWrapper error={!!error} hasContent={!!anime} onRetry={refresh}>
       <View className="flex-1 bg-black">
         <ScrollView
           contentContainerStyle={{ paddingBottom: TAB_BAR_OFFSET }}

@@ -1,6 +1,6 @@
 import { ContinueWatching } from "@/components/home/ContinueWatching";
 import { AnimeGridSection } from "@/components/home/AnimeGridSection";
-import { ScreenWrapper } from "@/components/ScreenWrapper";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useHomeScreen, type SectionItem } from "@/hooks/useHomeScreen";
 import { useTabBarManager } from "@/hooks/useTabBarManager";
@@ -19,29 +19,31 @@ const HomeContent = React.memo(function HomeContent() {
     reset();
   }, [fetchHome, reset]);
 
+  if (!hasContent && error) {
+    return <ErrorState onRetry={() => void fetchHome(true)} />;
+  }
+
   return (
-    <ScreenWrapper isLoading={isLoading} error={!!error} hasContent={hasContent} onRetry={() => void fetchHome(true)}>
-      <View className="flex-1 bg-black">
-        <FlatList
-          data={sections}
-          keyExtractor={(item: SectionItem, index: number) => `${item.type}-${index}`}
-          renderItem={({ item }) => {
-            if (item.type === "CONTINUE") return <ContinueWatching items={item.items} />;
-            return <AnimeGridSection label={item.label} items={item.items} />;
-          }}
-          ItemSeparatorComponent={() => <View className="h-4" />}
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            paddingTop: insets.top + 16,
-            paddingBottom: TAB_BAR_OFFSET + insets.bottom,
-          }}
-          showsVerticalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => void fetchHome(true)} tintColor="#A855F7" />}
-        />
-      </View>
-    </ScreenWrapper>
+    <View className="flex-1 bg-black">
+      <FlatList
+        data={sections}
+        keyExtractor={(item: SectionItem, index: number) => `${item.type}-${index}`}
+        renderItem={({ item }) => {
+          if (item.type === "CONTINUE") return <ContinueWatching items={item.items} />;
+          return <AnimeGridSection label={item.label} items={item.items} />;
+        }}
+        ItemSeparatorComponent={() => <View className="h-4" />}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: insets.top + 16,
+          paddingBottom: TAB_BAR_OFFSET + insets.bottom,
+        }}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => void fetchHome(true)} tintColor="#A855F7" />}
+      />
+    </View>
   );
 });
 

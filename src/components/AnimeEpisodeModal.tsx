@@ -1,9 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import type { Episode, VideoServer } from "../types";
 import { AnimatedPressable } from "./AnimatedPressable";
-import { AppLoader } from "./ui/AppLoader";
 
 interface AnimeEpisodeModalProps {
   visible: boolean;
@@ -47,7 +46,7 @@ export const AnimeEpisodeModal = ({
 
         <View className="gap-2">
           {isLoading ? (
-            <AppLoader variant="small" />
+            <View className="h-48 justify-center items-center"><ActivityIndicator size="small" color="#A855F7" /></View>
           ) : displayServers.length === 0 ? (
             <View className="h-48 justify-center items-center">
               <Text className="text-neutral-400 text-xs">No hay servidor disponible</Text>

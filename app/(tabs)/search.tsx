@@ -2,7 +2,6 @@ import AnimeCard from "@/components/AnimeCard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RecentSearches } from "@/components/RecentSearches";
 import { SuggestionsList } from "@/components/SuggestionsList";
-import { AppLoader } from "@/components/ui/AppLoader";
 import type { Anime } from "@/types";
 import { useSearchScreen } from "@/hooks/useSearchScreen";
 import { useTabBarManager } from "@/hooks/useTabBarManager";
@@ -75,9 +74,6 @@ function SearchScreenContent() {
         {isTyping && suggestions.length > 0 && (
           <SuggestionsList suggestions={suggestions} onSelect={handleSelectSuggestion} onScroll={handleScroll} tabBarOffset={TAB_BAR_OFFSET} />
         )}
-        {isLoading && (
-          <View className="flex-1 justify-center items-center"><AppLoader variant="small" /></View>
-        )}
         {isSearched && (
           <Animated.View style={{ flex: 1, opacity: resultsOpacity }}>
             <FlatList
@@ -92,12 +88,12 @@ function SearchScreenContent() {
               onScroll={handleScroll}
               scrollEventThrottle={16}
               refreshControl={<RefreshControl refreshing={isLoading} onRefresh={retrySearch} tintColor="#A855F7" />}
-              ListEmptyComponent={
+              ListEmptyComponent={!isLoading ? (
                 <View className="flex-1 justify-start items-center px-5 pt-20">
                   <Feather name="search" size={40} color="#a3a3a3" />
                   <Text className="text-sm text-neutral-500 mt-2">No se encontraron resultados</Text>
                 </View>
-              }
+              ) : null}
             />
           </Animated.View>
         )}
