@@ -38,7 +38,6 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       return;
     }
 
-    // Check cache
     const cacheKey = `${CACHE_PREFIXES.SERVERS}_${slug}_${number}`;
     if (!force) {
       try {
@@ -48,7 +47,6 @@ export const usePlayerStore = create<PlayerState>((set) => ({
           return;
         }
       } catch {
-        // cache miss
       }
     }
 
@@ -75,7 +73,6 @@ export const usePlayerStore = create<PlayerState>((set) => ({
 
     const cacheKey = `${CACHE_PREFIXES.STREAM}_${server.url}_${server.id}`;
 
-    // Check cache
     try {
       const cached = await storage.get<{ payload: { url: string; headers?: Record<string, string> }; expiration: number }>(cacheKey);
       if (cached && Date.now() < cached.expiration) {
@@ -87,7 +84,6 @@ export const usePlayerStore = create<PlayerState>((set) => ({
         return;
       }
     } catch {
-      // cache miss
     }
 
     const doResolve = async (): Promise<boolean> => {
@@ -117,7 +113,6 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       const ok = await doResolve();
       if (ok) return;
 
-      // Retry with fresh session
       logger.info("playerStore", "Stream resolve failed, refreshing session...");
       await refreshSession();
       const ok2 = await doResolve();

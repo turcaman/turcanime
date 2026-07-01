@@ -1,6 +1,3 @@
-/**
- * Extract raw cookie string from a potentially JSON-wrapped value.
- */
 export function unwrapCookies(rawCookies: string): string {
   try {
     const parsed = JSON.parse(rawCookies);

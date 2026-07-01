@@ -30,14 +30,12 @@ export async function withCache<T>(
         }
       }
     } catch {
-      // cache miss or corrupted
     }
   }
 
   try {
     const data = await fetchFn(signal ?? new AbortController().signal);
 
-    // Cache the result (skip if too large)
     try {
       const entry: CacheEntry<T> = { payload: data, expiration: Date.now() + (ttl ?? 6 * 60 * 60 * 1000) };
       const size = JSON.stringify(data).length;
@@ -47,7 +45,6 @@ export async function withCache<T>(
         logger.warn("Cache", `Entry "${cacheKey}" too large (${(size / 1024).toFixed(1)}KB), skipping`);
       }
     } catch {
-      // non-critical
     }
 
     return { data, error: null, fromCache: false };

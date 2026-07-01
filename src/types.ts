@@ -1,4 +1,3 @@
-// ─── Error types ───
 export type AppErrorType = "NETWORK_ERROR" | "NOT_FOUND" | "SERVER_ERROR" | "AUTH_ERROR" | "UNKNOWN";
 
 export interface AppError {
@@ -6,7 +5,6 @@ export interface AppError {
   message: string;
 }
 
-// ─── Anime entities ───
 export interface Anime {
   title: string;
   image: string;
@@ -73,32 +71,27 @@ export interface AutocompleteAnime {
   poster: string;
 }
 
-// ─── Session ───
 export interface ISession {
   cookies: string;
   userAgent: string;
 }
 
-// ─── Stream result ───
 export interface StreamUrlResult {
   url: string;
   headers?: Record<string, string>;
 }
 
-// ─── Cache ───
 export interface CacheEntry<T> {
   payload: T;
   expiration: number;
 }
 
-// ─── Episode pagination ───
 export interface EpisodeRange {
   label: string;
   start: number;
   end: number;
 }
 
-// ─── WebView messages ───
 export type WebViewMessageData =
   | { type: "DECRYPTION_RESULT"; id: string; data: string | null; error?: string }
   | { type: "EMBED_VIDEO_URL"; url: string }

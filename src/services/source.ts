@@ -16,7 +16,6 @@ import type {
   StreamUrlResult,
 } from "../types";
 
-// ─── Fetch with session ───
 
 async function fetchWithSession(path: string, options: RequestInit = {}, retryCount = 0): Promise<Response> {
   await sessionManager.waitForCookies();
@@ -74,7 +73,6 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
         throw error;
       }
 
-      // Retry 403/network errors once
       if (retryCount < 1) {
         logger.info("fetch", `Smart retry (1/1) for HTTP ${res.status}: ${url}`);
         await new Promise((resolve) => setTimeout(resolve, TIMEOUTS.RETRY_DELAY));
@@ -96,13 +94,9 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
   }
 }
 
-// ─── Helpers ───
-
 function cleanTitle(raw: string): string {
   return raw.replace(/^Ver\s+/i, "").replace(/\s+Sub\s+.*$/i, "").trim();
 }
-
-// ─── Provider ───
 
 const htmlParser = new HtmlParser();
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
@@ -251,7 +245,6 @@ async function resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSign
           await getEpisodeServers(parsed[1]!, parsed[2]!, options ?? {});
           continue;
         } catch {
-          // fall through
         }
       }
       break;
@@ -291,8 +284,6 @@ async function resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSign
 
   return { url: iframeUrl };
 }
-
-// ─── Public exports ───
 
 export const source = {
   getHomeData,

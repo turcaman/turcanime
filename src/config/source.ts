@@ -35,7 +35,6 @@ export function refererForUrl(url: string): string {
       if (hostname.includes(domain)) return referer;
     }
   } catch {
-    // not a valid URL
   }
   return "";
 }

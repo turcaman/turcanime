@@ -1,7 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logger } from "./logger";
 
-/** Simple typed wrapper around AsyncStorage. */
 class Storage {
   async get<T>(key: string): Promise<T | null> {
     try {

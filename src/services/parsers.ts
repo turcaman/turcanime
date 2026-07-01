@@ -2,8 +2,6 @@ import type { Anime, AnimeRelations, Episode } from "../types";
 import { TMDB_IMAGE_BASE } from "../config/source";
 import { logger } from "../utils/logger";
 
-// ─── ParserUtils ───
-
 export class ParserUtils {
   static sanitizeTitle(title: string): string {
     return title
@@ -31,8 +29,6 @@ export class ParserUtils {
     return url.replace(/^\/+/, "").replace(/\/+$/, "");
   }
 }
-
-// ─── HtmlParser ───
 
 const CARD_LINK_REGEX = /<a[^>]*class="group block"[^>]*href="\/anime\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*(?:src|data-src)="([^"]*)"[\s\S]*?alt="([^"]*)"/g;
 
@@ -301,7 +297,6 @@ export class HtmlParser {
       const refMatch = html.match(refPattern);
       if (refMatch) return this.unescapeRscValue(refMatch[1]!);
     } catch {
-      // not found
     }
     return null;
   }
