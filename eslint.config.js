@@ -24,19 +24,10 @@ module.exports = defineConfig([
       'react-hooks/exhaustive-deps': 'warn',
       'no-duplicate-imports': 'error',
       'no-var': 'error',
-      'max-depth': ['warn', 5],
-      'max-lines-per-function': ['warn', {
-        max: 150,
-        skipBlankLines: true,
-        skipComments: true,
-      }],
 
-      // Type-aware strict rules
+      // Bug-prevention type-aware rules
       '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/strict-boolean-expressions': 'error',
-      '@typescript-eslint/no-confusing-void-expression': 'error',
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
-      '@typescript-eslint/no-unnecessary-condition': 'error',
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
     },
   },

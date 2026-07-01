@@ -51,10 +51,10 @@ function PlayerContent() {
     const init = async () => {
       await setupImmersiveMode();
     };
-    init();
+    void init();
     return () => {
-      cleanupImmersiveMode();
-      clearStream();
+      void cleanupImmersiveMode();
+      void clearStream();
     };
   }, [clearStream]);
 
