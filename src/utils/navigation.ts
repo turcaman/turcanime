@@ -12,7 +12,7 @@ function debouncedPush(path: string | object) {
   const now = Date.now();
   if (now < navigationLockedUntil) return;
   navigationLockedUntil = now + NAVIGATION_LOCK_MS;
-  router.navigate(path as never);
+  router.push(path as never);
 }
 
 export function navigateToAnime(slug: string) {

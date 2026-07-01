@@ -21,7 +21,7 @@ interface AnimeDetailsHeaderProps {
   onBackPress?: () => void;
 }
 
-const TYPE_LABEL = { prequel: "Precuela", sequel: "Secuela", related: "Relacionado" };
+const TYPE_LABEL = { prequel: "Precuela", sequel: "Secuela" };
 
 export const AnimeDetailsHeader = memo(
   ({
@@ -130,39 +130,40 @@ export const AnimeDetailsHeader = memo(
         </View>
 
         {relatedItems != null && (
-            <View className="pt-6">
-              <View className="px-5">
-                <SectionTitle>Animes relacionados</SectionTitle>
-              </View>
-              <View className="mb-3" />
-              <FlashList
-                horizontal
-                data={relatedItems}
-                keyExtractor={(item) => `${item.type}-${item.anime.id}`}
-                contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-                renderItem={({ item }) => (
-                  <AnimatedPressable
-                    className="w-[110px]"
-                    onPress={() => navigateToAnime(item.anime.slug)}
-                  >
-                    <View className="relative">
-                      <ImageWithLoader
-                        uri={item.anime.poster}
-                        style={{ width: 110, height: 154, borderRadius: 12 }}
-                      />
-                      <View className="absolute top-2 left-2 rounded-md bg-black/70 px-1.5 py-0.5">
-                        <Text className="text-[9px] font-bold text-purple-400 uppercase">
-                          {TYPE_LABEL[item.type]}
-                        </Text>
+            <View className="pt-5 px-5">
+              <SectionTitle>También te puede interesar</SectionTitle>
+              <View className="mt-3">
+                <FlashList
+                  horizontal
+                  data={relatedItems}
+                  keyExtractor={(item) => `${item.type}-${item.anime.id}`}
+                  contentContainerStyle={{ gap: 12 }}
+                  showsHorizontalScrollIndicator={false}
+                  renderItem={({ item }) => (
+                    <AnimatedPressable
+                      className="w-[100px]"
+                      onPress={() => navigateToAnime(item.anime.slug)}
+                    >
+                      <View className="relative">
+                        <ImageWithLoader
+                          uri={item.anime.poster}
+                          style={{ width: 100, height: 140, borderRadius: 10 }}
+                        />
+                        {item.type !== "related" && (
+                          <View className="absolute top-1.5 left-1.5 rounded-md bg-purple-500 px-1.5 py-0.5">
+                            <Text className="text-[9px] font-bold text-white uppercase">
+                              {TYPE_LABEL[item.type]}
+                            </Text>
+                          </View>
+                        )}
                       </View>
-                    </View>
-                    <Text className="mt-1.5 text-xs font-medium text-white" numberOfLines={2}>
-                      {item.anime.name}
-                    </Text>
-                  </AnimatedPressable>
-                )}
-                showsHorizontalScrollIndicator={false}
-              />
+                      <Text className="mt-1 text-xs font-medium text-neutral-300" numberOfLines={2}>
+                        {item.anime.name}
+                      </Text>
+                    </AnimatedPressable>
+                  )}
+                />
+              </View>
             </View>
           )}
 
