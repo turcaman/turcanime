@@ -53,9 +53,12 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
         return;
       }
       lastPressTimeRef.current = now;
+      if (hapticFeedback) {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
       onPress?.(e);
     },
-    [onPress, debounceMs],
+    [onPress, hapticFeedback, debounceMs],
   );
 
   const opacity = useSharedValue(1);
@@ -69,13 +72,8 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   const handlePressIn = useCallback((e: GestureResponderEvent) => {
     scale.value = withTiming(0.96, { duration: 80 });
     opacity.value = withTiming(0.8, { duration: 80 });
-
-    if (hapticFeedback) {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
     if (onPressIn) onPressIn(e);
-  }, [onPressIn, hapticFeedback, scale, opacity]);
+  }, [onPressIn, scale, opacity]);
 
   const handlePressOut = useCallback((e: GestureResponderEvent) => {
     scale.value = withTiming(1, { duration: 120 });

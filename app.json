@@ -19,6 +19,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "package": "com.turcanime.app",
+      "softwareKeyboardLayoutMode": "pan",
       "versionCode": 1910
     },
     "plugins": [
