@@ -5,7 +5,7 @@ import React, { memo, useMemo } from "react";
 import { Text, useWindowDimensions, View } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
 import type { AnimeDetail, AnimeRelations, RelatedAnime } from "../types";
-import { navigateToAnime } from "../utils/navigation";
+import { router } from "expo-router";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ImageWithLoader } from "./ui/ImageWithLoader";
 import { SectionTitle } from "./ui/SectionTitle";
@@ -137,12 +137,11 @@ export const AnimeDetailsHeader = memo(
                   horizontal
                   data={relatedItems}
                   keyExtractor={(item) => `${item.type}-${item.anime.id}`}
-                  contentContainerStyle={{ gap: 12 }}
                   showsHorizontalScrollIndicator={false}
                   renderItem={({ item }) => (
                     <AnimatedPressable
-                      className="w-[100px]"
-                      onPress={() => navigateToAnime(item.anime.slug)}
+                      className="w-[100px] mr-3"
+                      onPress={() => router.replace(`/anime/${item.anime.slug}`)}
                     >
                       <View className="relative">
                         <ImageWithLoader
