@@ -81,6 +81,9 @@ jobs:
       - name: Verify EAS CLI
         run: eas --version
 
+      - name: Generate native project
+        run: npx expo prebuild --platform android --non-interactive
+
       - name: Decode Keystore
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
