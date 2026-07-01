@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
-import type { Episode, VideoServer } from "../lib/domain/entities";
+import type { Episode, VideoServer } from "../types";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { AppLoader } from "./ui/AppLoader";
 

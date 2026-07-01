@@ -1,12 +1,16 @@
 import "../global.css";
 import { NetworkBanner } from "@/components/NetworkBanner";
-import { getDeps, initializeDeps } from "@/lib/di";
-import { useNetworkStatus, type ConnectionType } from "@/lib/hooks/useNetworkStatus";
-import { refreshSession } from "@/lib/core/infrastructure";
-import { useHomeStore } from "@/lib/store/homeStore";
-import { useUIStore } from "@/lib/store/uiStore";
-import { useSettingsStore, useUserInitializationStore } from "@/lib/store/user";
-import { WebViewWorker } from "@/lib/infrastructure/components/WebViewWorker";
+import { WebViewWorker } from "@/components/WebViewWorker";
+import { useHomeStore } from "@/stores/homeStore";
+import { useUIStore } from "@/stores/uiStore";
+import { useSettingsStore, useUserInitializationStore } from "@/stores/userIndex";
+import { useHistoryStore } from "@/stores/historyStore";
+import { useSearchHistoryStore } from "@/stores/searchHistoryStore";
+import { useNetworkStatus, type ConnectionType } from "@/hooks/useNetworkStatus";
+import { sessionManager, refreshSession } from "@/services/session";
+import { storage } from "@/utils/storage";
+import { logger } from "@/utils/logger";
+import type { HistoryItem } from "@/types";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
@@ -22,38 +26,26 @@ function RootInner() {
   const lastRefreshTime = useRef(0);
   const hasBeenActive = useRef(false);
 
-  // Detect network type change (wifi ↔ cellular) → auto session refresh
   useEffect(() => {
     const prev = prevConnectionType.current;
     prevConnectionType.current = connectionType;
-
-    if (prev !== null && prev !== connectionType &&
-        prev !== 'unknown' && connectionType !== 'unknown') {
-      const timer = setTimeout(() => {
-        triggerSessionRefresh();
-      }, 2000);
-      return () => { clearTimeout(timer); };
+    if (prev !== null && prev !== connectionType && prev !== "unknown" && connectionType !== "unknown") {
+      const timer = setTimeout(() => triggerSessionRefresh(), 2000);
+      return () => clearTimeout(timer);
     }
-
     return undefined;
   }, [connectionType, triggerSessionRefresh]);
 
-  // Detect reachability restore → any reconnection (WiFi→WiFi, data→data, airplane mode off, VPN)
   useEffect(() => {
     const prev = prevReachable.current;
     prevReachable.current = isInternetReachable;
-
     if (prev === false && isInternetReachable === true) {
-      const timer = setTimeout(() => {
-        triggerSessionRefresh();
-      }, 2000);
-      return () => { clearTimeout(timer); };
+      const timer = setTimeout(() => triggerSessionRefresh(), 2000);
+      return () => clearTimeout(timer);
     }
-
     return undefined;
   }, [isInternetReachable, triggerSessionRefresh]);
 
-  // Detect app returning to foreground after network changes in background
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
       if (state !== "active") return;
@@ -65,76 +57,73 @@ function RootInner() {
       if (elapsed < 5 * 60 * 1000) return;
       triggerSessionRefresh();
     });
-    return () => { sub.remove(); };
+    return () => sub.remove();
   }, [triggerSessionRefresh]);
 
   useEffect(() => {
     if (sessionRefreshTrigger === 0) return;
-
     const doRefresh = async () => {
       try {
         lastRefreshTime.current = Date.now();
-
-        // Show loading state immediately before slow operations
         useHomeStore.getState().prepareRefresh();
-
         await refreshSession();
-        await getDeps().animeService.clearAnimeCache();
-
+        // Clear caches
+        const allKeys = await storage.getAllKeys();
+        const cacheKeys = allKeys.filter((k) => k.startsWith("ch_") || k.startsWith("search_") || k.startsWith("anime_") || k.startsWith("suggestions_") || k.startsWith("stream_") || k.startsWith("servers_"));
+        await Promise.all(cacheKeys.map((k) => storage.remove(k)));
         void useHomeStore.getState().fetchHome(true);
         useSettingsStore.getState().invalidateCache();
       } finally {
         setSessionRefreshing(false);
       }
     };
-
     void doRefresh();
   }, [sessionRefreshTrigger, setSessionRefreshing]);
 
   useEffect(() => {
     let cancelled = false;
-
-    initializeDeps().ready
-      .then(() => useUserInitializationStore.getState().initialize())
-      .then(() => {
-        if (!cancelled) setReady(true);
-      })
-      .catch((error) => {
-        console.error('[RootLayout] Initialization failed:', error);
-        if (!cancelled) setReady(true);
-      });
-
+    const init = async () => {
+      logger.setStorage(storage);
+      await sessionManager.initialize();
+      const [history, searches, order] = await Promise.all([
+        storage.get<HistoryItem[]>("last_viewed"),
+        storage.get<string[]>("recent_searches"),
+        storage.get<"asc" | "desc">("episode_order"),
+      ]);
+      useHistoryStore.getState().initialize(history ?? []);
+      useSearchHistoryStore.getState().initialize(searches ?? []);
+      useSettingsStore.getState().initialize(order ?? "asc");
+      useUserInitializationStore.setState({ isInitialized: true });
+      if (!cancelled) setReady(true);
+    };
+    init().catch((error) => {
+      console.error("[RootLayout] Initialization failed:", error);
+      if (!cancelled) setReady(true);
+    });
     return () => {
       cancelled = true;
     };
   }, []);
 
   if (!ready) {
-    return (
-      <View className="flex-1 bg-black" />
-    );
+    return <View className="flex-1 bg-black" />;
   }
 
   return (
     <View className="flex-1 bg-black">
       <NetworkBanner visible={isInternetReachable === false} />
       <StatusBar style="light" />
-      <Stack screenOptions={{
-        headerShown: false,
-        animation: 'slide_from_right',
-        contentStyle: { backgroundColor: "#000000" },
-        statusBarStyle: 'light',
-      }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: "slide_from_right",
+          contentStyle: { backgroundColor: "#000000" },
+          statusBarStyle: "light",
+        }}
+      >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="anime/[slug]" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="player"
-          options={{
-            headerShown: false,
-            animation: "fade_from_bottom",
-            statusBarHidden: true,
-          }}
-        />
+        <Stack.Screen name="player" options={{ headerShown: false, animation: "fade_from_bottom", statusBarHidden: true }} />
       </Stack>
       <WebViewWorker />
     </View>

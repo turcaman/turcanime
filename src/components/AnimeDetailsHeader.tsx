@@ -3,7 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { memo } from "react";
 import { Text, useWindowDimensions, View } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
-import type { AnimeDetail } from "../lib/domain/entities";
+import type { AnimeDetail } from "../types";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ImageWithLoader } from "./ui/ImageWithLoader";
 import { SectionTitle } from "./ui/SectionTitle";

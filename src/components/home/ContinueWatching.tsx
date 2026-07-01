@@ -1,8 +1,8 @@
 import React, { memo } from "react";
 import { Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
-import type { HistoryItem } from "../../lib/domain/entities";
-import { navigateToAnime } from "../../lib/utils/navigation";
+import type { HistoryItem } from "../../types";
+import { navigateToAnime } from "../../utils/navigation";
 import { AnimatedPressable } from "../AnimatedPressable";
 import { ImageWithLoader } from "../ui/ImageWithLoader";
 import { SectionTitle } from "../ui/SectionTitle";

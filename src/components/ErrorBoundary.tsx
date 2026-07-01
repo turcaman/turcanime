@@ -5,7 +5,7 @@
 
 import React, { type ErrorInfo, type ReactNode, Component } from "react";
 import { Pressable, Text, View } from "react-native";
-import { logger } from "../lib/utils/logger";
+import { logger } from "../utils/logger";
 
 interface Props {
   children: ReactNode;

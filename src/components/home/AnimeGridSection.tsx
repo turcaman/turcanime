@@ -1,9 +1,9 @@
 import { useWindowDimensions, View } from "react-native";
-import type { Anime } from "@/lib/domain/entities";
+import type { Anime } from "@/types";
 import React, { memo, useMemo } from "react";
 import AnimeCard from "../AnimeCard";
 import { SectionTitle } from "../ui/SectionTitle";
-import { calcCardWidth } from "@/lib/utils/layout";
+import { calcCardWidth } from "@/utils/layout";
 
 interface AnimeGridSectionProps {
   label: string;

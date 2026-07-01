@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from "react";
 import { View, Text } from "react-native";
-import type { Anime, HistoryItem } from "../lib/domain/entities";
-import { navigateToAnime } from "../lib/utils/navigation";
+import type { Anime, HistoryItem } from "../types";
+import { navigateToAnime } from "../utils/navigation";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ImageWithLoader } from "./ui/ImageWithLoader";
 

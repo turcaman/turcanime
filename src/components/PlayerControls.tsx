@@ -1,6 +1,6 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { DarkOverlay } from "@/components/DarkOverlay";
-import { useAutoHide } from "@/lib/hooks/useAutoHide";
+import { useAutoHide } from "@/hooks/useAutoHide";
 import { Feather } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import type { VideoPlayer } from "expo-video";

@@ -1,12 +1,12 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PlayerControls } from "@/components/PlayerControls";
-import { orderEpisodes } from "@/lib/domain/services/episodeService";
-import { getDeps } from "@/lib/di";
-import { useAnimeData } from "@/lib/hooks/useAnimeData";
-import { useEpisodeNavigation } from "@/lib/hooks/useEpisodeNavigation";
-import { useNetworkStatus } from "@/lib/hooks/useNetworkStatus";
-import { usePlayerStore } from "@/lib/store/playerStore";
-import { useHistoryStore } from "@/lib/store/user";
+import { orderEpisodes } from "@/hooks/episodeHelpers";
+import { useAnimeData } from "@/hooks/useAnimeData";
+import { useEpisodeNavigation } from "@/hooks/useEpisodeNavigation";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { usePlayerStore } from "@/stores/playerStore";
+import { useHistoryStore } from "@/stores/historyStore";
+import { setupImmersiveMode, cleanupImmersiveMode } from "@/services/playerUI";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useLocalSearchParams, router } from "expo-router";
@@ -15,12 +15,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function PlayerContent() {
-  const params = useLocalSearchParams<{
-    slug?: string;
-    number?: string;
-    title?: string;
-    image?: string;
-  }>();
+  const params = useLocalSearchParams<{ slug?: string; number?: string; title?: string; image?: string }>();
   const slug = params.slug ?? "";
   const number = params.number ?? "";
   const title = params.title ?? "";
@@ -29,7 +24,6 @@ function PlayerContent() {
 
   const { streamUrl, streamHeaders, reset: clearStream } = usePlayerStore();
   const { addToHistory } = useHistoryStore();
-  const deps = getDeps();
   const { anime } = useAnimeData(slug);
   const { isInternetReachable: networkOk } = useNetworkStatus();
   const networkOkRef = useRef<boolean | null>(null);
@@ -38,11 +32,8 @@ function PlayerContent() {
   const saveProgressRef = useRef<() => void>(() => {});
   const [playState, setPlayState] = useState({ currentTime: 0, duration: 0, isPlaying: false });
 
-  const player = useVideoPlayer(null, (instance) => {
-    instance.loop = false;
-  });
+  const player = useVideoPlayer(null, (instance) => { instance.loop = false; });
 
-  // Pause + save progress when network drops; root NetworkBanner handles blocking overlay
   useEffect(() => {
     const prev = prevNetworkOk.current;
     prevNetworkOk.current = networkOk;
@@ -52,61 +43,41 @@ function PlayerContent() {
     }
   }, [networkOk, player]);
 
-  const {
-    resolveAndPlay, loading, error, currentEpNumber, setCurrentEpNumber,
-  } = useEpisodeNavigation(player, title, image);
+  const { resolveAndPlay, loading, error, currentEpNumber, setCurrentEpNumber } = useEpisodeNavigation(player, title, image);
+
+  useEffect(() => { setCurrentEpNumber(number); }, [number, setCurrentEpNumber]);
 
   useEffect(() => {
-    setCurrentEpNumber(number);
-  }, [number, setCurrentEpNumber]);
-
-  useEffect(() => {
-    void deps.playerUIService.setupImmersiveMode();
+    const init = async () => {
+      await setupImmersiveMode();
+    };
+    init();
     return () => {
-      void deps.playerUIService.cleanupImmersiveMode();
+      cleanupImmersiveMode();
       clearStream();
     };
-  }, [clearStream, deps.playerUIService]);
+  }, [clearStream]);
 
-  const episodes = useMemo(
-    () => (anime?.episodes ? orderEpisodes(anime.episodes) : []),
-    [anime?.episodes],
-  );
-  const currentIdx = useMemo(
-    () => episodes.findIndex((e) => e.number === currentEpNumber),
-    [episodes, currentEpNumber],
-  );
-  const prevEpisode = useMemo(() => {
-    if (currentIdx < 1) return null;
-    return episodes[currentIdx - 1];
-  }, [episodes, currentIdx]);
-  const nextEpisode = useMemo(() => {
-    if (currentIdx < 0 || currentIdx >= episodes.length - 1) return null;
-    return episodes[currentIdx + 1];
-  }, [episodes, currentIdx]);
+  const episodes = useMemo(() => (anime?.episodes ? orderEpisodes(anime.episodes) : []), [anime?.episodes]);
+  const currentIdx = useMemo(() => episodes.findIndex((e) => e.number === currentEpNumber), [episodes, currentEpNumber]);
+  const prevEpisode = useMemo(() => (currentIdx < 1 ? null : episodes[currentIdx - 1]), [episodes, currentIdx]);
+  const nextEpisode = useMemo(() => (currentIdx < 0 || currentIdx >= episodes.length - 1 ? null : episodes[currentIdx + 1]), [episodes, currentIdx]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setPlayState({
-        currentTime: player.currentTime, duration: player.duration, isPlaying: player.playing,
-      });
+      setPlayState({ currentTime: player.currentTime, duration: player.duration, isPlaying: player.playing });
     }, 250);
-    return () => { clearInterval(interval); };
+    return () => clearInterval(interval);
   }, [player]);
 
-  const handlePrev = useCallback(() => {
-    if (prevEpisode) { void resolveAndPlay(slug, prevEpisode); }
-  }, [prevEpisode, slug, resolveAndPlay]);
-  const handleNext = useCallback(() => {
-    if (nextEpisode) { void resolveAndPlay(slug, nextEpisode); }
-  }, [nextEpisode, slug, resolveAndPlay]);
-  const handleBack = useCallback(() => { router.back(); }, []);
+  const handlePrev = useCallback(() => { if (prevEpisode) void resolveAndPlay(slug, prevEpisode); }, [prevEpisode, slug, resolveAndPlay]);
+  const handleNext = useCallback(() => { if (nextEpisode) void resolveAndPlay(slug, nextEpisode); }, [nextEpisode, slug, resolveAndPlay]);
+  const handleBack = useCallback(() => router.back(), []);
 
   const lastSeekKey = useRef("");
 
   useEffect(() => {
     if (streamUrl == null) return;
-
     player.replace({ uri: streamUrl, headers: streamHeaders ?? undefined });
 
     const seekKey = `${slug}_${currentEpNumber}`;
@@ -119,11 +90,10 @@ function PlayerContent() {
         try { player.currentTime = match.progress; } catch {}
       }
     }
-    // Don't auto-play if offline — user taps play after reconnect
-    if (networkOkRef.current !== false) { player.play(); }
+    if (networkOkRef.current !== false) player.play();
   }, [streamUrl, streamHeaders, player, slug, currentEpNumber]);
 
-  const historyCtx = useRef({ title: "", url: "", image: "", number: "" });
+  const historyCtx = useRef({ title, url: slug, image, number: currentEpNumber });
   historyCtx.current = { title, url: slug, image, number: currentEpNumber };
 
   const saveProgress = useCallback(() => {
@@ -131,11 +101,9 @@ function PlayerContent() {
       const ct = player.currentTime;
       const dur = player.duration;
       if (ct > 0 && dur > 0) {
-        void addToHistory({
-          ...historyCtx.current, progress: ct, duration: dur, timestamp: Date.now(),
-        });
+        void addToHistory({ ...historyCtx.current, progress: ct, duration: dur, timestamp: Date.now() });
       }
-    } catch { /* player was released (component unmounting) */ }
+    } catch {}
   }, [player, addToHistory]);
   saveProgressRef.current = saveProgress;
 
@@ -148,15 +116,7 @@ function PlayerContent() {
   return (
     <View className="flex-1 bg-black">
       <StatusBar hidden />
-
-      <VideoView
-        key={streamUrl ?? 'no-stream'}
-        player={player}
-        style={StyleSheet.absoluteFill}
-        nativeControls={false}
-        contentFit="contain"
-      />
-
+      <VideoView key={streamUrl ?? "no-stream"} player={player} style={StyleSheet.absoluteFill} nativeControls={false} contentFit="contain" />
       <PlayerControls
         player={player}
         isPlaying={playState.isPlaying}
@@ -172,7 +132,6 @@ function PlayerContent() {
         onNext={handleNext}
         onBack={handleBack}
       />
-
       {error != null && (
         <View className="absolute bottom-20 left-4 right-4 bg-neutral-900 rounded-lg border border-neutral-800 p-3">
           <Text className="text-neutral-400 text-xs text-center">{error}</Text>

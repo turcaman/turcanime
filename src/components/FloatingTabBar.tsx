@@ -8,7 +8,7 @@ import Animated, {
     withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useUIStore } from "../lib/store/uiStore";
+import { useUIStore } from "../stores/uiStore";
 import { AnimatedPressable } from "./AnimatedPressable";
 
 type FloatingTabBarProps = BottomTabBarProps;

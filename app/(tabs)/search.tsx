@@ -3,70 +3,38 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RecentSearches } from "@/components/RecentSearches";
 import { SuggestionsList } from "@/components/SuggestionsList";
 import { AppLoader } from "@/components/ui/AppLoader";
-
-import type { Anime } from "@/lib/domain/entities";
-import { useSearchScreen } from "@/lib/hooks/useSearchScreen";
-import { useTabBarManager } from "@/lib/hooks/useTabBarManager";
-import { TAB_BAR_OFFSET, calcCardWidth } from "@/lib/utils/layout";
+import type { Anime } from "@/types";
+import { useSearchScreen } from "@/hooks/useSearchScreen";
+import { useTabBarManager } from "@/hooks/useTabBarManager";
+import { TAB_BAR_OFFSET, calcCardWidth } from "@/utils/layout";
 import { Feather } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef } from "react";
-import {
-    Animated,
-    FlatList,
-    RefreshControl,
-    Text,
-    TextInput,
-    useWindowDimensions,
-    View,
-} from "react-native";
+import { Animated, FlatList, RefreshControl, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function SearchScreenContent() {
   const {
-    searchTerm,
-    searchAnimes,
-    suggestions,
-    recentSearches,
-    isLoading,
-    isIdle,
-    isTyping,
-    isSearched,
-    handleSearch,
-    handleTextChange,
-    resetSearch,
-    retrySearch,
-    removeRecentSearch,
-    clearRecentSearches,
-    handleSelectSuggestion,
+    searchTerm, searchAnimes, suggestions, recentSearches, isLoading,
+    isIdle, isTyping, isSearched, handleSearch, handleTextChange, resetSearch,
+    retrySearch, removeRecentSearch, clearRecentSearches, handleSelectSuggestion,
   } = useSearchScreen();
 
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = calcCardWidth(screenWidth);
-
   const { handleScroll, reset, showTabBar } = useTabBarManager({ threshold: 8 });
-
   const resultsOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (!isSearched) {
-      reset();
-      showTabBar();
-    }
+    if (!isSearched) { reset(); showTabBar(); }
   }, [isSearched, reset, showTabBar]);
 
   useEffect(() => {
-    Animated.timing(resultsOpacity, {
-      toValue: isSearched ? 1 : 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start();
+    Animated.timing(resultsOpacity, { toValue: isSearched ? 1 : 0, duration: 150, useNativeDriver: true }).start();
   }, [isSearched, resultsOpacity]);
 
   const renderSearchResult = useCallback(({ item }: { item: Anime }) => (
-    <View className="mb-2">
-      <AnimeCard anime={item} width={cardWidth} />
-    </View>
+    <View className="mb-2"><AnimeCard anime={item} width={cardWidth} /></View>
   ), [cardWidth]);
 
   const showIdleContent = isIdle && !isTyping && !isSearched && !isLoading;
@@ -74,35 +42,21 @@ function SearchScreenContent() {
 
   return (
     <View className="flex-1 bg-black">
-      <View
-        className="px-5 pb-4"
-        style={{ paddingTop: insets.top + 16 }}
-      >
+      <View className="px-5 pb-4" style={{ paddingTop: insets.top + 16 }}>
         <View className="flex-row items-center h-12 bg-neutral-900 rounded-xl border border-neutral-800 px-4">
-          <Feather
-            name="search"
-            size={18}
-            color={"#a3a3a3"}
-            style={{ marginRight: 8 }}
-          />
+          <Feather name="search" size={18} color="#a3a3a3" style={{ marginRight: 8 }} />
           <TextInput
             className="flex-1 text-white text-base font-normal h-12"
             placeholder="Buscar anime..."
-            placeholderTextColor={"#737373"}
+            placeholderTextColor="#737373"
             value={searchTerm}
             onChangeText={handleTextChange}
-            onSubmitEditing={() => { handleSearch(searchTerm); }}
+            onSubmitEditing={() => handleSearch(searchTerm)}
             returnKeyType="search"
           />
           {searchTerm.length > 0 && (
-            <Feather
-              name="x"
-              size={16}
-              color="#a3a3a3"
-              onPress={() => {
-                resetSearch();
-                showTabBar();
-              }}
+            <Feather name="x" size={16} color="#a3a3a3"
+              onPress={() => { resetSearch(); showTabBar(); }}
               style={{ padding: 8 }}
             />
           )}
@@ -111,37 +65,19 @@ function SearchScreenContent() {
 
       <View className="flex-1 bg-black px-5">
         {showIdleContent && recentSearches.length > 0 && (
-          <RecentSearches
-            searches={recentSearches}
-            onSelect={(term) => { handleSearch(term); }}
-            onRemove={removeRecentSearch}
-            onClearAll={clearRecentSearches}
-          />
+          <RecentSearches searches={recentSearches} onSelect={(t) => handleSearch(t)} onRemove={removeRecentSearch} onClearAll={clearRecentSearches} />
         )}
-
         {showHint && (
           <View className="flex-1 justify-start items-center pt-20">
-            <Text className="text-sm text-neutral-500 text-center leading-6">
-              {"Ej: One Piece, Attack on Titan,\nDemon Slayer..."}
-            </Text>
+            <Text className="text-sm text-neutral-500 text-center leading-6">{"Ej: One Piece, Attack on Titan,\nDemon Slayer..."}</Text>
           </View>
         )}
-
         {isTyping && suggestions.length > 0 && (
-          <SuggestionsList
-            suggestions={suggestions}
-            onSelect={handleSelectSuggestion}
-            onScroll={handleScroll}
-            tabBarOffset={TAB_BAR_OFFSET}
-          />
+          <SuggestionsList suggestions={suggestions} onSelect={handleSelectSuggestion} onScroll={handleScroll} tabBarOffset={TAB_BAR_OFFSET} />
         )}
-
-        {isLoading ? (
-          <View className="flex-1 justify-center items-center">
-            <AppLoader variant="small" />
-          </View>
-        ) : null}
-
+        {isLoading && (
+          <View className="flex-1 justify-center items-center"><AppLoader variant="small" /></View>
+        )}
         {isSearched && (
           <Animated.View style={{ flex: 1, opacity: resultsOpacity }}>
             <FlatList
@@ -155,23 +91,11 @@ function SearchScreenContent() {
               showsVerticalScrollIndicator={false}
               onScroll={handleScroll}
               scrollEventThrottle={16}
-              refreshControl={
-                <RefreshControl
-                  refreshing={isLoading}
-                  onRefresh={retrySearch}
-                  tintColor="#A855F7"
-                />
-              }
+              refreshControl={<RefreshControl refreshing={isLoading} onRefresh={retrySearch} tintColor="#A855F7" />}
               ListEmptyComponent={
-                <View className="flex-1 justify-start items-center px-5 pt-20" accessibilityLabel="No se encontraron resultados">
-                  <Feather
-                    name="search"
-                    size={40}
-                    color={"#a3a3a3"}
-                  />
-                  <Text className="text-sm text-neutral-500 mt-2">
-                    No se encontraron resultados
-                  </Text>
+                <View className="flex-1 justify-start items-center px-5 pt-20">
+                  <Feather name="search" size={40} color="#a3a3a3" />
+                  <Text className="text-sm text-neutral-500 mt-2">No se encontraron resultados</Text>
                 </View>
               }
             />
