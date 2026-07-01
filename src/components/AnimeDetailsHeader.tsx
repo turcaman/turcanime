@@ -1,15 +1,18 @@
+import { FlashList } from "@shopify/flash-list";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { Text, useWindowDimensions, View } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
-import type { AnimeDetail } from "../types";
+import type { AnimeDetail, AnimeRelations, RelatedAnime } from "../types";
+import { navigateToAnime } from "../utils/navigation";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ImageWithLoader } from "./ui/ImageWithLoader";
 import { SectionTitle } from "./ui/SectionTitle";
 
 interface AnimeDetailsHeaderProps {
   anime: AnimeDetail | null;
+  relations: AnimeRelations | null;
   isExpanded: boolean;
   setIsExpanded: (v: boolean) => void;
   isAscending: boolean;
@@ -18,9 +21,12 @@ interface AnimeDetailsHeaderProps {
   onBackPress?: () => void;
 }
 
+const TYPE_LABEL = { prequel: "Precuela", sequel: "Secuela", related: "Relacionado" };
+
 export const AnimeDetailsHeader = memo(
   ({
     anime,
+    relations,
     isExpanded,
     setIsExpanded,
     isAscending,
@@ -32,6 +38,16 @@ export const AnimeDetailsHeader = memo(
     const hasSynopsis = anime?.synopsis != null && anime.synopsis.length > 0;
     const statusLower = anime?.status.toLowerCase();
     const isAiring = statusLower != null && (statusLower.includes("emisión") || statusLower.includes("emision"));
+
+    const relatedItems = useMemo(() => {
+      if (relations == null) return null;
+      const items: { anime: RelatedAnime; type: "prequel" | "sequel" | "related" }[] = [
+        ...relations.prequel.map((a) => ({ anime: a, type: "prequel" as const })),
+        ...relations.sequel.map((a) => ({ anime: a, type: "sequel" as const })),
+        ...relations.related.map((a) => ({ anime: a, type: "related" as const })),
+      ];
+      return items.length > 0 ? items : null;
+    }, [relations]);
 
     return (
       <>
@@ -112,6 +128,43 @@ export const AnimeDetailsHeader = memo(
             </Text>
           )}
         </View>
+
+        {relatedItems != null && (
+            <View className="pt-6">
+              <View className="px-5">
+                <SectionTitle>Animes relacionados</SectionTitle>
+              </View>
+              <View className="mb-3" />
+              <FlashList
+                horizontal
+                data={relatedItems}
+                keyExtractor={(item) => `${item.type}-${item.anime.id}`}
+                contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+                renderItem={({ item }) => (
+                  <AnimatedPressable
+                    className="w-[110px]"
+                    onPress={() => navigateToAnime(item.anime.slug)}
+                  >
+                    <View className="relative">
+                      <ImageWithLoader
+                        uri={item.anime.poster}
+                        style={{ width: 110, height: 154, borderRadius: 12 }}
+                      />
+                      <View className="absolute top-2 left-2 rounded-md bg-black/70 px-1.5 py-0.5">
+                        <Text className="text-[9px] font-bold text-purple-400 uppercase">
+                          {TYPE_LABEL[item.type]}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text className="mt-1.5 text-xs font-medium text-white" numberOfLines={2}>
+                      {item.anime.name}
+                    </Text>
+                  </AnimatedPressable>
+                )}
+                showsHorizontalScrollIndicator={false}
+              />
+            </View>
+          )}
 
         <View className="flex-row items-center justify-between px-5 pt-6">
           <SectionTitle>Episodios ({anime?.episodes.length ?? 0})</SectionTitle>

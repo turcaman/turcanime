@@ -35,6 +35,7 @@ function AnimeDetailsContent() {
         >
           <AnimeDetailsHeader
             anime={anime!}
+            relations={anime?.relations ?? null}
             isExpanded={isExpanded}
             setIsExpanded={setIsExpanded}
             isAscending={isAscending}
