@@ -19,7 +19,6 @@ interface SearchState {
   cancelSearch: () => void;
   resetSearch: () => void;
   setSearchTerm: (term: string) => void;
-  setError: (error: AppError | null) => void;
 }
 
 export const useSearchStore = create<SearchState>((set) => ({
@@ -93,5 +92,4 @@ export const useSearchStore = create<SearchState>((set) => ({
   },
 
   setSearchTerm: (term: string) => set({ lastSearchTerm: term }),
-  setError: (error) => set({ error }),
 }));

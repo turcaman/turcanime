@@ -12,7 +12,6 @@ const EPISODE_ORDER_KEY = "episode_order";
 interface InitializationState {
   isInitialized: boolean;
   initialize: () => Promise<void>;
-  clearAllData: () => Promise<void>;
 }
 
 export const useUserInitializationStore = create<InitializationState>(() => ({
@@ -32,12 +31,6 @@ export const useUserInitializationStore = create<InitializationState>(() => ({
     useUserInitializationStore.setState({ isInitialized: true });
   },
 
-  clearAllData: async () => {
-    void useHistoryStore.getState().clearHistory();
-    void useSearchHistoryStore.getState().clearRecentSearches();
-    void useSettingsStore.getState().setEpisodeOrder("asc");
-    await storage.clear();
-  },
 }));
 
 export * from "./historyStore";

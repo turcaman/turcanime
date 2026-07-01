@@ -12,7 +12,6 @@ interface DetailsState {
   error: AppError | null;
   fetchDetails: (slug: string, force?: boolean) => Promise<void>;
   reset: () => void;
-  setError: (error: AppError | null) => void;
 }
 
 export const useDetailsStore = create<DetailsState>((set) => ({
@@ -45,5 +44,4 @@ export const useDetailsStore = create<DetailsState>((set) => ({
   },
 
   reset: () => set({ activeAnime: null, error: null, isDetailsLoading: false }),
-  setError: (error) => set({ error }),
 }));
