@@ -5,7 +5,6 @@ import {
     type PressableProps,
     type StyleProp,
     type ViewStyle,
-    Platform,
     Pressable,
 } from 'react-native';
 import Animated, {
@@ -71,7 +70,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     scale.value = withTiming(0.96, { duration: 80 });
     opacity.value = withTiming(0.8, { duration: 80 });
 
-    if (hapticFeedback && Platform.OS === 'ios') {
+    if (hapticFeedback) {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
