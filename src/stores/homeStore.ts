@@ -69,6 +69,7 @@ export const useHomeStore = create<HomeState>((set) => ({
   },
 
   reset: () => {
+    homeController?.abort();
     set({ homeData: { recent: [] }, error: null, isHomeLoading: false, isRefreshing: false });
   },
 }));

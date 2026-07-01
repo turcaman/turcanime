@@ -43,5 +43,8 @@ export const useDetailsStore = create<DetailsState>((set) => ({
     }
   },
 
-  reset: () => set({ activeAnime: null, error: null, isDetailsLoading: false }),
+  reset: () => {
+    detailsController?.abort();
+    set({ activeAnime: null, error: null, isDetailsLoading: false });
+  },
 }));

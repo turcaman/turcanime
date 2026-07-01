@@ -57,6 +57,12 @@ export function useServerFetcher(
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
 
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
   const fetchAndSet = useCallback(
     async (ep: Episode) => {
       if (slug == null) return;

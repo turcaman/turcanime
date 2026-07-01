@@ -88,6 +88,7 @@ export const useSearchStore = create<SearchState>((set) => ({
 
   resetSearch: () => {
     if (searchController) searchController.abort();
+    suggestionsController?.abort();
     set({ searchAnimes: [], suggestions: [], error: null, isSearchLoading: false });
   },
 
