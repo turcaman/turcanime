@@ -5,7 +5,6 @@ import { usePlayerStore } from "../stores/playerStore";
 import { useHistoryStore } from "../stores/historyStore";
 import { source } from "../services/source";
 import { refreshSession } from "../services/session";
-import { refererForUrl } from "../config/source";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
   const { setStream, setLastLanguage, lastLanguage } = usePlayerStore();
@@ -46,11 +45,7 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
         const streamResult = await source.resolveStreamUrl(server.url);
         if (streamResult == null) throw new Error("No se pudo resolver el stream");
 
-        let headers = streamResult.headers;
-        if (!headers) {
-          const referer = refererForUrl(streamResult.url);
-          if (referer) headers = { Referer: referer };
-        }
+        const headers = streamResult.headers;
 
         const existing = useHistoryStore.getState().lastViewed.find(
           (h) => h.url === targetSlug && h.number === targetEp.number,

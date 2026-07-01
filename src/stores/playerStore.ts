@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { source } from "../services/source";
 import { refreshSession } from "../services/session";
-import { refererForUrl } from "../config/source";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
@@ -90,11 +89,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       const streamResult = await source.resolveStreamUrl(server.url);
       if (streamResult == null) return false;
 
-      let headers = streamResult.headers;
-      if (!headers) {
-        const referer = refererForUrl(streamResult.url);
-        if (referer) headers = { Referer: referer };
-      }
+      const headers = streamResult.headers;
 
       void storage.set(cacheKey, {
         payload: { url: streamResult.url, headers },
