@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { animeLatino } from "../services/animeLatino";
+import { source } from "../services/source";
 import { withCache } from "../utils/cache";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import type { AnimeDetail, AppError } from "../types";
@@ -31,7 +31,7 @@ export const useDetailsStore = create<DetailsState>((set) => ({
 
     const result = await withCache(
       cacheKey,
-      (sig) => animeLatino.getDetails(slug, { signal: sig }),
+      (sig) => source.getDetails(slug, { signal: sig }),
       { ttl: CACHE_TTL.DETAILS, signal, force },
     );
 

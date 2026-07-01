@@ -3,9 +3,9 @@ import type { VideoPlayer } from "expo-video";
 import type { Episode, VideoServer } from "../types";
 import { usePlayerStore } from "../stores/playerStore";
 import { useHistoryStore } from "../stores/historyStore";
-import { animeLatino } from "../services/animeLatino";
+import { source } from "../services/source";
 import { refreshSession } from "../services/session";
-import { getRequiredReferer } from "../config/animeLatino";
+import { refererForUrl } from "../config/source";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
   const { setStream, setLastLanguage, lastLanguage } = usePlayerStore();
@@ -36,19 +36,19 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       setError(null);
 
       const attempt = async (/* retried */ _retried?: boolean): Promise<void> => {
-        const servers = await animeLatino.getEpisodeServers(targetSlug, targetEp.number);
+        const servers = await source.getEpisodeServers(targetSlug, targetEp.number);
         const server: VideoServer | undefined =
           lastLanguage != null
             ? servers.find((s) => s.language === lastLanguage) ?? servers[0]
             : servers[0];
         if (server == null) throw new Error("No hay servidor disponible");
 
-        const streamResult = await animeLatino.resolveStreamUrl(server.url);
+        const streamResult = await source.resolveStreamUrl(server.url);
         if (streamResult == null) throw new Error("No se pudo resolver el stream");
 
         let headers = streamResult.headers;
         if (!headers) {
-          const referer = getRequiredReferer(streamResult.url);
+          const referer = refererForUrl(streamResult.url);
           if (referer) headers = { Referer: referer };
         }
 

@@ -1,12 +1,12 @@
 import { TIMEOUTS } from "../config/cache";
-import { ANIMELATINO_CONFIG } from "../config/animeLatino";
+import { SOURCE_CONFIG } from "../config/source";
 import { logger } from "../utils/logger";
-import { ProviderError } from "../utils/errors";
+import { SourceError } from "../utils/errors";
 import { unwrapCookies, mergeCookies } from "./cookies";
 import { sessionManager } from "./session";
 import { webViewBridge } from "./webview";
 import { HtmlParser, ParserUtils } from "./parsers";
-import { extractBest } from "./byse";
+import { extractBest } from "./extractors";
 import type {
   Anime,
   AnimeDetail,
@@ -23,7 +23,7 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
 
   const session = await sessionManager.getSession();
   const rawCookies = unwrapCookies(session?.cookies ?? "");
-  const baseUrl = ANIMELATINO_CONFIG.baseUrl;
+  const baseUrl = SOURCE_CONFIG.baseUrl;
 
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
@@ -108,7 +108,7 @@ const htmlParser = new HtmlParser();
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
 
 async function getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData> {
-  const homeEndpoint = ANIMELATINO_CONFIG.endpoints?.home ?? "/";
+  const homeEndpoint = SOURCE_CONFIG.endpoints?.home ?? "/";
   const res = await fetchWithSession(homeEndpoint, options ?? {});
   const html = await res.text();
   const recent = htmlParser.parseCards(html);
@@ -120,10 +120,10 @@ async function getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData
 
 async function search(query: string, options?: { signal?: AbortSignal }): Promise<Anime[]> {
   const res = await fetchWithSession(`/api/anime/search?q=${encodeURIComponent(query)}`, options ?? {});
-  if (!res.ok) throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
+  if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
   const json = await res.json();
   const items = json.data ?? [];
-  if (!Array.isArray(items)) throw new ProviderError(`Unexpected response format for query: ${query}`, "UNKNOWN");
+  if (!Array.isArray(items)) throw new SourceError(`Unexpected response format for query: ${query}`, "UNKNOWN");
   return items.map((item: { name: string; slug: string; poster: string }) => ({
     title: cleanTitle(item.name),
     image: item.poster ? (item.poster.startsWith("http") ? item.poster : `${TMDB_IMAGE_BASE}${item.poster}`) : "",
@@ -134,10 +134,10 @@ async function search(query: string, options?: { signal?: AbortSignal }): Promis
 
 async function getSuggestions(query: string, options?: { signal?: AbortSignal }): Promise<AutocompleteAnime[]> {
   const res = await fetchWithSession(`/api/anime/search?q=${encodeURIComponent(query)}`, options ?? {});
-  if (!res.ok) throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
+  if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
   const json = await res.json();
   const items = json.data ?? [];
-  if (!Array.isArray(items)) throw new ProviderError(`Unexpected response format for query: ${query}`, "UNKNOWN");
+  if (!Array.isArray(items)) throw new SourceError(`Unexpected response format for query: ${query}`, "UNKNOWN");
   return items.map((item: { name: string; slug: string; poster: string; type: string }) => ({
     name: item.name,
     slug: item.slug,
@@ -149,7 +149,7 @@ async function getSuggestions(query: string, options?: { signal?: AbortSignal })
 async function getDetails(slug: string, options?: { signal?: AbortSignal }): Promise<AnimeDetail | null> {
   const res = await fetchWithSession(`/anime/${slug}`, options ?? {});
   if (res.status === 404) return null;
-  if (!res.ok) throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
+  if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
   const html = await res.text();
   return parseAnimeDetail(html, slug);
 }
@@ -186,7 +186,7 @@ function parseAnimeDetail(html: string, slug: string): AnimeDetail {
 
 async function getEpisodeServers(slug: string, number: string, options?: { signal?: AbortSignal }): Promise<VideoServer[]> {
   const res = await fetchWithSession(`/ver/${slug}/${number}`, options ?? {});
-  if (!res.ok) throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
+  if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
   const html = await res.text();
 
   const scripts = html.matchAll(/<script[^>]*>(.*?)<\/script>/gs);
@@ -227,7 +227,7 @@ async function getEpisodeServers(slug: string, number: string, options?: { signa
     }
   }
 
-  throw new ProviderError(`No Delta servers extracted for ${slug} ep ${number}`, "UNKNOWN");
+  throw new SourceError(`No Delta servers extracted for ${slug} ep ${number}`, "UNKNOWN");
 }
 
 async function resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<StreamUrlResult | null> {
@@ -263,10 +263,10 @@ async function resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSign
     try {
       const res = await fetchWithSession(currentUrl, options ?? {});
       logger.info("resolveStreamUrl", `fetchWithSession status: ${res.status}`);
-      if (!res.ok) throw new ProviderError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
+      if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
       const html = await res.text();
       const m = html.match(/<iframe[^>]*src="([^"]+)"[^>]*>/);
-      if (!m) throw new ProviderError("No iframe in bridge page", "UNKNOWN");
+      if (!m) throw new SourceError("No iframe in bridge page", "UNKNOWN");
       iframeUrl = m[1]!;
     } catch (e: unknown) {
       logger.error("resolveStreamUrl", "Fallback failed", e);
@@ -294,7 +294,7 @@ async function resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSign
 
 // ─── Public exports ───
 
-export const animeLatino = {
+export const source = {
   getHomeData,
   search,
   getSuggestions,

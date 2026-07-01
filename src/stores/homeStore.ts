@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { animeLatino } from "../services/animeLatino";
+import { source } from "../services/source";
 import { withCache } from "../utils/cache";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import type { AppError, HomeData } from "../types";
@@ -40,7 +40,7 @@ export const useHomeStore = create<HomeState>((set) => ({
 
     const result = await withCache(
       CACHE_PREFIXES.HOME,
-      (sig) => animeLatino.getHomeData({ signal: sig }),
+      (sig) => source.getHomeData({ signal: sig }),
       { ttl: CACHE_TTL.HOME, signal, force },
     );
 

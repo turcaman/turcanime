@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { View } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
-import { ANIMELATINO_CONFIG } from "../config/animeLatino";
+import { SOURCE_CONFIG } from "../config/source";
 import { GLOBAL_BOOTSTRAP } from "../services/bootstrap";
 import { sessionManager } from "../services/session";
 import { webViewBridge } from "../services/webview";
@@ -31,7 +31,7 @@ const IFRAME_EXTRACT_FN = `(function(){
   }
 })();`;
 
-const WORKER_URL = ANIMELATINO_CONFIG.sessionWashUrl;
+const WORKER_URL = SOURCE_CONFIG.sessionWashUrl;
 
 export const WebViewWorker = () => {
   const vRef = useRef<WebView>(null);

@@ -2,7 +2,7 @@ import React, { memo } from "react";
 import { type NativeScrollEvent, type NativeSyntheticEvent, Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import type { AutocompleteAnime } from "../types";
-import { TMDB_POSTER_W92 } from "../config/animeLatino";
+import { TMDB_POSTER_W92 } from "../config/source";
 import { TAB_BAR_OFFSET } from "../utils/layout";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ImageWithLoader } from "./ui/ImageWithLoader";

@@ -91,21 +91,6 @@ export interface CacheEntry<T> {
   expiration: number;
 }
 
-// ─── Provider config ───
-export interface ProviderConfig {
-  name: string;
-  baseUrl: string;
-  sessionWashUrl: string;
-  endpoints?: {
-    home?: string;
-    suggestions?: string;
-  };
-  features?: {
-    hasSuggestions: boolean;
-    requiresSession: boolean;
-  };
-}
-
 // ─── Episode pagination ───
 export interface EpisodeRange {
   label: string;

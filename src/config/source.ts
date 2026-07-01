@@ -1,7 +1,5 @@
-import type { ProviderConfig } from "../types";
-
-/** AnimeLatinoHD provider configuration */
-export const ANIMELATINO_CONFIG: ProviderConfig = {
+/** Source configuration */
+export const SOURCE_CONFIG = {
   name: "AnimeLatinoHD",
   baseUrl: "https://www.animelatinohd.com",
   sessionWashUrl: "https://www.animelatinohd.com/",
@@ -30,7 +28,7 @@ export const EMBED_REFERER: ReadonlyMap<string, string> = new Map([
 ]);
 
 /** Find the required Referer for a given video URL */
-export function getRequiredReferer(url: string): string {
+export function refererForUrl(url: string): string {
   try {
     const { hostname } = new URL(url);
     for (const [domain, referer] of EMBED_REFERER) {

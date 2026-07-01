@@ -1,5 +1,5 @@
 import { TIMEOUTS } from "../config/cache";
-import { ANIMELATINO_CONFIG } from "../config/animeLatino";
+import { SOURCE_CONFIG } from "../config/source";
 import type { ISession } from "../types";
 import { logger } from "../utils/logger";
 import { storage } from "../utils/storage";
@@ -92,7 +92,7 @@ export const sessionManager = new SessionManager();
 export async function refreshSession(): Promise<void> {
   logger.info("infrastructure", "Refreshing session...");
   await sessionManager.invalidateCookies();
-  webViewBridge.navigateTo(ANIMELATINO_CONFIG.sessionWashUrl);
+  webViewBridge.navigateTo(SOURCE_CONFIG.sessionWashUrl);
   try {
     await sessionManager.waitForCookies();
     logger.info("infrastructure", "Session refreshed successfully");

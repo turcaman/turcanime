@@ -1,5 +1,5 @@
 import type { Anime, AnimeRelations, Episode } from "../types";
-import { TMDB_IMAGE_BASE } from "../config/animeLatino";
+import { TMDB_IMAGE_BASE } from "../config/source";
 import { logger } from "../utils/logger";
 
 // ─── ParserUtils ───

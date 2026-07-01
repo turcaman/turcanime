@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import { animeLatino } from "../services/animeLatino";
+import { source } from "../services/source";
 import { refreshSession } from "../services/session";
-import { getRequiredReferer } from "../config/animeLatino";
+import { refererForUrl } from "../config/source";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
@@ -53,7 +53,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
     }
 
     try {
-      const data = await animeLatino.getEpisodeServers(slug, number, { signal });
+      const data = await source.getEpisodeServers(slug, number, { signal });
       void storage.set(cacheKey, { payload: data, expiration: Date.now() + CACHE_TTL.SERVERS });
       set({ servers: data, isLoading: false });
     } catch (e: unknown) {
@@ -91,12 +91,12 @@ export const usePlayerStore = create<PlayerState>((set) => ({
     }
 
     const doResolve = async (): Promise<boolean> => {
-      const streamResult = await animeLatino.resolveStreamUrl(server.url);
+      const streamResult = await source.resolveStreamUrl(server.url);
       if (streamResult == null) return false;
 
       let headers = streamResult.headers;
       if (!headers) {
-        const referer = getRequiredReferer(streamResult.url);
+        const referer = refererForUrl(streamResult.url);
         if (referer) headers = { Referer: referer };
       }
 

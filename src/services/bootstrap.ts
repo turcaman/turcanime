@@ -47,7 +47,7 @@ export const GLOBAL_BOOTSTRAP = [
   "",
   "  pollForCloudflareValidation();",
   "",
-  "  // --- AnimeLatinoHD Decryption ---",
+  "  // --- Stream Decryption ---",
   "  var handleDecryption = async function(requestId) {",
   "    if (requestId === undefined) requestId = 'legacy';",
   "    try {",

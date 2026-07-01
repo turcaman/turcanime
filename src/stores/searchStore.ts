@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { animeLatino } from "../services/animeLatino";
+import { source } from "../services/source";
 import { withCache } from "../utils/cache";
 import { CACHE_PREFIXES, CACHE_TTL, TIMEOUTS } from "../config/cache";
 import type { Anime, AppError, AutocompleteAnime } from "../types";
@@ -49,7 +49,7 @@ export const useSearchStore = create<SearchState>((set) => ({
         const timeoutPromise = new Promise<never>((_, reject) => {
           setTimeout(() => reject(new Error("Search timeout")), TIMEOUTS.SEARCH);
         });
-        const searchPromise = animeLatino.search(query, { signal: sig });
+        const searchPromise = source.search(query, { signal: sig });
         return await Promise.race([searchPromise, timeoutPromise]);
       },
       { ttl: CACHE_TTL.SEARCH, signal, force },
@@ -74,7 +74,7 @@ export const useSearchStore = create<SearchState>((set) => ({
 
     const result = await withCache(
       cacheKey,
-      (sig) => animeLatino.getSuggestions(query, { signal: sig }),
+      (sig) => source.getSuggestions(query, { signal: sig }),
       { ttl: CACHE_TTL.SUGGESTIONS, signal },
     );
 
