@@ -9,8 +9,11 @@ import { computeEpisodePagination } from "./episodeHelpers";
 
 export function useAnimeDetailScreen(slug: string) {
   const { anime, isLoading: isAnimeLoading, error, hasLoaded, refresh } = useAnimeData(slug);
-  const { resolveStream, servers, fetchServers } = usePlayerStore();
-  const { episodeOrder, setEpisodeOrder } = useSettingsStore();
+  const resolveStream = usePlayerStore((s) => s.resolveStream);
+  const servers = usePlayerStore((s) => s.servers);
+  const fetchServers = usePlayerStore((s) => s.fetchServers);
+  const episodeOrder = useSettingsStore((s) => s.episodeOrder);
+  const setEpisodeOrder = useSettingsStore((s) => s.setEpisodeOrder);
   const episodeUI = useEpisodeUI();
 
   const [activeRangeIdx, setActiveRangeIdx, isRestoring] = usePersistedRange(slug);

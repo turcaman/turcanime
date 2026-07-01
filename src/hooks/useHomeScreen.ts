@@ -10,10 +10,15 @@ export type SectionItem =
   | { type: "SECTION"; label: string; items: Anime[] };
 
 export function useHomeScreen() {
-  const { fetchHome, homeData, isHomeLoading, isRefreshing, error } = useHomeStore();
-  const { continueWatching } = useHistoryStore();
-  const { cacheInvalidationTimestamp } = useSettingsStore();
-  const { isInitialized } = useUserInitializationStore();
+  const fetchHome = useHomeStore((s) => s.fetchHome);
+  const homeData = useHomeStore((s) => s.homeData);
+  const isHomeLoading = useHomeStore((s) => s.isHomeLoading);
+  const isRefreshing = useHomeStore((s) => s.isRefreshing);
+  const error = useHomeStore((s) => s.error);
+
+  const continueWatching = useHistoryStore((s) => s.continueWatching);
+  const cacheInvalidationTimestamp = useSettingsStore((s) => s.cacheInvalidationTimestamp);
+  const isInitialized = useUserInitializationStore((s) => s.isInitialized);
 
   useEffect(() => {
     if (cacheInvalidationTimestamp > 0) {
