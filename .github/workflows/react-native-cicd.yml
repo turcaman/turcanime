@@ -7,8 +7,7 @@ on:
         type: choice
         description: "Build type to run"
         options:
-          - prod-apk
-          - preview-apk
+          - production
           - all
 
 concurrency:
@@ -43,7 +42,7 @@ jobs:
 
   build-android:
     needs: validate
-    if: ${{ github.event.inputs.buildType == 'prod-apk' || github.event.inputs.buildType == 'all' }}
+    if: ${{ github.event.inputs.buildType == 'production' || github.event.inputs.buildType == 'all' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -98,8 +97,8 @@ jobs:
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
           echo "storeFile=release.keystore" >> android/key.properties
 
-      - name: Build Production APK
-        run: eas build --platform android --profile production-apk --local --non-interactive --output=./app-prod.apk
+      - name: Build APK
+        run: eas build --platform android --profile production --local --non-interactive --output=./app-prod.apk
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -110,7 +109,7 @@ jobs:
 
   create-release:
     needs: build-android
-    if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'prod-apk'
+    if: github.event.inputs.buildType == 'all' || github.event.inputs.buildType == 'production'
     runs-on: ubuntu-latest
     permissions:
       contents: write
