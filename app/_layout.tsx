@@ -67,7 +67,6 @@ function RootInner() {
         lastRefreshTime.current = Date.now();
         useHomeStore.getState().prepareRefresh();
         await refreshSession();
-        // Clear caches
         const allKeys = await storage.getAllKeys();
         const cacheKeys = allKeys.filter((k) => k.startsWith("ch_") || k.startsWith("search_") || k.startsWith("anime_") || k.startsWith("suggestions_") || k.startsWith("stream_") || k.startsWith("servers_"));
         await Promise.all(cacheKeys.map((k) => storage.remove(k)));

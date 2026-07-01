@@ -25,14 +25,12 @@ export const EpisodeRangeSelector = memo(({
 
   useEffect(() => {
     if (ranges.length > 0 && listRef.current && !isRestoring) {
-      // Validate index is within bounds to prevent scrollToIndex failures
       const validIndex = Math.max(0, Math.min(activeRangeIdx, ranges.length - 1));
       if (validIndex !== activeRangeIdx) {
         return; // Don't scroll if index is invalid, let parent correct it
       }
 
       const timer = setTimeout(() => {
-        // Double-check ref and bounds before scrolling
         if (listRef.current && validIndex < ranges.length) {
           listRef.current.scrollToIndex({
             index: validIndex,

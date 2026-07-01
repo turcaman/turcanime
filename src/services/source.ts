@@ -44,7 +44,6 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
   try {
     const res = await fetch(url, { ...options, headers, signal: options.signal });
 
-    // Capture Set-Cookie headers
     const setCookies: string[] = [];
     res.headers.forEach((value, key) => {
       if (key.toLowerCase() === "set-cookie") {

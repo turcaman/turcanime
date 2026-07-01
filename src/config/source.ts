@@ -1,4 +1,3 @@
-/** Source configuration */
 export const SOURCE_CONFIG = {
   name: "AnimeLatinoHD",
   baseUrl: "https://www.animelatinohd.com",
@@ -13,7 +12,6 @@ export const SOURCE_CONFIG = {
   },
 };
 
-/** TMDB image base URLs */
 export const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
 export const TMDB_POSTER_W92 = "https://media.themoviedb.org/t/p/w92";
 
@@ -27,7 +25,6 @@ export const EMBED_REFERER: ReadonlyMap<string, string> = new Map([
   ["vidcache.net", "https://www.yourupload.com/"],
 ]);
 
-/** Find the required Referer for a given video URL */
 export function refererForUrl(url: string): string {
   try {
     const { hostname } = new URL(url);

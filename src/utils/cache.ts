@@ -19,7 +19,6 @@ export async function withCache<T>(
 ): Promise<{ data: T | null; error: Error | null; fromCache: boolean }> {
   const { ttl, signal, force } = options;
 
-  // Try cache first
   if (!force) {
     try {
       const cached = await storage.get<CacheEntry<T>>(cacheKey);

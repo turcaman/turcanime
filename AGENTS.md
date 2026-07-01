@@ -29,9 +29,9 @@ Expo 55 + React Native 0.83 app. File-based routing via `expo-router`.
 - Components: `src/components/`, hooks: `src/hooks/`, stores: `src/stores/`.
 - Services: `src/services/`, utils: `src/utils/`, config: `src/config/`.
 - Types: `src/types.ts` (single file).
-- No unnecessary comments. Only explain *why*, not *what*.
-
-## Documentation
-
-- **JSDoc:** Keep concise (1 line). Public exports should be documented.
-- **WHY comments:** Allowed for non-obvious workarounds, race conditions, platform bugs.
+- **Comments:** Only add comments for logic the code itself doesn't explain.
+  - No section headers (comment banners, `/** Section */` JSDocs).
+  - No "what" comments (`// Fetch data`, `// Clear cache`, `// Try cache first`).
+  - No obvious JSDocs on self-explanatory functions/constants.
+  - Allowed: JSDoc on complex public APIs explaining non-obvious behavior (e.g. stale thresholds, error recovery).
+  - Allowed: `// why` comments for workarounds, race conditions, platform bugs.
