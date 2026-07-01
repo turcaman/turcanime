@@ -4,7 +4,6 @@ import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { unwrapCookies, mergeCookies } from "./cookies";
 import { sessionManager } from "./session";
-import { webViewBridge } from "./webview";
 import { HtmlParser, ParserUtils } from "./parsers";
 import { extractBest } from "./extractors";
 import type {
@@ -226,45 +225,13 @@ async function getEpisodeServers(slug: string, number: string, options?: { signa
 async function resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<StreamUrlResult | null> {
   logger.info("resolveStreamUrl", `Bridge URL: ${videoUrl.slice(0, 80)}`);
 
-  let iframeUrl: string | null = null;
-  let currentUrl = videoUrl;
-  const parsed = currentUrl.match(/\/v\/(.+)-episodio-(\d+)\//);
-
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      logger.info("resolveStreamUrl", `WebView bridge attempt ${attempt + 1}: ${currentUrl.slice(0, 80)}`);
-      iframeUrl = await webViewBridge.fetchViaWebView(currentUrl, 10000);
-      logger.info("resolveStreamUrl", `WebView bridge OK: ${iframeUrl.slice(0, 100)}`);
-      break;
-    } catch (e: unknown) {
-      logger.warn("resolveStreamUrl", `Attempt ${attempt + 1} failed: ${e instanceof Error ? e.message : String(e)}`);
-      if (attempt === 0 && parsed) {
-        logger.info("resolveStreamUrl", "Re-fetching servers for fresh cookies...");
-        try {
-          await getEpisodeServers(parsed[1]!, parsed[2]!, options ?? {});
-          continue;
-        } catch {
-        }
-      }
-      break;
-    }
-  }
-
-  if (iframeUrl == null) {
-    logger.info("resolveStreamUrl", "Fallback: fetchWithSession");
-    try {
-      const res = await fetchWithSession(currentUrl, options ?? {});
-      logger.info("resolveStreamUrl", `fetchWithSession status: ${res.status}`);
-      if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
-      const html = await res.text();
-      const m = html.match(/<iframe[^>]*src="([^"]+)"[^>]*>/);
-      if (!m) throw new SourceError("No iframe in bridge page", "UNKNOWN");
-      iframeUrl = m[1]!;
-    } catch (e: unknown) {
-      logger.error("resolveStreamUrl", "Fallback failed", e);
-      throw e;
-    }
-  }
+  logger.info("resolveStreamUrl", "Fetching bridge page via fetchWithSession");
+  const res = await fetchWithSession(videoUrl, options ?? {});
+  if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
+  const html = await res.text();
+  const m = html.match(/<iframe[^>]*src="([^"]+)"[^>]*>/);
+  if (!m) throw new SourceError("No iframe in bridge page", "UNKNOWN");
+  const iframeUrl = m[1]!;
 
   logger.info("resolveStreamUrl", `Iframe URL: ${iframeUrl.slice(0, 100)}`);
 
