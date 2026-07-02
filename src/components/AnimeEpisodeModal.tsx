@@ -1,8 +1,9 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import type { Episode, VideoServer } from "../types";
 import { AnimatedPressable } from "./AnimatedPressable";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface AnimeEpisodeModalProps {
   visible: boolean;
@@ -46,7 +47,14 @@ export const AnimeEpisodeModal = ({
 
         <View className="gap-2">
           {isLoading ? (
-            <View className="h-48 justify-center items-center"><ActivityIndicator size="small" color="#A855F7" /></View>
+            <View className="gap-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <View key={`skel-${i}`} className="flex-row items-center bg-black p-4 rounded-xl">
+                  <Skeleton width={28} height={28} borderRadius={8} />
+                  <Skeleton width={120} height={16} borderRadius={4} className="ml-3" />
+                </View>
+              ))}
+            </View>
           ) : displayServers.length === 0 ? (
             <View className="h-48 justify-center items-center">
               <Text className="text-neutral-400 text-xs">No hay servidor disponible</Text>
