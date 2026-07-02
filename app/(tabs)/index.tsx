@@ -6,58 +6,79 @@ import { HomeSkeleton } from "@/components/skeletons/HomeSkeleton";
 import { useHomeScreen, type SectionItem } from "@/hooks/useHomeScreen";
 import { useTabBarManager } from "@/hooks/useTabBarManager";
 import { TAB_BAR_OFFSET } from "@/utils/layout";
-import React, { useEffect, useRef } from "react";
-import { Animated, RefreshControl, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+
+const CROSSFADE_DURATION = 250;
 
 const HomeContent = React.memo(function HomeContent() {
   const { sections, isLoading, error, fetchHome, hasContent } = useHomeScreen();
   const { handleScroll, reset } = useTabBarManager({ threshold: 8 });
   const insets = useSafeAreaInsets();
-  const contentOpacity = useRef(new Animated.Value(0)).current;
-  const hasShownContent = useRef(false);
+
+  const [keepSkeleton, setKeepSkeleton] = useState(!hasContent);
+  const skeletonOpacity = useSharedValue(1);
+  const contentOpacity = useSharedValue(hasContent ? 1 : 0);
+  const wasReady = useRef(hasContent);
+
+  useEffect(() => {
+    if (!hasContent) {
+      skeletonOpacity.value = 1;
+      contentOpacity.value = 0;
+      setKeepSkeleton(true);
+    }
+    if (!wasReady.current && hasContent) {
+      skeletonOpacity.value = withTiming(0, { duration: CROSSFADE_DURATION });
+      contentOpacity.value = withTiming(1, { duration: CROSSFADE_DURATION }, (finished) => {
+        if (finished) runOnJS(setKeepSkeleton)(false);
+      });
+    }
+    wasReady.current = hasContent;
+  }, [hasContent, skeletonOpacity, contentOpacity]);
 
   useEffect(() => {
     void fetchHome();
     reset();
   }, [fetchHome, reset]);
 
-  useEffect(() => {
-    if (hasContent && !hasShownContent.current) {
-      hasShownContent.current = true;
-      Animated.timing(contentOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-    }
-  }, [hasContent, contentOpacity]);
+  const skeletonStyle = useAnimatedStyle(() => ({ opacity: skeletonOpacity.value }));
+  const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
 
   if (!hasContent && error) {
     return <ErrorState onRetry={() => void fetchHome(true)} />;
   }
 
-  if (!hasContent && !error) {
-    return <HomeSkeleton />;
-  }
-
   return (
     <View className="flex-1 bg-black">
-      <Animated.FlatList
-        data={sections}
-        keyExtractor={(item: SectionItem, index: number) => `${item.type}-${index}`}
-        renderItem={({ item }) => {
-          if (item.type === "CONTINUE") return <ContinueWatching items={item.items} />;
-          return <AnimeGridSection label={item.label} items={item.items} />;
-        }}
-        ItemSeparatorComponent={() => <View className="h-4" />}
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingTop: insets.top + 16,
-          paddingBottom: TAB_BAR_OFFSET + insets.bottom,
-        }}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => void fetchHome(true)} tintColor="#A855F7" />}
-        style={{ opacity: contentOpacity }}
-      />
+      {hasContent && (
+        <Animated.View style={[{ flex: 1 }, contentStyle]}>
+          <FlatList
+            data={sections}
+            keyExtractor={(item: SectionItem, index: number) => `${item.type}-${index}`}
+            renderItem={({ item }) => {
+              if (item.type === "CONTINUE") return <ContinueWatching items={item.items} />;
+              return <AnimeGridSection label={item.label} items={item.items} />;
+            }}
+            ItemSeparatorComponent={() => <View className="h-4" />}
+            contentContainerStyle={{
+              paddingHorizontal: 20,
+              paddingTop: insets.top + 16,
+              paddingBottom: TAB_BAR_OFFSET + insets.bottom,
+            }}
+            showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => void fetchHome(true)} tintColor="#A855F7" />}
+          />
+        </Animated.View>
+      )}
+      {(keepSkeleton || !hasContent) && (
+        <Animated.View style={[StyleSheet.absoluteFill, skeletonStyle]}>
+          <HomeSkeleton />
+        </Animated.View>
+      )}
     </View>
   );
 });
