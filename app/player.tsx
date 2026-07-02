@@ -78,19 +78,25 @@ function PlayerContent() {
 
   useEffect(() => {
     if (streamUrl == null) return;
-    void player.replaceAsync({ uri: streamUrl, headers: streamHeaders ?? undefined });
+    let cancelled = false;
+    const run = async () => {
+      await player.replaceAsync({ uri: streamUrl, headers: streamHeaders ?? undefined });
+      if (cancelled) return;
 
-    const seekKey = `${slug}_${currentEpNumber}`;
-    if (seekKey !== lastSeekKey.current) {
-      lastSeekKey.current = seekKey;
-      const match = useHistoryStore.getState().lastViewed.find(
-        (h) => h.url === slug && h.number === currentEpNumber && (h.progress ?? 0) > 10,
-      );
-      if (match?.progress != null) {
-        try { player.currentTime = match.progress; } catch {}
+      const seekKey = `${slug}_${currentEpNumber}`;
+      if (seekKey !== lastSeekKey.current) {
+        lastSeekKey.current = seekKey;
+        const match = useHistoryStore.getState().lastViewed.find(
+          (h) => h.url === slug && h.number === currentEpNumber && (h.progress ?? 0) > 10,
+        );
+        if (match?.progress != null) {
+          try { player.currentTime = match.progress; } catch {}
+        }
       }
-    }
-    if (networkOkRef.current !== false) player.play();
+      if (networkOkRef.current !== false) player.play();
+    };
+    run();
+    return () => { cancelled = true; };
   }, [streamUrl, streamHeaders, player, slug, currentEpNumber]);
 
   const historyCtx = useRef({ title, url: slug, image, number: currentEpNumber });
