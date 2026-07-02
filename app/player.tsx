@@ -1,6 +1,5 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PlayerControls } from "@/components/PlayerControls";
-import { PlayerLoadingOverlay } from "@/components/skeletons/PlayerLoadingOverlay";
 import { orderEpisodes } from "@/hooks/episodeHelpers";
 import { useAnimeData } from "@/hooks/useAnimeData";
 import { useEpisodeNavigation } from "@/hooks/useEpisodeNavigation";
@@ -118,7 +117,6 @@ function PlayerContent() {
     <View className="flex-1 bg-black">
       <StatusBar hidden />
       <VideoView key={streamUrl ?? "no-stream"} player={player} style={StyleSheet.absoluteFill} nativeControls={false} contentFit="contain" />
-      <PlayerLoadingOverlay visible={loading || streamUrl == null} />
       <PlayerControls
         player={player}
         isPlaying={playState.isPlaying}

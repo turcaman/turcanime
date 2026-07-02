@@ -8,7 +8,7 @@ export function SearchSkeleton() {
   const cardHeight = cardWidth * 1.4;
 
   return (
-    <View className="px-5 pt-4">
+    <View className="pt-4">
       <View style={{ gap: 14 }}>
         {Array.from({ length: 3 }).map((_, rowIdx) => (
           <View key={`row-${rowIdx}`} style={{ flexDirection: "row", gap: CARD_WIDTH_CONFIG.gap }}>

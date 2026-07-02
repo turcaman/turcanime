@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
 import type { Episode, VideoServer } from "../types";
+import Animated, { FadeIn } from "react-native-reanimated";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -48,7 +49,7 @@ export const AnimeEpisodeModal = ({
         <View className="gap-2">
           {isLoading ? (
             <View className="gap-2">
-              {Array.from({ length: 3 }).map((_, i) => (
+              {Array.from({ length: 2 }).map((_, i) => (
                 <View key={`skel-${i}`} className="flex-row items-center bg-black p-4 rounded-xl">
                   <Skeleton width={28} height={28} borderRadius={8} />
                   <Skeleton width={120} height={16} borderRadius={4} className="ml-3" />
@@ -61,8 +62,8 @@ export const AnimeEpisodeModal = ({
             </View>
           ) : (
             displayServers.map((server, index) => (
+              <Animated.View key={server.id || `server-${index}`} entering={FadeIn.delay(index * 50).duration(200)}>
               <AnimatedPressable
-                key={server.id || `server-${index}`}
                 className="flex-row items-center bg-black p-4 rounded-xl"
                 onPress={() => { onServerSelect(server); }}
               >
@@ -73,6 +74,7 @@ export const AnimeEpisodeModal = ({
                   {mapLanguage(server.language)}
                 </Text>
               </AnimatedPressable>
+              </Animated.View>
             ))
           )}
         </View>
