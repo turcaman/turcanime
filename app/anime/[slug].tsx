@@ -4,6 +4,7 @@ import { AnimeDetailsHeader } from "@/components/AnimeDetailsHeader";
 import { AnimeEpisodeModal } from "@/components/AnimeEpisodeModal";
 import { EpisodeRangeSelector } from "@/components/EpisodeRangeSelector";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { DetailSkeleton } from "@/components/skeletons/DetailSkeleton";
 import { useAnimeDetailScreen } from "@/hooks/useAnimeDetailScreen";
 import { navigateBack, navigateToPlayer } from "@/utils/navigation";
 import { useHistoryStore } from "@/stores/historyStore";
@@ -24,6 +25,10 @@ function AnimeDetailsContent() {
     hasLoaded, activeRangeIdx, setActiveRangeIdx, isRestoring,
     ranges, visibleEpisodes, isAscending, handleEpisodePress, refresh, resolveStream,
   } = useAnimeDetailScreen(slug as string);
+
+  if (!anime && !error) {
+    return <DetailSkeleton />;
+  }
 
   return (
     <ScreenWrapper error={!!error} hasContent={!!anime} onRetry={refresh}>
