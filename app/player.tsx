@@ -95,7 +95,7 @@ function PlayerContent() {
       }
       if (networkOkRef.current !== false) player.play();
     };
-    run();
+    void run();
     return () => { cancelled = true; };
   }, [streamUrl, streamHeaders, player, slug, currentEpNumber]);
 
