@@ -13,7 +13,7 @@ export function HomeSkeleton() {
     <View className="flex-1 bg-black" style={{ paddingHorizontal: CARD_WIDTH_CONFIG.horizontalPad, paddingTop: insets.top + 16 }}>
       <Skeleton width={140} height={16} borderRadius={4} className="mb-4" />
       <View className="flex-row gap-3 mb-8">
-        {Array.from({ length: 3 }).map((_, i) => (
+        {Array.from({ length: 2 }).map((_, i) => (
           <View key={`cw-${i}`} style={{ width: 110 }}>
             <Skeleton width={110} height={165} borderRadius={8} />
             <Skeleton width="90%" height={12} borderRadius={4} className="mt-2" />

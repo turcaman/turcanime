@@ -42,7 +42,7 @@ export function DetailSkeleton() {
       <View className="pt-5 px-5">
         <Skeleton width={160} height={14} borderRadius={4} />
         <View className="flex-row gap-3 mt-3">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 3 }).map((_, i) => (
             <View key={`rel-${i}`} className="w-[100px]">
               <Skeleton width={100} height={140} borderRadius={10} />
               <Skeleton width="90%" height={12} borderRadius={4} className="mt-1" />

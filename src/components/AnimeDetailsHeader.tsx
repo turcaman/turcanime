@@ -131,7 +131,7 @@ export const AnimeDetailsHeader = memo(
 
         {relatedItems != null && (
             <View className="pt-5 px-5">
-              <SectionTitle>También te puede interesar</SectionTitle>
+              <SectionTitle>Relacionados</SectionTitle>
               <View className="mt-3">
                 <FlashList
                   horizontal
