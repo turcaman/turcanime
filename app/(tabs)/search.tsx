@@ -1,6 +1,7 @@
 import AnimeCard from "@/components/AnimeCard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RecentSearches } from "@/components/RecentSearches";
+import { SearchSkeleton } from "@/components/skeletons/SearchSkeleton";
 import { SuggestionsList } from "@/components/SuggestionsList";
 import type { Anime } from "@/types";
 import { useSearchScreen } from "@/hooks/useSearchScreen";
@@ -38,6 +39,8 @@ function SearchScreenContent() {
 
   const showIdleContent = isIdle && !isTyping && !isSearched && !isLoading;
   const showHint = showIdleContent && recentSearches.length === 0;
+  /** Show skeleton grid while a search is executing but results haven't arrived yet */
+  const showSearchSkeleton = !isSearched && !isIdle && !isTyping && isLoading;
 
   return (
     <View className="flex-1 bg-black">
@@ -74,6 +77,7 @@ function SearchScreenContent() {
         {isTyping && suggestions.length > 0 && (
           <SuggestionsList suggestions={suggestions} onSelect={handleSelectSuggestion} onScroll={handleScroll} tabBarOffset={TAB_BAR_OFFSET} />
         )}
+        {showSearchSkeleton && <SearchSkeleton />}
         {isSearched && (
           <Animated.View style={{ flex: 1, opacity: resultsOpacity }}>
             <FlatList
