@@ -89,7 +89,6 @@ export function FloatingTabBar({
               key={route.key}
               onPress={onPress}
               className="w-11 h-11 rounded-lg items-center justify-center"
-              hapticFeedback={false}
               accessibilityLabel={LABELS[route.name]}
               accessibilityRole="button"
             >

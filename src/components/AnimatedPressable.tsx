@@ -40,7 +40,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   onPress,
   accessibilityLabel,
   accessibilityHint,
-  hapticFeedback = true,
+  hapticFeedback = false,
   debounceMs = DEFAULT_DEBOUNCE_MS,
   ...rest
 }) => {
