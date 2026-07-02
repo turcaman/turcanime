@@ -37,11 +37,13 @@ export function useHomeScreen() {
     return list;
   }, [homeData, continueWatching]);
 
+  const hasContent = isInitialized && (homeData.recent.length > 0 || (!isHomeLoading && !isRefreshing));
+
   return {
     sections,
     isLoading: isHomeLoading || (isRefreshing && homeData.recent.length === 0) || !isInitialized,
     error,
     fetchHome,
-    hasContent: sections.length > 0,
+    hasContent,
   };
 }
