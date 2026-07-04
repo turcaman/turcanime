@@ -32,7 +32,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   fetchServers: async (slug: string, number: string, force = false, signal?: AbortSignal) => {
     set({ isLoading: true, servers: [], error: null });
 
-    if (signal?.aborted === true) {
+    if (signal != null && signal.aborted) {
       set({ isLoading: false });
       return;
     }
@@ -57,6 +57,50 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       if (e instanceof Error && e.name === "AbortError") {
         set({ isLoading: false });
         return;
+      }
+      if ((e as { type?: string })?.type === "AUTH_ERROR") {
+        logger.info("playerStore", "Auth error on fetchServers, refreshing session and retrying...");
+        try {
+          await refreshSession();
+        } catch {
+          logger.info("playerStore", "Session refresh failed, falling through to error");
+          set({
+            servers: [],
+            isLoading: false,
+            error: "Error de sesión al cargar servidores",
+          });
+          return;
+        }
+        if (signal != null && signal.aborted) {
+          set({ isLoading: false });
+          return;
+        }
+        try {
+          const data = await source.getEpisodeServers(slug, number, { signal });
+          void storage.set(cacheKey, { payload: data, expiration: Date.now() + CACHE_TTL.SERVERS });
+          set({ servers: data, isLoading: false });
+          return;
+        } catch (e2: unknown) {
+          if (e2 instanceof Error) {
+            if (e2.name === "AbortError") {
+              set({ isLoading: false });
+              return;
+            }
+            logger.error("playerStore", "fetchServers retry failed", e2);
+            set({
+              servers: [],
+              isLoading: false,
+              error: e2.message,
+            });
+            return;
+          }
+          set({
+            servers: [],
+            isLoading: false,
+            error: "Error al cargar servidores",
+          });
+          return;
+        }
       }
       logger.error("playerStore", "fetchServers failed", e);
       set({
