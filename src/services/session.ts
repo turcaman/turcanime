@@ -10,6 +10,7 @@ const SESSION_KEY = "scraper_session";
 class SessionManager {
   private sessionReadyPromise: Promise<void> | null = null;
   private sessionReadyResolver: (() => void) | null = null;
+  private refreshPromise: Promise<void> | null = null;
 
   async initialize(): Promise<void> {
     let promiseResolver: (() => void) | null = null;
@@ -85,18 +86,32 @@ class SessionManager {
       this.sessionReadyResolver = resolve;
     });
   }
+
+  async acquireFreshSession(): Promise<void> {
+    if (this.refreshPromise) return this.refreshPromise;
+    this.refreshPromise = this.executeRefresh();
+    try {
+      await this.refreshPromise;
+    } finally {
+      this.refreshPromise = null;
+    }
+  }
+
+  private async executeRefresh(): Promise<void> {
+    await this.invalidateCookies();
+    webViewBridge.navigateTo(SOURCE_CONFIG.sessionWashUrl);
+    await this.waitForCookies();
+    const session = await this.getSession();
+    if (!session?.cookies) {
+      throw new Error("Session refresh failed - no cookies received");
+    }
+    logger.info("infrastructure", "Session refreshed successfully");
+  }
 }
 
 export const sessionManager = new SessionManager();
 
 export async function refreshSession(): Promise<void> {
-  logger.info("infrastructure", "Refreshing session...");
-  await sessionManager.invalidateCookies();
-  webViewBridge.navigateTo(SOURCE_CONFIG.sessionWashUrl);
-  try {
-    await sessionManager.waitForCookies();
-    logger.info("infrastructure", "Session refreshed successfully");
-  } catch (e) {
-    logger.error("infrastructure", "Failed to wait for cookies after refresh", e);
-  }
+  logger.info("infrastructure", "refreshSession called");
+  await sessionManager.acquireFreshSession();
 }

@@ -66,6 +66,7 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
 
       if (res.status === 403 || res.status === 401) {
         logger.info("fetch", "Auth error detected, triggering session invalidation");
+        void sessionManager.invalidateCookies();
         const error = new Error("Authentication failed - session invalid") as Error & { type: string };
         error.type = "AUTH_ERROR";
         throw error;
