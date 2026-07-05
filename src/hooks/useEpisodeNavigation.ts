@@ -70,7 +70,13 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       } catch (e: unknown) {
         const isAuth = (e as { type?: string })?.type === "AUTH_ERROR";
         if (isAuth) {
-          await refreshSession();
+          try {
+            await refreshSession();
+          } catch {
+            setError("Error al renovar sesión");
+            setLoading(false);
+            return;
+          }
           try {
             await attempt(true);
           } catch (e2: unknown) {
