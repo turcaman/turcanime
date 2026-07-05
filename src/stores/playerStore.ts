@@ -159,6 +159,39 @@ export const usePlayerStore = create<PlayerState>((set) => ({
         set({ isLoading: false, error: "No se pudo resolver el stream" });
       }
     } catch (e: unknown) {
+      if ((e as { type?: string })?.type === "AUTH_ERROR") {
+        logger.info("playerStore", "Auth error on resolveStream, refreshing session and retrying...");
+        try {
+          await refreshSession();
+        } catch {
+          set({ isLoading: false, error: "Error de sesión al resolver stream" });
+          return;
+        }
+        try {
+          const streamResult = await source.resolveStreamUrl(server.url);
+          if (streamResult == null) {
+            set({ isLoading: false, error: "No se pudo resolver el stream" });
+            return;
+          }
+          const headers = streamResult.headers;
+          void storage.set(cacheKey, {
+            payload: { url: streamResult.url, headers },
+            expiration: Date.now() + CACHE_TTL.STREAM,
+          });
+          set({
+            streamUrl: streamResult.url,
+            streamHeaders: headers ?? null,
+            isLoading: false,
+          });
+          return;
+        } catch (e2: unknown) {
+          set({
+            isLoading: false,
+            error: e2 instanceof Error ? e2.message : "Error al resolver stream",
+          });
+          return;
+        }
+      }
       set({
         isLoading: false,
         error: e instanceof Error ? e.message : "Error al resolver stream",
