@@ -30,13 +30,14 @@ export function DetailSkeleton() {
         </View>
       </View>
 
-      <View className="px-5 pt-5" style={{ gap: 6 }}>
+      <View className="px-5 pt-5" style={{ gap: 8 }}>
         <Skeleton width={60} height={14} borderRadius={4} />
-        <View className="mt-2" style={{ gap: 6 }}>
+        <View style={{ gap: 6 }}>
           <Skeleton width="100%" height={14} borderRadius={4} />
           <Skeleton width="92%" height={14} borderRadius={4} />
           <Skeleton width="65%" height={14} borderRadius={4} />
         </View>
+        <Skeleton width={80} height={14} borderRadius={4} />
       </View>
 
       <View className="pt-5 px-5">
@@ -56,18 +57,17 @@ export function DetailSkeleton() {
         <Skeleton width={20} height={20} borderRadius={4} />
       </View>
 
-      <View className="flex-row gap-3 px-5 mt-3 mb-4">
+      <View className="flex-row gap-3 px-5 mt-3 mb-2">
         {Array.from({ length: 2 }).map((_, i) => (
           <Skeleton key={`tab-${i}`} width={80} height={32} borderRadius={8} />
         ))}
       </View>
 
-      <View className="px-5" style={{ gap: 8 }}>
+      <View className="px-5" style={{ marginTop: 4, gap: 8 }}>
         {Array.from({ length: 6 }).map((_, i) => (
           <View
             key={`ep-${i}`}
-            className="flex-row items-center justify-between rounded-xl bg-neutral-950 border border-neutral-800 px-4"
-            style={{ height: 56 }}
+            className="flex-row items-center justify-between rounded-xl bg-neutral-950 border border-neutral-800 p-4"
           >
             <Skeleton width={100} height={15} borderRadius={4} />
             <Skeleton width={15} height={15} borderRadius={4} />
