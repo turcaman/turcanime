@@ -62,25 +62,45 @@ function RootInner() {
 
   useEffect(() => {
     if (sessionRefreshTrigger === 0) return;
+
     const doRefresh = async () => {
       try {
         lastRefreshTime.current = Date.now();
         useHomeStore.getState().prepareRefresh();
+
+        let sessionOk = false;
         try {
           await refreshSession();
+          sessionOk = true;
         } catch {
-          logger.warn("refresh", "Session refresh failed, continuing with cache clear anyway");
+          logger.warn("refresh", "Session refresh failed, skipping cache clear and using stale cache");
         }
-        const allKeys = await storage.getAllKeys();
-        const cacheKeys = allKeys.filter((k) => k.startsWith("ch_") || k.startsWith("search_") || k.startsWith("anime_") || k.startsWith("suggestions_") || k.startsWith("stream_") || k.startsWith("servers_"));
-        await Promise.all(cacheKeys.map((k) => storage.remove(k)));
-        void useHomeStore.getState().fetchHome(true);
-        useSettingsStore.getState().invalidateCache();
+
+        if (sessionOk) {
+          const allKeys = await storage.getAllKeys();
+          const cacheKeys = allKeys.filter((k) => k.startsWith("ch_") || k.startsWith("search_") || k.startsWith("anime_") || k.startsWith("suggestions_") || k.startsWith("stream_") || k.startsWith("servers_"));
+          await Promise.all(cacheKeys.map((k) => storage.remove(k)));
+          void useHomeStore.getState().fetchHome(true);
+          useSettingsStore.getState().invalidateCache();
+        } else {
+          void useHomeStore.getState().fetchHome(false);
+        }
       } finally {
         setSessionRefreshing(false);
       }
     };
     void doRefresh();
+
+    // Safety net: if data hasn't loaded within 12s, auto-retry the fetch
+    const safetyTimer = setTimeout(() => {
+      const { homeData, isHomeLoading } = useHomeStore.getState();
+      if (homeData.recent.length === 0 && !isHomeLoading) {
+        logger.info("refresh", "Safety timer: data still empty, retrying fetch...");
+        void useHomeStore.getState().fetchHome(true);
+      }
+    }, 12000);
+
+    return () => clearTimeout(safetyTimer);
   }, [sessionRefreshTrigger, setSessionRefreshing]);
 
   useEffect(() => {

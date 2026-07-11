@@ -1,4 +1,3 @@
-import { TIMEOUTS } from "../config/cache";
 import { SOURCE_CONFIG } from "../config/source";
 import type { ISession } from "../types";
 import { logger } from "../utils/logger";
@@ -64,11 +63,27 @@ class SessionManager {
       }
       if (this.sessionReadyPromise) {
         logger.debug("SessionManager", "Waiting for cookies from WebView");
-        await Promise.race([
-          this.sessionReadyPromise,
-          new Promise((resolve) => setTimeout(resolve, TIMEOUTS.SESSION_INIT)),
-        ]);
-        logger.debug("SessionManager", "Cookies ready or timeout reached");
+
+        // Poll every 2s for up to 60s (30 attempts), checking if cookies have actually arrived
+        const maxAttempts = 30;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          const raceResult = await Promise.race([
+            this.sessionReadyPromise.then(() => "resolved" as const),
+            new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), 2000)),
+          ]);
+
+          if (raceResult === "resolved") {
+            const session = await this.getSession();
+            if (session?.cookies && session.cookies.length > 0) {
+              logger.debug("SessionManager", `Cookies ready after ~${(attempt + 1) * 2}s`);
+              return;
+            }
+          }
+
+          logger.debug("SessionManager", `Waiting for cookies... attempt ${attempt + 1}/${maxAttempts}`);
+        }
+
+        logger.warn("SessionManager", "Cookies not received within 60s, proceeding anyway");
       }
     } catch (error) {
       logger.error("SessionManager", "Failed to wait for cookies", error);

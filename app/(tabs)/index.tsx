@@ -28,14 +28,16 @@ const HomeContent = React.memo(function HomeContent() {
       skeletonOpacity.value = 1;
       contentOpacity.value = 0;
       setKeepSkeleton(true);
+      wasReady.current = false;
+      return;
     }
-    if (!wasReady.current && hasContent) {
+    if (!wasReady.current) {
+      wasReady.current = true;
       skeletonOpacity.value = withTiming(0, { duration: CROSSFADE_DURATION });
       contentOpacity.value = withTiming(1, { duration: CROSSFADE_DURATION }, (finished) => {
         if (finished) runOnJS(setKeepSkeleton)(false);
       });
     }
-    wasReady.current = hasContent;
   }, [hasContent, skeletonOpacity, contentOpacity]);
 
   useEffect(() => {
