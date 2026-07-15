@@ -27,7 +27,7 @@ File-based routing via `expo-router`.
 
 ### Source & Streaming
 
-- **Source:** AnimeLatinoHD (`src/config/source.ts`). TMDB images for posters.
+- **Source:** configuración en `src/config/source.ts` (scraper de anime). TMDB images for posters.
 - **Stream:** Direct HTTP fetch via `fetchWithSession` (no WebView for streaming).
   - Bridge page fetched → iframe URL extracted → `extractBest()` decrypts Byse payload via `@noble/ciphers` AES-GCM.
   - Decryption: `gcm()` from `@noble/ciphers/aes.js`, key assembled from `key_parts` using version-based index selection.

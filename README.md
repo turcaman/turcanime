@@ -52,7 +52,7 @@ src/
   components/           → UI components (AnimeCard, PlayerControls, FloatingTabBar, etc.)
   hooks/                → Custom hooks (useHomeScreen, useAnimeDetailScreen, etc.)
   stores/               → Zustand stores (home, search, player, history, settings)
-  services/             → HTTP, session, parsers, extractors (AnimeLatinoHD scraper)
+  services/             → HTTP, session, parsers, extractors (anime scraper)
   config/               → Source URLs, cache TTLs
   utils/                → Cache, storage, logger, navigation helpers
   types.ts              → TypeScript types

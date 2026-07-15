@@ -1,5 +1,4 @@
 export const SOURCE_CONFIG = {
-  name: "AnimeLatinoHD",
   baseUrl: "https://www.animelatinohd.com",
   sessionWashUrl: "https://www.animelatinohd.com/",
   endpoints: {
