@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { HistoryItem } from "../types";
-import { computeContinueWatching, prependDedup, removeBy } from "../utils/history";
+import { computeContinueWatching, removeBy } from "../utils/history";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
 
@@ -26,7 +26,9 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
   addToHistory: async (item: HistoryItem) => {
     const newItem = { ...item, timestamp: Date.now() };
     const previous = get().lastViewed;
-    const updated = prependDedup(previous, newItem, 50, "url");
+    const updated = [newItem, ...previous.filter(
+      (i) => i.url !== newItem.url || i.number !== newItem.number,
+    )].slice(0, 50);
 
     set({ lastViewed: updated, continueWatching: computeContinueWatching(updated) });
     try {

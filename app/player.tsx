@@ -83,6 +83,8 @@ function PlayerContent() {
       await player.replaceAsync({ uri: streamUrl, headers: streamHeaders ?? undefined });
       if (cancelled) return;
 
+      try { player.currentTime = 0; } catch {}
+
       const seekKey = `${slug}_${currentEpNumber}`;
       if (seekKey !== lastSeekKey.current) {
         lastSeekKey.current = seekKey;
@@ -116,8 +118,14 @@ function PlayerContent() {
   useEffect(() => {
     if (streamUrl == null) return;
     const interval = setInterval(saveProgress, 10000);
-    return () => { clearInterval(interval); saveProgress(); };
+    return () => { clearInterval(interval); };
   }, [streamUrl, saveProgress]);
+
+  useEffect(() => {
+    return () => {
+      saveProgress();
+    };
+  }, [saveProgress]);
 
   return (
     <View className="flex-1 bg-black">

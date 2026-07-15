@@ -12,9 +12,12 @@ export function removeBy<T>(list: T[], predicate: (item: T) => boolean): T[] {
 }
 
 export function computeContinueWatching(lastViewed: HistoryItem[]): HistoryItem[] {
-  const uniqueAnimes = new Map<string, HistoryItem>();
-  lastViewed.forEach(item => {
-    uniqueAnimes.set(item.url, item);
-  });
-  return Array.from(uniqueAnimes.values()).slice(0, 8);
+  const latestPerAnime = new Map<string, HistoryItem>();
+  for (const item of lastViewed) {
+    const existing = latestPerAnime.get(item.url);
+    if (!existing || item.timestamp > existing.timestamp) {
+      latestPerAnime.set(item.url, item);
+    }
+  }
+  return Array.from(latestPerAnime.values()).slice(0, 8);
 }
