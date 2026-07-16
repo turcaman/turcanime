@@ -15,8 +15,14 @@ interface ContinueWatchingProps {
 export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
   if (items.length === 0) return null;
 
-  const renderItem = ({ item }: { item: HistoryItem }) => (
-    <AnimatedPressable
+  const renderItem = ({ item }: { item: HistoryItem }) => {
+    const pct = item.progress != null && item.duration != null && item.duration > 0
+      ? Math.min(item.progress / item.duration, 1)
+      : 0;
+    const barProgress = pct >= 0.9 ? item.duration : item.progress;
+
+    return (
+      <AnimatedPressable
       className="mr-3 w-[110px] h-[165px] rounded-xl overflow-hidden bg-neutral-950"
       onPress={() => { navigateToAnime(item.url); }}
       accessibilityLabel={`Continuar viendo: ${item.title}`}
@@ -32,10 +38,11 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
         <Text numberOfLines={1} className="text-sm font-bold text-white">
           {item.title}
         </Text>
-        <ProgressBar progress={item.progress} duration={item.duration} className="mt-1" />
+        <ProgressBar progress={barProgress} duration={item.duration} className="mt-1" />
       </View>
     </AnimatedPressable>
-  );
+    );
+  };
 
   return (
     <View>
