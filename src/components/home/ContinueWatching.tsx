@@ -5,22 +5,11 @@ import type { HistoryItem } from "../../types";
 import { navigateToAnime } from "../../utils/navigation";
 import { AnimatedPressable } from "../AnimatedPressable";
 import { ImageWithLoader } from "../ui/ImageWithLoader";
+import { ProgressBar } from "../ui/ProgressBar";
 import { SectionTitle } from "../ui/SectionTitle";
 
 interface ContinueWatchingProps {
   items: HistoryItem[];
-}
-
-function ProgressBar({ progress, duration }: { progress?: number; duration?: number }) {
-  const pct = progress != null && duration != null && duration > 0
-    ? Math.min(progress / duration, 1)
-    : 0;
-
-  return (
-    <View className="h-0.5 bg-neutral-800 mt-1">
-      <View className="h-full bg-purple-500" style={{ width: `${pct * 100}%` }} />
-    </View>
-  );
 }
 
 export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
@@ -43,7 +32,7 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
         <Text numberOfLines={1} className="text-sm font-bold text-white">
           {item.title}
         </Text>
-        <ProgressBar progress={item.progress} duration={item.duration} />
+        <ProgressBar progress={item.progress} duration={item.duration} className="mt-1" />
       </View>
     </AnimatedPressable>
   );

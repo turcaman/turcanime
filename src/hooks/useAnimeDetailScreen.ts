@@ -17,6 +17,8 @@ export function useAnimeDetailScreen(slug: string) {
   const episodeOrder = useSettingsStore((s) => s.episodeOrder);
   const setEpisodeOrder = useSettingsStore((s) => s.setEpisodeOrder);
   const addToHistory = useHistoryStore((s) => s.addToHistory);
+  const watched = useHistoryStore((s) => s.watched);
+  const toggleWatched = useHistoryStore((s) => s.toggleWatched);
   const episodeUI = useEpisodeUI();
   const { selectedEpisode, setSelectedEpisode } = episodeUI;
 
@@ -26,6 +28,8 @@ export function useAnimeDetailScreen(slug: string) {
     [anime?.episodes, episodeOrder, activeRangeIdx],
   );
   const { serverLoading, fetchAndSet } = useServerFetcher(slug, fetchServers);
+
+  const watchedSet = useMemo(() => new Set(watched), [watched]);
 
   const handleEpisodePress = useCallback(
     (ep: Episode) => {
@@ -81,6 +85,8 @@ export function useAnimeDetailScreen(slug: string) {
     visibleEpisodes,
     handleEpisodePress,
     handleServerSelect,
+    watchedSet,
+    toggleWatched,
     ...episodeUI,
   };
 }
