@@ -1,10 +1,10 @@
 # Turcanime
 
-App de anime para Android — sin anuncios, sin cuentas, sin límites.
+**Anime streaming app for Android** — no ads, no accounts, no limits.
 
-Built with **Expo 55** + **React Native 0.83**.
+Streams directly via HLS with native `expo-video`. Built with Expo 55 + React Native 0.83.
 
-> Descarga el último APK en la [página de releases](https://github.com/turcaman/turcanime/releases).
+> Download the latest APK from the [releases page](https://github.com/turcaman/turcanime/releases).
 
 ## Stack
 
@@ -17,37 +17,46 @@ Built with **Expo 55** + **React Native 0.83**.
 | Styling | NativeWind v5 + Tailwind CSS 4 |
 | Video | expo-video |
 | Animations | react-native-reanimated 4 |
+| Cache | AsyncStorage + custom `withCache()` |
+| Scraper | Direct HTTP fetch + RSC payload parsing |
+| Stream | Byse AES-GCM decrypt → HLS |
 
 ## Requirements
 
 - **Node.js** >= 20
-- **Android SDK** — para builds locales
-- Dispositivo físico o emulador Android
+- **Android SDK** — for local builds
+- Physical device or Android emulator
 
 ## Setup
 
 ```bash
 npm install
-npm install lightningcss@1.30.1    # pin necesario, ver abajo
 npx expo prebuild --platform android
 npx expo run:android
 ```
 
-> **⚠️ lightningcss**: La versión `^1.30.1` en `package.json` permite que `npm install` instale `1.32.x`, que tiene un bug confirmado con `react-native-css`. Siempre hacer `npm install lightningcss@1.30.1` después de instalar dependencias.
+## Scripts
 
-## Available Scripts
-
-| Comando | Descripción |
+| Command | Description |
 |---------|-------------|
-| `npm start` | Iniciar dev server |
-| `npx expo run:android` | Ejecutar en Android |
+| `npm start` | Start dev server |
+| `npx expo run:android` | Run on Android |
 | `npm run lint` | ESLint (flat config, type-aware) |
 | `npx tsc --noEmit` | TypeScript check |
+
+## Features
+
+- **Home** — Recently added anime + "Continue Watching" from your history
+- **Search** — Search with autocomplete suggestions + search history
+- **Detail** — Synopsis, genres, related anime, episode list with range pagination
+- **Player** — Native video player with landscape mode, server switching, auto-resume
+- **No login** — No account needed; the scraper handles source authentication automatically
+- **Smart cache** — Cached results with per-type TTLs (home: 6h, details: 12h, stream: 5min)
 
 ## Project Structure
 
 ```
-app/                    → Screens (expo-router)
+app/                    → Screens (expo-router file-based routing)
 src/
   components/           → UI components (AnimeCard, PlayerControls, FloatingTabBar, etc.)
   hooks/                → Custom hooks (useHomeScreen, useAnimeDetailScreen, etc.)
@@ -58,29 +67,20 @@ src/
   types.ts              → TypeScript types
 ```
 
-## Features
-
-- **Home** — Animes recién agregados, "Continue Watching" desde tu historial
-- **Search** — Búsqueda con sugerencias automáticas + historial de búsquedas
-- **Detail** — Sinopsis, géneros, animes relacionados, episodios con paginación
-- **Player** — Reproductor nativo con soporte landscape, cambio de servidores, reanudación automática
-- **Sin sesión** — No necesitas cuenta, el scraper maneja la autenticación del source automáticamente
-- **Cache inteligente** — Resultados cacheados con TTLs por tipo (home: 6h, details: 12h, stream: 5min)
-
 ## Deployment
 
-CI/CD via GitHub Actions (trigger manual):
+CI/CD via GitHub Actions (manual trigger):
 
 1. `validate` — ESLint + TypeScript check
-2. `build-android` — Prebuild + EAS build local → APK firmado
-3. `create-release` — Draft release en GitHub con changelog
+2. `build-android` — Prebuild + EAS local build → signed APK
+3. `create-release` — Draft GitHub Release with changelog
 
-**Version bumps**: Editar `package.json` (version) y `app.json` (expo.version + expo.android.versionCode).
+**Version bumps**: Edit `package.json` (`version`) and `app.json` (`expo.version` + `expo.android.versionCode`).
 
 ## Conventions
 
-- **Dark theme** — UI en negro con acento morado (`#A855F7`)
-- **Español** — Todos los strings de UI en español
-- **Android-only** — Sin soporte iOS/web
-- **No tests** — Sin framework de testing configurado
-- **Sin JSDocs** — Comentarios solo para workarounds no obvios
+- **Dark theme** — Black UI with purple accent (`#A855F7`)
+- **Spanish UI** — All user-facing strings in Spanish
+- **Android-only** — No iOS/web support
+- **No tests** — No test framework configured
+- **Minimal comments** — Only for non-obvious workarounds and race conditions
