@@ -3,7 +3,10 @@ import type { AnimeDetail, AppError } from "../types";
 import { useDetailsStore } from "../stores/detailsStore";
 
 export function useAnimeData(slug: string) {
-  const { activeAnime: anime, isDetailsLoading: isLoading, fetchDetails, error } = useDetailsStore();
+  const anime = useDetailsStore((s) => s.activeAnime);
+  const isLoading = useDetailsStore((s) => s.isDetailsLoading);
+  const fetchDetails = useDetailsStore((s) => s.fetchDetails);
+  const error = useDetailsStore((s) => s.error);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {

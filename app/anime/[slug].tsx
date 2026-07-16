@@ -6,27 +6,25 @@ import { EpisodeRangeSelector } from "@/components/EpisodeRangeSelector";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DetailSkeleton } from "@/components/skeletons/DetailSkeleton";
 import { useAnimeDetailScreen } from "@/hooks/useAnimeDetailScreen";
-import { navigateBack, navigateToPlayer } from "@/utils/navigation";
-import { useHistoryStore } from "@/stores/historyStore";
+import { navigateBack } from "@/utils/navigation";
 import { TAB_BAR_OFFSET } from "@/utils/layout";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 const CROSSFADE_DURATION = 250;
 
-function AnimeDetailsContent() {
+const AnimeDetailsContent = memo(function AnimeDetailsContent() {
   const { slug } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const { addToHistory } = useHistoryStore();
   const {
     anime, isAnimeLoading, error, servers, serverLoading, setEpisodeOrder,
     isExpanded, setIsExpanded, selectedEpisode, setSelectedEpisode,
     hasLoaded, activeRangeIdx, setActiveRangeIdx, isRestoring,
-    ranges, visibleEpisodes, isAscending, handleEpisodePress, refresh, resolveStream,
+    ranges, visibleEpisodes, isAscending, handleEpisodePress, handleServerSelect, refresh,
   } = useAnimeDetailScreen(slug as string);
 
   const showContent = anime != null && anime.url === slug;
@@ -102,25 +100,7 @@ function AnimeDetailsContent() {
                 episode={selectedEpisode}
                 servers={servers}
                 isLoading={serverLoading}
-                onServerSelect={(server) => {
-                  if (selectedEpisode) void resolveStream(server, selectedEpisode.url);
-                  setSelectedEpisode(null);
-                  if (selectedEpisode && anime) {
-                    const existing = useHistoryStore.getState().lastViewed.find(
-                      (h) => h.url === slug && h.number === selectedEpisode.number,
-                    );
-                    addToHistory({
-                      title: anime.title,
-                      image: anime.image,
-                      url: slug as string,
-                      number: selectedEpisode.number,
-                      progress: existing?.progress,
-                      duration: existing?.duration,
-                      timestamp: Date.now(),
-                    }).catch(() => {});
-                    navigateToPlayer({ slug: slug as string, number: selectedEpisode.number, title: anime.title, image: anime.image });
-                  }
-                }}
+                onServerSelect={handleServerSelect}
               />
             </View>
           </ScreenWrapper>
@@ -133,7 +113,7 @@ function AnimeDetailsContent() {
       )}
     </View>
   );
-}
+});
 
 export default function AnimeDetails() {
   return (
