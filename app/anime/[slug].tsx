@@ -13,7 +13,7 @@ import { useLocalSearchParams } from "expo-router";
 import React, { memo, useEffect, useRef, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 const CROSSFADE_DURATION = 250;
 
@@ -83,15 +83,13 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                 />
                 <EpisodeRangeSelector ranges={ranges} activeRangeIdx={activeRangeIdx} setActiveRangeIdx={setActiveRangeIdx} isRestoring={isRestoring} />
                 <View style={{ paddingHorizontal: 20, marginTop: 4, gap: 8 }}>
-                  {visibleEpisodes.map((item, index) => (
-                    <Animated.View key={item.id} entering={FadeIn.delay(index * 50).duration(200)}>
-                      <AnimatedPressable onPress={() => handleEpisodePress(item)}>
-                        <View className="rounded-xl bg-neutral-950 flex-row items-center justify-between border border-neutral-800 p-4">
-                          <Text className="font-semibold text-white">Episodio {item.number}</Text>
-                          <Feather name="play" size={16} color="#A855F7" />
-                        </View>
-                      </AnimatedPressable>
-                    </Animated.View>
+                  {visibleEpisodes.map((item) => (
+                    <AnimatedPressable key={item.id} onPress={() => handleEpisodePress(item)}>
+                      <View className="rounded-xl bg-neutral-950 flex-row items-center justify-between border border-neutral-800 p-4">
+                        <Text className="font-semibold text-white">Episodio {item.number}</Text>
+                        <Feather name="play" size={16} color="#A855F7" />
+                      </View>
+                    </AnimatedPressable>
                   ))}
                 </View>
               </ScrollView>
