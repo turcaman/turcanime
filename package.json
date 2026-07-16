@@ -54,5 +54,8 @@
     "tailwindcss": "^4.3.0",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "react-dom": "19.2.0"
+  }
 }
