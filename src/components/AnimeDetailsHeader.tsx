@@ -3,6 +3,7 @@ import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { memo, useMemo } from "react";
 import { Text, useWindowDimensions, View } from "react-native";
+import Animated, { LinearTransition } from "react-native-reanimated";
 import type { EdgeInsets } from "react-native-safe-area-context";
 import type { AnimeDetail, AnimeRelations, RelatedAnime } from "../types";
 import { router } from "expo-router";
@@ -110,15 +111,17 @@ export const AnimeDetailsHeader = memo(
           <SectionTitle>Sinopsis</SectionTitle>
           {hasSynopsis ? (
             <AnimatedPressable onPress={() => { setIsExpanded(!isExpanded); }}>
-              <Text
-                className="text-sm font-medium leading-6 text-neutral-400 mt-2"
-                numberOfLines={isExpanded ? undefined : 3}
-              >
-                {anime.synopsis}
-              </Text>
-              {!isExpanded && anime.synopsis.length > 150 && (
+              <Animated.View layout={LinearTransition.duration(250)}>
+                <Text
+                  className="text-sm font-medium leading-6 text-neutral-400 mt-2"
+                  numberOfLines={isExpanded ? undefined : 3}
+                >
+                  {anime.synopsis}
+                </Text>
+              </Animated.View>
+              {anime.synopsis.length > 150 && (
                 <Text className="mt-2 text-sm font-bold leading-6 text-purple-500">
-                  Leer más
+                  {isExpanded ? "Leer menos" : "Leer más"}
                 </Text>
               )}
             </AnimatedPressable>
