@@ -68,7 +68,7 @@ export const AnimeEpisodeModal = ({
                 onPress={() => { onServerSelect(server); }}
               >
                 <View className="w-7 h-7 rounded-lg bg-purple-500/15 justify-center items-center mr-2">
-                  <Feather name="play" size={14} color="#A855F7" />
+                  <Text className="text-xs font-bold text-purple-500">{index + 1}</Text>
                 </View>
                 <Text className="text-white font-bold flex-1">
                   {mapLanguage(server.language)}
