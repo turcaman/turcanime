@@ -90,6 +90,8 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                       (h) => h.url === slug && h.number === item.number,
                     );
                     const hasProgress = historyEntry != null && (historyEntry.progress ?? 0) > 0 && (historyEntry.duration ?? 0) > 0;
+                    const pct = hasProgress ? (historyEntry.progress ?? 0) / (historyEntry.duration ?? 1) : 0;
+                    const barProgress = hasProgress && pct >= 0.9 ? historyEntry!.duration : historyEntry?.progress;
 
                     return (
                       <AnimatedPressable key={item.id} onPress={() => handleEpisodePress(item)}>
@@ -99,7 +101,7 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                             <Feather name="play" size={16} color="#A855F7" />
                           </View>
                           {hasProgress && (
-                            <ProgressBar progress={historyEntry.progress} duration={historyEntry.duration} />
+                            <ProgressBar progress={barProgress} duration={historyEntry.duration} />
                           )}
                         </View>
                       </AnimatedPressable>
