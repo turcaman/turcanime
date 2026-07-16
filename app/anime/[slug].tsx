@@ -26,8 +26,7 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
     anime, isAnimeLoading, error, servers, serverLoading, setEpisodeOrder,
     isExpanded, setIsExpanded, selectedEpisode, setSelectedEpisode,
     hasLoaded, activeRangeIdx, setActiveRangeIdx, isRestoring,
-    ranges, visibleEpisodes, isAscending, handleEpisodePress, handleServerSelect,
-    watchedSet, toggleWatched, refresh,
+    ranges, visibleEpisodes, isAscending, handleEpisodePress, handleServerSelect, refresh,
   } = useAnimeDetailScreen(slug as string);
 
   const showContent = anime != null && anime.url === slug;
@@ -87,29 +86,20 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                 <EpisodeRangeSelector ranges={ranges} activeRangeIdx={activeRangeIdx} setActiveRangeIdx={setActiveRangeIdx} isRestoring={isRestoring} />
                 <View style={{ paddingHorizontal: 20, marginTop: 4, gap: 8 }}>
                   {visibleEpisodes.map((item) => {
-                    const key = `${slug}|${item.number}`;
                     const historyEntry = useHistoryStore.getState().lastViewed.find(
                       (h) => h.url === slug && h.number === item.number,
                     );
                     const hasProgress = historyEntry != null && (historyEntry.progress ?? 0) > 0 && (historyEntry.duration ?? 0) > 0;
-                    const autoWatched = hasProgress && (historyEntry.progress ?? 0) >= (historyEntry.duration ?? 0);
-                    const isWatched = watchedSet.has(key) || autoWatched;
 
                     return (
-                      <AnimatedPressable
-                        key={item.id}
-                        onPress={() => handleEpisodePress(item)}
-                        onLongPress={() => toggleWatched(slug as string, item.number)}
-                      >
+                      <AnimatedPressable key={item.id} onPress={() => handleEpisodePress(item)}>
                         <View className="rounded-xl bg-neutral-950 border border-neutral-800 overflow-hidden">
                           <View className="flex-row items-center justify-between p-4">
-                            <Text className={`font-semibold ${isWatched ? "text-neutral-500" : "text-white"}`}>
-                              Episodio {item.number}
-                            </Text>
-                            <Feather name="play" size={16} color={isWatched ? "#525252" : "#A855F7"} />
+                            <Text className="font-semibold text-white">Episodio {item.number}</Text>
+                            <Feather name="play" size={16} color="#A855F7" />
                           </View>
                           {hasProgress && (
-                            <ProgressBar progress={historyEntry.progress} duration={historyEntry.duration} color={isWatched ? "#525252" : undefined} />
+                            <ProgressBar progress={historyEntry.progress} duration={historyEntry.duration} />
                           )}
                         </View>
                       </AnimatedPressable>

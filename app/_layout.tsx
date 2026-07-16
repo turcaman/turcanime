@@ -108,13 +108,12 @@ function RootInner() {
     const init = async () => {
       logger.setStorage(storage);
       await sessionManager.initialize();
-      const [history, searches, order, watchedData] = await Promise.all([
+      const [history, searches, order] = await Promise.all([
         storage.get<HistoryItem[]>("last_viewed"),
         storage.get<string[]>("recent_searches"),
         storage.get<"asc" | "desc">("episode_order"),
-        storage.get<string[]>("watched_episodes"),
       ]);
-      useHistoryStore.getState().initialize(history ?? [], watchedData ?? []);
+      useHistoryStore.getState().initialize(history ?? []);
       useSearchHistoryStore.getState().initialize(searches ?? []);
       useSettingsStore.getState().initialize(order ?? "asc");
       useUserInitializationStore.setState({ isInitialized: true });

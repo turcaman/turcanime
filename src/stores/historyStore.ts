@@ -5,26 +5,22 @@ import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
 
 const historyKey = "last_viewed";
-const watchedKey = "watched_episodes";
 
 interface HistoryState {
   lastViewed: HistoryItem[];
   continueWatching: HistoryItem[];
-  watched: string[];
-  initialize: (data: HistoryItem[], watchedData?: string[]) => void;
+  initialize: (data: HistoryItem[]) => void;
   addToHistory: (item: HistoryItem) => Promise<void>;
   removeFromHistory: (url: string) => Promise<void>;
-  toggleWatched: (slug: string, episodeNumber: string) => Promise<void>;
   clearHistory: () => Promise<void>;
 }
 
 export const useHistoryStore = create<HistoryState>((set, get) => ({
   lastViewed: [],
   continueWatching: [],
-  watched: [],
 
-  initialize: (data: HistoryItem[], watchedData?: string[]) => {
-    set({ lastViewed: data, continueWatching: computeContinueWatching(data), watched: watchedData ?? [] });
+  initialize: (data: HistoryItem[]) => {
+    set({ lastViewed: data, continueWatching: computeContinueWatching(data) });
   },
 
   addToHistory: async (item: HistoryItem) => {
@@ -40,22 +36,6 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     } catch (error) {
       set({ lastViewed: previous, continueWatching: computeContinueWatching(previous) });
       logger.error("historyStore", "Failed to persist history", error);
-    }
-  },
-
-  toggleWatched: async (slug: string, episodeNumber: string) => {
-    const key = `${slug}|${episodeNumber}`;
-    const previous = get().watched;
-    const updated = previous.includes(key)
-      ? previous.filter((k) => k !== key)
-      : [...previous, key];
-
-    set({ watched: updated });
-    try {
-      await storage.set(watchedKey, updated);
-    } catch (error) {
-      set({ watched: previous });
-      logger.error("historyStore", "Failed to persist watched", error);
     }
   },
 
