@@ -9,7 +9,7 @@ export function SearchSkeleton() {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ paddingBottom: TAB_BAR_OFFSET }}>
+      <View style={{ paddingTop: 16, paddingBottom: TAB_BAR_OFFSET }}>
         <View style={{ gap: 8 }}>
           {Array.from({ length: 3 }).map((_, rowIdx) => (
             <View key={`row-${rowIdx}`} style={{ flexDirection: "row", gap: CARD_WIDTH_CONFIG.gap }}>

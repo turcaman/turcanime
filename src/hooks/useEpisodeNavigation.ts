@@ -34,7 +34,7 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       setLoading(true);
       setError(null);
 
-      const attempt = async (/* retried */ _retried?: boolean): Promise<void> => {
+      const attempt = async (_retried?: boolean): Promise<void> => {
         const servers = await source.getEpisodeServers(targetSlug, targetEp.number);
         const server: VideoServer | undefined =
           lastLanguage != null

@@ -1,4 +1,3 @@
-/** WebView bootstrap — injected into the hidden WebView for session initialization. */
 export const GLOBAL_BOOTSTRAP = [
   "(function() {",
   "  var post = function(type, data) {",

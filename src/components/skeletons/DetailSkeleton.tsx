@@ -67,10 +67,12 @@ export function DetailSkeleton() {
         {Array.from({ length: 6 }).map((_, i) => (
           <View
             key={`ep-${i}`}
-            className="flex-row items-center justify-between rounded-xl bg-neutral-950 border border-neutral-800 p-4"
+            className="rounded-xl bg-neutral-950 border border-neutral-800 overflow-hidden"
           >
-            <Skeleton width={100} height={15} borderRadius={4} />
-            <Skeleton width={15} height={15} borderRadius={4} />
+            <View className="flex-row items-center justify-between p-4">
+              <Skeleton width={100} height={15} borderRadius={4} />
+              <Skeleton width={16} height={16} borderRadius={4} />
+            </View>
           </View>
         ))}
       </View>

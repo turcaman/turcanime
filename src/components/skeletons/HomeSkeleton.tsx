@@ -11,7 +11,6 @@ export function HomeSkeleton() {
 
   return (
     <View className="flex-1 bg-black" style={{ paddingHorizontal: CARD_WIDTH_CONFIG.horizontalPad, paddingTop: insets.top + 16 }}>
-      {/* Continue Watching section */}
       <Skeleton width={140} height={14} borderRadius={4} />
       <View className="mb-3" />
       <View className="flex-row gap-3 mb-4">
@@ -29,7 +28,8 @@ export function HomeSkeleton() {
         ))}
       </View>
 
-      {/* Recién agregados section */}
+      <View className="mb-4" />
+
       <Skeleton width={160} height={14} borderRadius={4} />
       <View className="mb-3" />
       <View style={{ gap: 12 }}>

@@ -64,7 +64,6 @@ class SessionManager {
       if (this.sessionReadyPromise) {
         logger.debug("SessionManager", "Waiting for cookies from WebView");
 
-        // Poll every 2s for up to 60s (30 attempts), checking if cookies have actually arrived
         const maxAttempts = 30;
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
           const raceResult = await Promise.race([

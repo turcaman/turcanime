@@ -39,7 +39,6 @@ function SearchScreenContent() {
 
   const showIdleContent = isIdle && !isTyping && !isSearched && !isLoading;
   const showHint = showIdleContent && recentSearches.length === 0;
-  /** Show skeleton grid while a search is executing but results haven't arrived yet */
   const showSearchSkeleton = !isSearched && !isIdle && !isTyping && isLoading;
 
   return (

@@ -21,7 +21,6 @@ interface AnimatedPressableProps extends Omit<PressableProps, 'style'> {
   accessibilityLabel?: string;
   accessibilityHint?: string;
   hapticFeedback?: boolean;
-  /** Duration in ms to ignore subsequent presses after the first one. */
   debounceMs?: number;
 }
 
