@@ -51,8 +51,7 @@ export const AnimeEpisodeModal = ({
             <View className="gap-2">
               {Array.from({ length: 2 }).map((_, i) => (
                 <View key={`skel-${i}`} className="flex-row items-center bg-black p-4 rounded-xl">
-                  <Skeleton width={28} height={28} borderRadius={8} />
-                  <Skeleton width={120} height={16} borderRadius={4} className="ml-3" />
+                  <Skeleton width={120} height={16} borderRadius={4} />
                 </View>
               ))}
             </View>
@@ -67,9 +66,6 @@ export const AnimeEpisodeModal = ({
                 className="flex-row items-center bg-black p-4 rounded-xl"
                 onPress={() => { onServerSelect(server); }}
               >
-                <View className="w-7 h-7 rounded-lg bg-purple-500/15 justify-center items-center mr-2">
-                  <Text className="text-xs font-bold text-purple-500">{index + 1}</Text>
-                </View>
                 <Text className="text-white font-bold flex-1">
                   {mapLanguage(server.language)}
                 </Text>
