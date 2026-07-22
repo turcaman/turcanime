@@ -97,9 +97,8 @@ export default function SettingsScreen() {
   return (
     <View className="flex-1 bg-black" style={{ paddingTop: insets.top + 16 }}>
       <View className="px-5 pb-6">
-        <View className="mb-6">
-          <SectionTitle>Conexión</SectionTitle>
-        </View>
+        <SectionTitle>Conexión</SectionTitle>
+        <View className="mb-3" />
         <AnimatedPressable
           onPress={handleRefresh}
           disabled={isRefreshingSession}
@@ -124,9 +123,8 @@ export default function SettingsScreen() {
         </AnimatedPressable>
 
         <View className="mt-8">
-          <View className="mb-6">
-            <SectionTitle>Actualizaciones</SectionTitle>
-          </View>
+          <SectionTitle>Actualizaciones</SectionTitle>
+          <View className="mb-3" />
           <View className="rounded-xl border border-neutral-800 bg-neutral-900 overflow-hidden">
             <View className="flex-row items-center px-5 py-4">
               <Feather name="bell" size={18} color="#737373" style={{ marginRight: 12 }} />
@@ -196,9 +194,8 @@ export default function SettingsScreen() {
         </View>
 
         <View className="mt-8">
-          <View className="mb-6">
-            <SectionTitle>Acerca de</SectionTitle>
-          </View>
+          <SectionTitle>Acerca de</SectionTitle>
+          <View className="mb-3" />
           <View className="flex-row items-center px-5 py-4 rounded-xl border border-neutral-800 bg-neutral-900">
             <Feather name="info" size={18} color="#737373" style={{ marginRight: 12 }} />
             <View className="flex-1">
