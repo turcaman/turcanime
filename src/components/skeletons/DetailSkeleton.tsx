@@ -10,7 +10,7 @@ export function DetailSkeleton() {
       <View style={{ height: backdropHeight, width: windowWidth }}>
         <Skeleton width="100%" height={backdropHeight} borderRadius={0} />
 
-        <View className="absolute top-16 left-5 w-12 h-12 rounded-full bg-black/60 items-center justify-center">
+        <View className="absolute top-12 left-5 w-12 h-12 rounded-full bg-black/60 items-center justify-center">
           <Skeleton width={24} height={24} borderRadius={4} />
         </View>
 
