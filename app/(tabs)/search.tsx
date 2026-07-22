@@ -8,7 +8,7 @@ import { useSearchScreen } from "@/hooks/useSearchScreen";
 import { useTabBarManager } from "@/hooks/useTabBarManager";
 import { TAB_BAR_OFFSET, calcCardWidth } from "@/utils/layout";
 import { Feather } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Animated, FlatList, RefreshControl, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -24,7 +24,6 @@ function SearchScreenContent() {
   const cardWidth = calcCardWidth(screenWidth);
   const { handleScroll, reset, showTabBar } = useTabBarManager({ threshold: 8 });
   const resultsOpacity = useRef(new Animated.Value(0)).current;
-  const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
     if (!isSearched) { reset(); showTabBar(); }
@@ -46,7 +45,7 @@ function SearchScreenContent() {
   return (
     <View className="flex-1 bg-black">
       <View className="px-5 pb-4" style={{ paddingTop: insets.top + 16 }}>
-        <View className={`flex-row items-center h-12 bg-neutral-900 rounded-xl px-4 transition-all duration-200 ${isFocused ? "ring-1 ring-purple-500/40 bg-neutral-800/80" : "ring-1 ring-neutral-800"}`}>
+        <View className="flex-row items-center h-12 bg-neutral-900 rounded-xl border border-neutral-800 px-4">
           <Feather name="search" size={18} color="#a3a3a3" style={{ marginRight: 8 }} />
           <TextInput
             className="flex-1 text-white text-base font-normal h-12"
@@ -56,8 +55,6 @@ function SearchScreenContent() {
             onChangeText={handleTextChange}
             onSubmitEditing={() => handleSearch(searchTerm)}
             returnKeyType="search"
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
           />
           {searchTerm.length > 0 && (
             <Feather name="x" size={16} color="#a3a3a3"
