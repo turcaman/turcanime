@@ -155,7 +155,7 @@ export default function SettingsScreen() {
               <Feather name="download" size={18} color="#A855F7" style={{ marginRight: 12 }} />
               <View className="flex-1 min-w-0">
                 <Text className="text-base font-medium text-white">
-                  {checkingUpdate ? "Buscando..." : "Buscar actualización"}
+                  Buscar actualización
                 </Text>
                 <View className="h-[18px] justify-center mt-0.5">
                   {checkingUpdate && (
