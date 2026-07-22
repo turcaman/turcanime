@@ -68,14 +68,18 @@ export default function SettingsScreen() {
     setUpdateAvailable(null);
     try {
       const res = await fetch(
-        "https://api.github.com/repos/turcaman/turcanime-desktop/releases/latest",
+        "https://api.github.com/repos/turcaman/turcanime/releases/latest?_=" + Date.now(),
+        { headers: { "User-Agent": "Turcanime-Android" } },
       );
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json() as { tag_name?: string };
-      const latest = (data.tag_name ?? "").replace(/^v/, "");
+      const latest = (data.tag_name ?? "").replace(/^v/, "").trim();
       if (!latest) throw new Error("No tag");
 
-      const parse = (v: string) => v.split(".").map((n) => parseInt(n, 10) || 0);
+      const parse = (v: string) => v.split(".").map((n) => {
+        const p = parseInt(n, 10);
+        return Number.isNaN(p) ? 0 : p;
+      });
       const currentParts = parse(current);
       const latestParts = parse(latest);
       const isNewer = latestParts.some((n, i) => n > (currentParts[i] ?? 0));
