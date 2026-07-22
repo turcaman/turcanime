@@ -84,7 +84,7 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                   onBackPress={navigateBack}
                 />
                 <EpisodeRangeSelector ranges={ranges} activeRangeIdx={activeRangeIdx} setActiveRangeIdx={setActiveRangeIdx} isRestoring={isRestoring} />
-                <View style={{ paddingHorizontal: 20, marginTop: 4, gap: 8 }}>
+                <View style={{ paddingHorizontal: 20, marginTop: 4, gap: 12 }}>
                   {visibleEpisodes.map((item) => {
                     const historyEntry = useHistoryStore.getState().lastViewed.find(
                       (h) => h.url === slug && h.number === item.number,

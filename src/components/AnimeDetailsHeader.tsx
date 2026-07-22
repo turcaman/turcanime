@@ -73,8 +73,8 @@ export const AnimeDetailsHeader = memo(
             </AnimatedPressable>
 
             <View
-              className={`absolute right-5 px-2 py-1 rounded-lg bg-neutral-950 ring-1 ${isAiring ? "ring-purple-500/30" : "ring-white/10"}`}
-              style={{ top: insets.top }}
+              className={`absolute right-4 rounded-lg bg-neutral-950/80 px-2.5 py-1`}
+              style={{ top: insets.top + 4 }}
             >
               <Text
                 className={`text-[11px] font-bold tracking-wider leading-none ${isAiring ? "text-purple-400" : "text-neutral-400"}`}

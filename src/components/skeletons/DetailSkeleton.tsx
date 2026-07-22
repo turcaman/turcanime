@@ -14,7 +14,7 @@ export function DetailSkeleton() {
           <Skeleton width={24} height={24} borderRadius={4} />
         </View>
 
-        <View className="absolute top-16 right-5 rounded-lg bg-neutral-950 px-2 py-1">
+        <View className="absolute top-14 right-4 rounded-lg bg-neutral-950/80 px-2.5 py-1">
           <Skeleton width={70} height={11} borderRadius={2} />
         </View>
 
@@ -63,7 +63,7 @@ export function DetailSkeleton() {
         ))}
       </View>
 
-      <View className="px-5" style={{ marginTop: 4, gap: 8 }}>
+      <View className="px-5" style={{ marginTop: 4, gap: 12 }}>
         {Array.from({ length: 6 }).map((_, i) => (
           <View
             key={`ep-${i}`}
