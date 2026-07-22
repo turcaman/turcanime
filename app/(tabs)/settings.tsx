@@ -6,7 +6,7 @@ import { storage } from "@/utils/storage";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Alert, Switch, Text, View } from "react-native";
+import { Alert, Linking, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SettingsScreen() {
@@ -16,6 +16,8 @@ export default function SettingsScreen() {
   const refreshedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [updateEnabled, setUpdateEnabled] = useState(true);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const appVersion = Constants.expoConfig?.version ?? "—";
 
   useEffect(() => () => {
@@ -58,10 +60,12 @@ export default function SettingsScreen() {
   const handleCheckUpdate = useCallback(async () => {
     const current = Constants.expoConfig?.version;
     if (!current) {
-      Alert.alert("Error", "No se pudo obtener la versión actual.");
+      setUpdateError("Error al obtener versión");
       return;
     }
     setCheckingUpdate(true);
+    setUpdateError(null);
+    setUpdateAvailable(null);
     try {
       const res = await fetch(
         "https://api.github.com/repos/turcaman/turcanime-desktop/releases/latest",
@@ -77,19 +81,17 @@ export default function SettingsScreen() {
       const isNewer = latestParts.some((n, i) => n > (currentParts[i] ?? 0));
 
       if (isNewer) {
-        Alert.alert(
-          "Actualización disponible",
-          `Versión ${latest} disponible. Descargala desde turcanime.pages.dev`,
-          [{ text: "OK" }],
-        );
-      } else {
-        Alert.alert("Estás al día", `Turcanime v${current}`);
+        setUpdateAvailable(latest);
       }
     } catch {
-      Alert.alert("Error", "No se pudo buscar actualizaciones.");
+      setUpdateError("Error al buscar actualizaciones");
     } finally {
       setCheckingUpdate(false);
     }
+  }, []);
+
+  const handleDownloadUpdate = useCallback(() => {
+    void Linking.openURL("https://turcanime.pages.dev");
   }, []);
 
   return (
@@ -145,18 +147,50 @@ export default function SettingsScreen() {
             </View>
             <View className="h-px bg-neutral-800" />
             <AnimatedPressable
-              onPress={handleCheckUpdate}
-              disabled={checkingUpdate}
+              onPress={checkingUpdate || updateAvailable ? undefined : handleCheckUpdate}
               hapticFeedback={true}
               className="flex-row items-center px-5 py-4"
               style={{ opacity: checkingUpdate ? 0.5 : 1 }}
             >
               <Feather name="download" size={18} color="#A855F7" style={{ marginRight: 12 }} />
-              <View className="flex-1">
+              <View className="flex-1 min-w-0">
                 <Text className="text-base font-medium text-white">
-                  Buscar actualización
+                  {checkingUpdate ? "Buscando..." : "Buscar actualización"}
                 </Text>
+                <View className="h-[18px] justify-center mt-0.5">
+                  {checkingUpdate && (
+                    <Text className="text-xs font-semibold tracking-wide text-neutral-500">
+                      Buscando...
+                    </Text>
+                  )}
+                  {!checkingUpdate && updateError && (
+                    <Text className="text-xs font-semibold tracking-wide text-red-400/70">
+                      {updateError}
+                    </Text>
+                  )}
+                  {!checkingUpdate && !updateError && updateAvailable && (
+                    <Text className="text-xs font-semibold tracking-wide text-purple-400">
+                      v{updateAvailable} disponible
+                    </Text>
+                  )}
+                  {!checkingUpdate && !updateError && !updateAvailable && appVersion && (
+                    <Text className="text-xs font-semibold tracking-wide text-emerald-400">
+                      Estás al día
+                    </Text>
+                  )}
+                </View>
               </View>
+              {!checkingUpdate && !updateError && updateAvailable && (
+                <AnimatedPressable
+                  onPress={handleDownloadUpdate}
+                  className="flex-row items-center gap-1 ml-auto flex-shrink-0"
+                >
+                  <Text className="text-xs font-semibold tracking-wide text-purple-400">
+                    Descargar
+                  </Text>
+                  <Feather name="external-link" size={11} color="#A855F7" />
+                </AnimatedPressable>
+              )}
             </AnimatedPressable>
           </View>
         </View>
