@@ -1,3 +1,4 @@
+import { Feather } from "@expo/vector-icons";
 import React, { memo } from "react";
 import { type NativeScrollEvent, type NativeSyntheticEvent, Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
@@ -33,13 +34,17 @@ export const SuggestionsList = memo(({ suggestions, onSelect, onScroll, tabBarOf
         scrollEventThrottle={16}
         renderItem={({ item }) => (
           <AnimatedPressable className="flex-row items-center border-b border-neutral-800 py-4" onPress={() => { onSelect(item); }}>
-            <View className="h-20 w-14 overflow-hidden rounded bg-neutral-900">
+            <View className="h-20 w-14 overflow-hidden rounded bg-neutral-800 border border-neutral-800/60">
               {item.poster ? (
                 <ImageWithLoader
                   uri={resolvePoster(item.poster)}
                   style={{ flex: 1 }}
                 />
-              ) : null}
+              ) : (
+                <View className="flex-1 items-center justify-center">
+                  <Feather name="film" size={14} color="#525252" />
+                </View>
+              )}
             </View>
             <View className="ml-2 flex-1">
               <Text className="text-base font-medium text-white" numberOfLines={1}>
