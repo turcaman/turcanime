@@ -3,6 +3,7 @@
  * and display a fallback UI instead of crashing the app.
  */
 
+import { Feather } from "@expo/vector-icons";
 import React, { type ErrorInfo, type ReactNode, Component } from "react";
 import { Pressable, Text, View } from "react-native";
 import { logger } from "../utils/logger";
@@ -50,9 +51,9 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <View className="flex-1 items-center justify-center bg-black p-5">
-          <Text className="text-4xl">😵</Text>
-          <Text className="text-lg font-bold text-white">Algo salió mal</Text>
+        <View className="flex-1 items-center justify-center bg-black px-5">
+          <Feather name="alert-circle" size={48} color="#737373" />
+          <Text className="mt-2 text-lg font-bold text-white">Algo salió mal</Text>
           <Text className="text-neutral-500">
             {this.state.error?.message ?? "Error inesperado"}
           </Text>

@@ -10,7 +10,7 @@ interface ErrorStateProps {
 
 export function ErrorState({ onRetry, title = "Error al cargar" }: ErrorStateProps) {
   return (
-    <View className="flex-1 items-center justify-center px-5">
+    <View className="flex-1 items-center justify-center bg-black px-5">
       <Feather name="alert-circle" size={48} color="#737373" />
       <Text className="mt-2 text-lg font-bold text-neutral-500">
         {title}
