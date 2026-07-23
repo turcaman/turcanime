@@ -1,4 +1,4 @@
-name: React Native CI/CD
+name: Build & Release
 
 on:
   workflow_dispatch:
@@ -89,14 +89,18 @@ jobs:
           echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
           echo "storeFile=release.keystore" >> android/key.properties
 
+      - name: Read version
+        id: ver
+        run: echo "version=$(node -p "require('./app.json').expo.version")" >> $GITHUB_OUTPUT
+
       - name: Build APK
-        run: eas build --platform android --profile production --local --non-interactive --output=./app-prod.apk
+        run: eas build --platform android --profile production --local --non-interactive --output=./turcanime-${{ steps.ver.outputs.version }}.apk
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-prod-apk
-          path: ./app-prod.apk
+          name: turcanime-apk
+          path: ./turcanime-${{ steps.ver.outputs.version }}.apk
           retention-days: 30
 
   create-release:
@@ -118,7 +122,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: app-prod-apk
+          name: turcanime-apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -126,7 +130,7 @@ jobs:
           draft: true
           name: "v${{ steps.build-info.outputs.version }}"
           tag_name: "v${{ steps.build-info.outputs.version }}"
-          files: app-prod.apk
+          files: turcanime-${{ steps.build-info.outputs.version }}.apk
           body_path: changelog.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
