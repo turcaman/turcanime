@@ -4,6 +4,7 @@ import { WebViewWorker } from "@/components/WebViewWorker";
 import { useHomeStore } from "@/stores/homeStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useSettingsStore, useUserInitializationStore } from "@/stores/userIndex";
+import { useUpdateStore } from "@/stores/updateStore";
 import { useHistoryStore } from "@/stores/historyStore";
 import { useSearchHistoryStore } from "@/stores/searchHistoryStore";
 import { useNetworkStatus, type ConnectionType } from "@/hooks/useNetworkStatus";
@@ -108,16 +109,22 @@ function RootInner() {
     const init = async () => {
       logger.setStorage(storage);
       await sessionManager.initialize();
-      const [history, searches, order] = await Promise.all([
+      const [history, searches, order, updateCheckEnabled] = await Promise.all([
         storage.get<HistoryItem[]>("last_viewed"),
         storage.get<string[]>("recent_searches"),
         storage.get<"asc" | "desc">("episode_order"),
+        storage.get<boolean>("update_check_enabled"),
       ]);
       useHistoryStore.getState().initialize(history ?? []);
       useSearchHistoryStore.getState().initialize(searches ?? []);
       useSettingsStore.getState().initialize(order ?? "asc");
+      useUpdateStore.getState().initialize(updateCheckEnabled !== false);
       useUserInitializationStore.setState({ isInitialized: true });
       if (!cancelled) setReady(true);
+
+      if (updateCheckEnabled !== false) {
+        void useUpdateStore.getState().checkForUpdates();
+      }
     };
     init().catch((error) => {
       console.error("[RootLayout] Initialization failed:", error);

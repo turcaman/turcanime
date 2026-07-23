@@ -1,8 +1,7 @@
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { useUIStore } from "@/stores/uiStore";
-import Constants from "expo-constants";
-import { storage } from "@/utils/storage";
+import { useUpdateStore } from "@/stores/updateStore";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState, useCallback } from "react";
@@ -14,21 +13,20 @@ export default function SettingsScreen() {
   const isRefreshingSession = useUIStore((s) => s.isRefreshingSession);
   const [refreshed, setRefreshed] = useState(false);
   const refreshedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [updateEnabled, setUpdateEnabled] = useState(true);
-  const [checkingUpdate, setCheckingUpdate] = useState(false);
-  const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
-  const [updateError, setUpdateError] = useState<string | null>(null);
-  const appVersion = Constants.expoConfig?.version ?? "—";
+
+  const updateCheckEnabled = useUpdateStore((s) => s.updateCheckEnabled);
+  const setUpdateCheckEnabled = useUpdateStore((s) => s.setUpdateCheckEnabled);
+  const updateAvailable = useUpdateStore((s) => s.updateAvailable);
+  const checkingForUpdates = useUpdateStore((s) => s.checkingForUpdates);
+  const lastCheckError = useUpdateStore((s) => s.lastCheckError);
+  const currentVersion = useUpdateStore((s) => s.currentVersion);
+  const checkForUpdates = useUpdateStore((s) => s.checkForUpdates);
+
+  const appVersion = currentVersion ?? "—";
 
   useEffect(() => () => {
     const t = refreshedTimer.current;
     if (t != null) clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    storage.get<boolean>("update_check_enabled").then((v) => {
-      if (v != null) setUpdateEnabled(v);
-    }).catch(() => {});
   }, []);
 
   const handleRefresh = useCallback(() => {
@@ -52,47 +50,9 @@ export default function SettingsScreen() {
     );
   }, []);
 
-  const handleToggleUpdate = useCallback(async (value: boolean) => {
-    setUpdateEnabled(value);
-    await storage.set("update_check_enabled", value);
-  }, []);
-
-  const handleCheckUpdate = useCallback(async () => {
-    const current = Constants.expoConfig?.version;
-    if (!current) {
-      setUpdateError("Error al obtener versión");
-      return;
-    }
-    setCheckingUpdate(true);
-    setUpdateError(null);
-    setUpdateAvailable(null);
-    try {
-      const res = await fetch(
-        "https://api.github.com/repos/turcaman/turcanime/releases/latest?_=" + Date.now(),
-        { headers: { "User-Agent": "Turcanime-Android" } },
-      );
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json() as { tag_name?: string };
-      const latest = (data.tag_name ?? "").replace(/^v/, "").trim();
-      if (!latest) throw new Error("No tag");
-
-      const parse = (v: string) => v.split(".").map((n) => {
-        const p = parseInt(n, 10);
-        return Number.isNaN(p) ? 0 : p;
-      });
-      const currentParts = parse(current);
-      const latestParts = parse(latest);
-      const isNewer = latestParts.some((n, i) => n > (currentParts[i] ?? 0));
-
-      if (isNewer) {
-        setUpdateAvailable(latest);
-      }
-    } catch {
-      setUpdateError("Error al buscar actualizaciones");
-    } finally {
-      setCheckingUpdate(false);
-    }
-  }, []);
+  const handleManualCheck = useCallback(() => {
+    void checkForUpdates();
+  }, [checkForUpdates]);
 
   const handleDownloadUpdate = useCallback(() => {
     void Linking.openURL("https://turcanime.pages.dev");
@@ -141,18 +101,18 @@ export default function SettingsScreen() {
                 </Text>
               </View>
               <Switch
-                value={updateEnabled}
-                onValueChange={handleToggleUpdate}
+                value={updateCheckEnabled}
+                onValueChange={(v) => { void setUpdateCheckEnabled(v); }}
                 trackColor={{ false: "#404040", true: "#A855F7" }}
                 thumbColor="#FFFFFF"
               />
             </View>
             <View className="h-px bg-neutral-800" />
             <AnimatedPressable
-              onPress={checkingUpdate || updateAvailable ? undefined : handleCheckUpdate}
+              onPress={checkingForUpdates || updateAvailable ? undefined : handleManualCheck}
               hapticFeedback={true}
               className="flex-row items-center px-5 py-4"
-              style={{ opacity: checkingUpdate ? 0.5 : 1 }}
+              style={{ opacity: checkingForUpdates ? 0.5 : 1 }}
             >
               <Feather name="download" size={18} color="#A855F7" style={{ marginRight: 12 }} />
               <View className="flex-1 min-w-0">
@@ -160,29 +120,29 @@ export default function SettingsScreen() {
                   Buscar actualización
                 </Text>
                 <View className="h-[18px] justify-center mt-0.5">
-                  {checkingUpdate && (
+                  {checkingForUpdates && (
                     <Text className="text-xs font-semibold tracking-wide text-neutral-500">
                       Buscando...
                     </Text>
                   )}
-                  {!checkingUpdate && updateError && (
+                  {!checkingForUpdates && lastCheckError && (
                     <Text className="text-xs font-semibold tracking-wide text-red-400/70">
-                      {updateError}
+                      {lastCheckError}
                     </Text>
                   )}
-                  {!checkingUpdate && !updateError && updateAvailable && (
+                  {!checkingForUpdates && !lastCheckError && updateAvailable && (
                     <Text className="text-xs font-semibold tracking-wide text-purple-400">
                       v{updateAvailable} disponible
                     </Text>
                   )}
-                  {!checkingUpdate && !updateError && !updateAvailable && appVersion && (
+                  {!checkingForUpdates && !lastCheckError && !updateAvailable && appVersion && (
                     <Text className="text-xs font-semibold tracking-wide text-emerald-400">
                       Estás al día
                     </Text>
                   )}
                 </View>
               </View>
-              {!checkingUpdate && !updateError && updateAvailable && (
+              {!checkingForUpdates && !lastCheckError && updateAvailable && (
                 <AnimatedPressable
                   onPress={handleDownloadUpdate}
                   className="flex-row items-center gap-1 ml-auto flex-shrink-0"

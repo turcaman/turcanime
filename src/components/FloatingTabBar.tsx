@@ -9,6 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUIStore } from "../stores/uiStore";
+import { useUpdateStore } from "../stores/updateStore";
 import { AnimatedPressable } from "./AnimatedPressable";
 
 type FloatingTabBarProps = BottomTabBarProps;
@@ -32,6 +33,7 @@ export function FloatingTabBar({
 }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
   const visible = useUIStore((state) => state.tabBarVisible);
+  const updateAvailable = useUpdateStore((state) => state.updateAvailable);
 
   const translateY = useSharedValue(0);
 
@@ -92,7 +94,16 @@ export function FloatingTabBar({
               accessibilityLabel={LABELS[route.name]}
               accessibilityRole="button"
             >
-              <Feather name={iconName} size={20} color={color} />
+              {route.name === "settings" ? (
+                <View className="relative">
+                  <Feather name={iconName} size={20} color={color} />
+                  {updateAvailable && (
+                    <View className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-purple-400" />
+                  )}
+                </View>
+              ) : (
+                <Feather name={iconName} size={20} color={color} />
+              )}
             </AnimatedPressable>
           );
         })}
