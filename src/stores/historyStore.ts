@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import type { HistoryItem } from "../types";
-import { computeContinueWatching, removeBy } from "../utils/history";
+import { computeContinueWatching, removeBy, persistWithRollback } from "../utils/history";
 import { storage } from "../utils/storage";
-import { logger } from "../utils/logger";
 
 const historyKey = "last_viewed";
 
@@ -31,12 +30,11 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     )].slice(0, 50);
 
     set({ lastViewed: updated, continueWatching: computeContinueWatching(updated) });
-    try {
-      await storage.set(historyKey, updated);
-    } catch (error) {
-      set({ lastViewed: previous, continueWatching: computeContinueWatching(previous) });
-      logger.error("historyStore", "Failed to persist history", error);
-    }
+    await persistWithRollback(
+      () => storage.set(historyKey, updated),
+      () => set({ lastViewed: previous, continueWatching: computeContinueWatching(previous) }),
+      "historyStore",
+    );
   },
 
   removeFromHistory: async (url: string) => {
@@ -44,12 +42,11 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     const updated = removeBy(previous, (i) => i.url !== url);
 
     set({ lastViewed: updated, continueWatching: computeContinueWatching(updated) });
-    try {
-      await storage.set(historyKey, updated);
-    } catch (error) {
-      set({ lastViewed: previous, continueWatching: computeContinueWatching(previous) });
-      logger.error("historyStore", "Failed to persist removal", error);
-    }
+    await persistWithRollback(
+      () => storage.set(historyKey, updated),
+      () => set({ lastViewed: previous, continueWatching: computeContinueWatching(previous) }),
+      "historyStore",
+    );
   },
 
   clearHistory: async () => {

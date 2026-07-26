@@ -1,4 +1,18 @@
 import type { HistoryItem } from "../types";
+import { logger } from "./logger";
+
+export async function persistWithRollback(
+  persist: () => Promise<void>,
+  rollback: () => void,
+  tag: string,
+): Promise<void> {
+  try {
+    await persist();
+  } catch (error) {
+    rollback();
+    logger.error(tag, "Failed to persist", error);
+  }
+}
 
 export function prependDedup<T>(list: T[], item: T, max: number, dedupKey?: keyof T): T[] {
   const filtered = dedupKey != null

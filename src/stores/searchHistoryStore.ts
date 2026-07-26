@@ -1,7 +1,6 @@
 import { create } from "zustand";
-import { prependDedup, removeBy } from "../utils/history";
+import { prependDedup, removeBy, persistWithRollback } from "../utils/history";
 import { storage } from "../utils/storage";
-import { logger } from "../utils/logger";
 
 const searchesKey = "recent_searches";
 
@@ -22,24 +21,22 @@ export const useSearchHistoryStore = create<SearchHistoryState>((set, get) => ({
     const previous = get().recentSearches;
     const updated = prependDedup(previous, term, 10);
     set({ recentSearches: updated });
-    try {
-      await storage.set(searchesKey, updated);
-    } catch (error) {
-      set({ recentSearches: previous });
-      logger.error("searchHistoryStore", "Failed to persist search", error);
-    }
+    await persistWithRollback(
+      () => storage.set(searchesKey, updated),
+      () => set({ recentSearches: previous }),
+      "searchHistoryStore",
+    );
   },
 
   removeRecentSearch: async (term: string) => {
     const previous = get().recentSearches;
     const updated = removeBy(previous, (t) => t !== term);
     set({ recentSearches: updated });
-    try {
-      await storage.set(searchesKey, updated);
-    } catch (error) {
-      set({ recentSearches: previous });
-      logger.error("searchHistoryStore", "Failed to persist removal", error);
-    }
+    await persistWithRollback(
+      () => storage.set(searchesKey, updated),
+      () => set({ recentSearches: previous }),
+      "searchHistoryStore",
+    );
   },
 
   clearRecentSearches: async () => {
