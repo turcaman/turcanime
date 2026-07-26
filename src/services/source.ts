@@ -93,6 +93,12 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
 const htmlParser = new HtmlParser();
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
 
+const LANGUAGE_MAP: Record<string, string> = {
+  SUB: "SUB",
+  LAT: "LATINO",
+  ESP: "CASTELLANO",
+};
+
 async function getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData> {
   const homeEndpoint = SOURCE_CONFIG.endpoints?.home ?? "/";
   const res = await fetchWithSession(homeEndpoint, options ?? {});
@@ -193,17 +199,11 @@ async function getEpisodeServers(slug: string, number: string, options?: { signa
       for (const player of players) {
         if (player.server_name !== "Delta") continue;
 
-        const languageMap: Record<string, string> = {
-          SUB: "SUB",
-          LAT: "LATINO",
-          ESP: "CASTELLANO",
-        };
-
         servers.push({
           id: String(player.id),
           title: player.server_name,
           url: player.bridge_url,
-          language: languageMap[player.language] ?? player.language,
+          language: LANGUAGE_MAP[player.language] ?? player.language,
         });
       }
 
