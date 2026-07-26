@@ -3,8 +3,9 @@ import React from "react";
 import { Pressable, Text, View } from "react-native";
 import type { Episode, VideoServer } from "@/types";
 import Animated, { FadeIn } from "react-native-reanimated";
-import { AnimatedPressable } from "./AnimatedPressable";
+import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { LANGUAGE_DISPLAY } from "@/config/source";
 
 interface AnimeEpisodeModalProps {
   visible: boolean;
@@ -14,14 +15,6 @@ interface AnimeEpisodeModalProps {
   isLoading: boolean;
   onServerSelect: (server: VideoServer) => void;
 }
-
-const mapLanguage = (lang: string) => {
-  const code = (lang || "").toUpperCase();
-  if (code.includes("SUB")) return "Subtitulado";
-  if (code.includes("LAT")) return "Latino";
-  if (code.includes("CAS")) return "Castellano";
-  return lang || "Desconocido";
-};
 
 export const AnimeEpisodeModal = ({
   visible, onClose, episode, servers, isLoading, onServerSelect
@@ -67,7 +60,7 @@ export const AnimeEpisodeModal = ({
                 onPress={() => { onServerSelect(server); }}
               >
                 <Text className="text-white font-bold flex-1">
-                  {mapLanguage(server.language)}
+                  {LANGUAGE_DISPLAY[server.language] ?? server.language ?? "Desconocido"}
                 </Text>
               </AnimatedPressable>
               </Animated.View>

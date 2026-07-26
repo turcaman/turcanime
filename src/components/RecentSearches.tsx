@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import React, { memo } from "react";
 import { FlatList, Text, View } from "react-native";
-import { AnimatedPressable } from "./AnimatedPressable";
+import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { SectionTitle } from "./ui/SectionTitle";
 
 interface RecentSearchesProps {

@@ -51,7 +51,7 @@ export function usePersistedRange(slug: string | undefined) {
 
 export function useServerFetcher(
   slug: string | undefined,
-  fetchServers: (slug: string, number: string, force: boolean, signal?: AbortSignal) => Promise<void>,
+  fetchServers: (slug: string, number: string, force?: boolean, signal?: AbortSignal) => Promise<void>,
 ) {
   const [serverLoading, setServerLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -75,7 +75,7 @@ export function useServerFetcher(
 
       setServerLoading(true);
       try {
-        await fetchServers(slug, ep.number, false, abortControllerRef.current.signal);
+        await fetchServers(slug, ep.number, undefined, abortControllerRef.current.signal);
       } catch (e: unknown) {
         if (e instanceof Error && e.name === "AbortError") return;
       } finally {

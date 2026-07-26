@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import { Modal, Text, View } from "react-native";
-import { AnimatedPressable } from "./AnimatedPressable";
+import { AnimatedPressable } from "@/components/AnimatedPressable";
 
 interface NetworkBannerProps {
   visible: boolean;

@@ -8,7 +8,7 @@ export function orderEpisodes(episodes: Episode[]): Episode[] {
   });
 }
 
-export function buildRanges(episodes: Episode[]): EpisodeRange[] {
+function buildRanges(episodes: Episode[]): EpisodeRange[] {
   if (!episodes.length) return [];
   if (episodes.length <= 50) {
     return [{ label: `1-${episodes[episodes.length - 1]!.number}`, start: 0, end: episodes.length }];
@@ -20,7 +20,7 @@ export function buildRanges(episodes: Episode[]): EpisodeRange[] {
   });
 }
 
-export function getVisibleEpisodes(
+function getVisibleEpisodes(
   episodes: Episode[],
   ranges: EpisodeRange[],
   activeRangeIdx: number,

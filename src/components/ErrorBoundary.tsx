@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import React, { type ErrorInfo, type ReactNode, Component } from "react";
 import { Text, View } from "react-native";
-import { AnimatedPressable } from "./AnimatedPressable";
+import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { logger } from "@/utils/logger";
 
 interface Props {
