@@ -1,4 +1,4 @@
-export type AppErrorType = "NETWORK_ERROR" | "NOT_FOUND" | "SERVER_ERROR" | "AUTH_ERROR" | "UNKNOWN";
+export type AppErrorType = "NETWORK_ERROR" | "AUTH_ERROR" | "UNKNOWN";
 
 export interface AppError {
   type: AppErrorType;

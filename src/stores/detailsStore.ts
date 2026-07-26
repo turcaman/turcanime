@@ -3,6 +3,7 @@ import { source } from "../services/source";
 import { withCache } from "../utils/cache";
 import { refreshSession } from "../services/session";
 import { logger } from "../utils/logger";
+import { isAuthError } from "../utils/errors";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import type { AnimeDetail, AppError } from "../types";
 
@@ -38,7 +39,7 @@ export const useDetailsStore = create<DetailsState>((set) => ({
 
     if (signal.aborted) return;
 
-    if ((result.error as { type?: string })?.type === "AUTH_ERROR") {
+    if (isAuthError(result.error)) {
       logger.info("detailsStore", "Auth error, refreshing session and retrying...");
       try {
         await refreshSession();

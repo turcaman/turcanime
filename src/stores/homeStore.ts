@@ -3,6 +3,7 @@ import { source } from "../services/source";
 import { withCache } from "../utils/cache";
 import { refreshSession } from "../services/session";
 import { logger } from "../utils/logger";
+import { isAuthError } from "../utils/errors";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import type { AppError, HomeData } from "../types";
 
@@ -51,9 +52,7 @@ export const useHomeStore = create<HomeState>((set) => ({
 
       if (signal.aborted) return;
 
-      const isAuthError = (result.error as { type?: string })?.type === "AUTH_ERROR";
-
-      if (isAuthError && retryCount < 2) {
+      if (isAuthError(result.error) && retryCount < 2) {
         logger.info("homeStore", `Auth error, refreshing session and retrying (attempt ${retryCount + 1}/3)...`);
         try {
           await refreshSession();

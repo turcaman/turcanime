@@ -38,15 +38,6 @@ class Storage {
       return [];
     }
   }
-
-  async clear(): Promise<void> {
-    try {
-      await AsyncStorage.clear();
-    } catch (error) {
-      logger.error("Storage", "Failed to clear storage", error);
-      throw error;
-    }
-  }
 }
 
 export const storage = new Storage();

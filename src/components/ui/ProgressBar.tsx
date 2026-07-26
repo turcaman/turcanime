@@ -1,5 +1,6 @@
 import React from "react";
 import { View } from "react-native";
+import { calcProgress } from "@/utils/math";
 
 interface ProgressBarProps {
   progress?: number;
@@ -9,9 +10,7 @@ interface ProgressBarProps {
 }
 
 export function ProgressBar({ progress, duration, color, className }: ProgressBarProps) {
-  const pct = progress != null && duration != null && duration > 0
-    ? Math.min(progress / duration, 1)
-    : 0;
+  const pct = calcProgress(progress, duration);
 
   return (
     <View className={`h-0.5 bg-neutral-800 ${className ?? ""}`}>

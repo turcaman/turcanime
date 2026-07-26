@@ -4,6 +4,7 @@ import { refreshSession } from "../services/session";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
+import { isAuthError } from "../utils/errors";
 import type { VideoServer } from "../types";
 
 interface PlayerState {
@@ -14,7 +15,7 @@ interface PlayerState {
   isLoading: boolean;
   error: string | null;
   fetchServers: (slug: string, number: string, force?: boolean, signal?: AbortSignal) => Promise<void>;
-  resolveStream: (server: VideoServer, episodeUrl: string) => Promise<void>;
+  resolveStream: (server: VideoServer) => Promise<void>;
   setStream: (url: string, headers: Record<string, string> | null) => void;
   setLastLanguage: (language: string) => void;
   reset: () => void;
@@ -58,7 +59,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
         set({ isLoading: false });
         return;
       }
-      if ((e as { type?: string })?.type === "AUTH_ERROR") {
+      if (isAuthError(e)) {
         logger.info("playerStore", "Auth error on fetchServers, refreshing session and retrying...");
         try {
           await refreshSession();
@@ -111,7 +112,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
     }
   },
 
-  resolveStream: async (server: VideoServer, _episodeUrl: string) => {
+  resolveStream: async (server: VideoServer) => {
     set({ isLoading: true, streamUrl: null, streamHeaders: null, lastLanguage: server.language, error: null });
 
     const cacheKey = `${CACHE_PREFIXES.STREAM}_${server.url}_${server.id}`;
@@ -159,7 +160,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
         set({ isLoading: false, error: "No se pudo resolver el stream" });
       }
     } catch (e: unknown) {
-      if ((e as { type?: string })?.type === "AUTH_ERROR") {
+      if (isAuthError(e)) {
         logger.info("playerStore", "Auth error on resolveStream, refreshing session and retrying...");
         try {
           await refreshSession();

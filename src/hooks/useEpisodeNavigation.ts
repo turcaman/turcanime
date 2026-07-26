@@ -5,6 +5,7 @@ import { usePlayerStore } from "../stores/playerStore";
 import { useHistoryStore } from "../stores/historyStore";
 import { source } from "../services/source";
 import { refreshSession } from "../services/session";
+import { isAuthError } from "../utils/errors";
 import { findHistoryEntry } from "../utils/history";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
@@ -67,8 +68,7 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       try {
         await attempt();
       } catch (e: unknown) {
-        const isAuth = (e as { type?: string })?.type === "AUTH_ERROR";
-        if (isAuth) {
+        if (isAuthError(e)) {
           try {
             await refreshSession();
           } catch {

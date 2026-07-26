@@ -8,3 +8,7 @@ export class SourceError extends Error implements AppError {
     this.name = "SourceError";
   }
 }
+
+export function isAuthError(error: unknown): error is { type: "AUTH_ERROR" } {
+  return (error as { type?: string })?.type === "AUTH_ERROR";
+}

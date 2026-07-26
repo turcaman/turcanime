@@ -7,6 +7,7 @@ import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { ImageWithLoader } from "@/components/ui/ImageWithLoader";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { SectionTitle } from "@/components/ui/SectionTitle";
+import { calcProgress } from "@/utils/math";
 
 interface ContinueWatchingProps {
   items: HistoryItem[];
@@ -16,9 +17,7 @@ export const ContinueWatching = memo(({ items }: ContinueWatchingProps) => {
   if (items.length === 0) return null;
 
   const renderItem = ({ item }: { item: HistoryItem }) => {
-    const pct = item.progress != null && item.duration != null && item.duration > 0
-      ? Math.min(item.progress / item.duration, 1)
-      : 0;
+    const pct = calcProgress(item.progress, item.duration);
     const barProgress = pct >= 0.9 ? item.duration : item.progress;
 
     return (

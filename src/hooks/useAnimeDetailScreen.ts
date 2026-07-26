@@ -39,7 +39,7 @@ export function useAnimeDetailScreen(slug: string) {
   const handleServerSelect = useCallback(
     (server: VideoServer) => {
       if (!selectedEpisode || !anime) return;
-      void resolveStream(server, selectedEpisode.url);
+      void resolveStream(server);
       setSelectedEpisode(null);
       const existing = findHistoryEntry(useHistoryStore.getState().lastViewed, slug, selectedEpisode.number);
       addToHistory({

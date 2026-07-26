@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import type { AnimeDetail, AppError } from "../types";
 import { useDetailsStore } from "../stores/detailsStore";
 
 export function useAnimeData(slug: string) {
@@ -20,9 +19,9 @@ export function useAnimeData(slug: string) {
   }, [anime]);
 
   return {
-    anime: anime as AnimeDetail | null,
+    anime,
     isLoading,
-    error: error as AppError | null,
+    error,
     hasLoaded,
     refresh: () => void fetchDetails(slug, true),
   };

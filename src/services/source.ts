@@ -1,5 +1,5 @@
 import { TIMEOUTS } from "../config/cache";
-import { SOURCE_CONFIG } from "../config/source";
+import { SOURCE_CONFIG, TMDB_IMAGE_BASE } from "../config/source";
 import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { unwrapCookies, mergeCookies } from "./cookies";
@@ -91,7 +91,6 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
 }
 
 const htmlParser = new HtmlParser();
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w300";
 
 const LANGUAGE_MAP: Record<string, string> = {
   SUB: "SUB",
