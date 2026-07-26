@@ -7,6 +7,7 @@ import { useAnimeData } from "./useAnimeData";
 import { usePersistedRange, useServerFetcher } from "./useAnimeDetail";
 import { useEpisodeUI } from "./useEpisodeUI";
 import { computeEpisodePagination } from "./episodeHelpers";
+import { findHistoryEntry } from "../utils/history";
 import { navigateToPlayer } from "../utils/navigation";
 
 export function useAnimeDetailScreen(slug: string) {
@@ -40,9 +41,7 @@ export function useAnimeDetailScreen(slug: string) {
       if (!selectedEpisode || !anime) return;
       void resolveStream(server, selectedEpisode.url);
       setSelectedEpisode(null);
-      const existing = useHistoryStore.getState().lastViewed.find(
-        (h) => h.url === slug && h.number === selectedEpisode.number,
-      );
+      const existing = findHistoryEntry(useHistoryStore.getState().lastViewed, slug, selectedEpisode.number);
       addToHistory({
         title: anime.title,
         image: anime.image,

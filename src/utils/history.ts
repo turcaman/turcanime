@@ -11,6 +11,10 @@ export function removeBy<T>(list: T[], predicate: (item: T) => boolean): T[] {
   return list.filter(predicate);
 }
 
+export function findHistoryEntry(lastViewed: HistoryItem[], url: string, number: string): HistoryItem | undefined {
+  return lastViewed.find((h) => h.url === url && h.number === number);
+}
+
 export function computeContinueWatching(lastViewed: HistoryItem[]): HistoryItem[] {
   const latestPerAnime = new Map<string, HistoryItem>();
   for (const item of lastViewed) {

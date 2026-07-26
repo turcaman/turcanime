@@ -8,6 +8,7 @@ import { DetailSkeleton } from "@/components/skeletons/DetailSkeleton";
 import { useAnimeDetailScreen } from "@/hooks/useAnimeDetailScreen";
 import { navigateBack } from "@/utils/navigation";
 import { useHistoryStore } from "@/stores/historyStore";
+import { findHistoryEntry } from "@/utils/history";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { TAB_BAR_OFFSET } from "@/utils/layout";
 import { Feather } from "@expo/vector-icons";
@@ -86,9 +87,7 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                 <EpisodeRangeSelector ranges={ranges} activeRangeIdx={activeRangeIdx} setActiveRangeIdx={setActiveRangeIdx} isRestoring={isRestoring} />
                 <View style={{ paddingHorizontal: 20, marginTop: 4, gap: 12 }}>
                   {visibleEpisodes.map((item) => {
-                    const historyEntry = useHistoryStore.getState().lastViewed.find(
-                      (h) => h.url === slug && h.number === item.number,
-                    );
+                    const historyEntry = findHistoryEntry(useHistoryStore.getState().lastViewed, slug as string, item.number);
                     const hasProgress = historyEntry != null && (historyEntry.progress ?? 0) > 0 && (historyEntry.duration ?? 0) > 0;
                     const pct = hasProgress ? (historyEntry.progress ?? 0) / (historyEntry.duration ?? 1) : 0;
                     const barProgress = hasProgress && pct >= 0.9 ? historyEntry!.duration : historyEntry?.progress;

@@ -5,6 +5,7 @@ import { usePlayerStore } from "../stores/playerStore";
 import { useHistoryStore } from "../stores/historyStore";
 import { source } from "../services/source";
 import { refreshSession } from "../services/session";
+import { findHistoryEntry } from "../utils/history";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
   const { setStream, setLastLanguage, lastLanguage } = usePlayerStore();
@@ -47,9 +48,7 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
 
         const headers = streamResult.headers;
 
-        const existing = useHistoryStore.getState().lastViewed.find(
-          (h) => h.url === targetSlug && h.number === targetEp.number,
-        );
+        const existing = findHistoryEntry(useHistoryStore.getState().lastViewed, targetSlug, targetEp.number);
 
         setCurrentEpNumber(targetEp.number);
         setStream(streamResult.url, headers ?? null);
