@@ -4,7 +4,7 @@ import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { unwrapCookies, mergeCookies } from "./cookies";
 import { sessionManager } from "./session";
-import { HtmlParser, ParserUtils } from "./parsers";
+import { HtmlParser, ParserUtils, cleanTitle } from "./parsers";
 import { extractBest } from "./extractors";
 import type {
   Anime,
@@ -90,10 +90,6 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
     }
     throw error;
   }
-}
-
-function cleanTitle(raw: string): string {
-  return raw.replace(/^Ver\s+/i, "").replace(/\s+Sub\s+.*$/i, "").trim();
 }
 
 const htmlParser = new HtmlParser();

@@ -41,7 +41,7 @@ function createAnimeCard(url: string, image: string, title: string): Anime {
   };
 }
 
-function cleanTitle(raw: string): string {
+export function cleanTitle(raw: string): string {
   return raw.replace(/^Ver\s+/i, "").replace(/\s+Sub\s+.*$/i, "").trim();
 }
 
