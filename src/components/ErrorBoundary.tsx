@@ -1,11 +1,7 @@
-/**
- * Error Boundary component to catch React rendering errors
- * and display a fallback UI instead of crashing the app.
- */
-
 import { Feather } from "@expo/vector-icons";
 import React, { type ErrorInfo, type ReactNode, Component } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { AnimatedPressable } from "./AnimatedPressable";
 import { logger } from "../utils/logger";
 
 interface Props {
@@ -57,12 +53,12 @@ export class ErrorBoundary extends Component<Props, State> {
           <Text className="text-neutral-500">
             {this.state.error?.message ?? "Error inesperado"}
           </Text>
-          <Pressable
+          <AnimatedPressable
             className="flex-row items-center mt-4 bg-purple-500/15 px-6 py-3 rounded-xl"
             onPress={this.handleRetry}
           >
             <Text className="font-semibold text-purple-500">Reintentar</Text>
-          </Pressable>
+          </AnimatedPressable>
         </View>
       );
     }
