@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
-import { AnimatedPressable } from "../AnimatedPressable";
+import { AnimatedPressable } from "@/components/AnimatedPressable";
 
 interface ActionRowProps {
   icon?: keyof typeof Feather.glyphMap;

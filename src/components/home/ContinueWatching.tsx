@@ -1,12 +1,12 @@
 import React, { memo } from "react";
 import { Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
-import type { HistoryItem } from "../../types";
-import { navigateToAnime } from "../../utils/navigation";
-import { AnimatedPressable } from "../AnimatedPressable";
-import { ImageWithLoader } from "../ui/ImageWithLoader";
-import { ProgressBar } from "../ui/ProgressBar";
-import { SectionTitle } from "../ui/SectionTitle";
+import type { HistoryItem } from "@/types";
+import { navigateToAnime } from "@/utils/navigation";
+import { AnimatedPressable } from "@/components/AnimatedPressable";
+import { ImageWithLoader } from "@/components/ui/ImageWithLoader";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { SectionTitle } from "@/components/ui/SectionTitle";
 
 interface ContinueWatchingProps {
   items: HistoryItem[];

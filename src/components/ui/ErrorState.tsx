@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
-import { AnimatedPressable } from "../AnimatedPressable";
+import { AnimatedPressable } from "@/components/AnimatedPressable";
 
 interface ErrorStateProps {
   onRetry: () => void;

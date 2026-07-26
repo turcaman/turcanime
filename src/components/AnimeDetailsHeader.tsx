@@ -4,11 +4,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { memo, useMemo } from "react";
 import { Text, useWindowDimensions, View } from "react-native";
 import type { EdgeInsets } from "react-native-safe-area-context";
-import type { AnimeDetail, AnimeRelations, RelatedAnime } from "../types";
+import type { AnimeDetail, AnimeRelations, RelatedAnime } from "@/types";
 import { router } from "expo-router";
-import { AnimatedPressable } from "./AnimatedPressable";
-import { ImageWithLoader } from "./ui/ImageWithLoader";
-import { SectionTitle } from "./ui/SectionTitle";
+import { AnimatedPressable } from "@/components/AnimatedPressable";
+import { ImageWithLoader } from "@/components/ui/ImageWithLoader";
+import { SectionTitle } from "@/components/ui/SectionTitle";
 
 interface AnimeDetailsHeaderProps {
   anime: AnimeDetail | null;

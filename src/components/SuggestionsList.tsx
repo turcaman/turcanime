@@ -2,11 +2,11 @@ import { Feather } from "@expo/vector-icons";
 import React, { memo } from "react";
 import { type NativeScrollEvent, type NativeSyntheticEvent, Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
-import type { AutocompleteAnime } from "../types";
-import { TMDB_POSTER_W92 } from "../config/source";
-import { TAB_BAR_OFFSET } from "../utils/layout";
-import { AnimatedPressable } from "./AnimatedPressable";
-import { ImageWithLoader } from "./ui/ImageWithLoader";
+import type { AutocompleteAnime } from "@/types";
+import { TMDB_POSTER_W92 } from "@/config/source";
+import { TAB_BAR_OFFSET } from "@/utils/layout";
+import { AnimatedPressable } from "@/components/AnimatedPressable";
+import { ImageWithLoader } from "@/components/ui/ImageWithLoader";
 
 interface SuggestionsListProps {
   suggestions: AutocompleteAnime[];

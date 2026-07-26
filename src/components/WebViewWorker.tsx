@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef } from "react";
 import { View } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
-import { SOURCE_CONFIG } from "../config/source";
-import { GLOBAL_BOOTSTRAP } from "../services/bootstrap";
-import { sessionManager } from "../services/session";
-import { webViewBridge } from "../services/webview";
-import { logger } from "../utils/logger";
-import type { ISession } from "../types";
+import { SOURCE_CONFIG } from "@/config/source";
+import { GLOBAL_BOOTSTRAP } from "@/services/bootstrap";
+import { sessionManager } from "@/services/session";
+import { webViewBridge } from "@/services/webview";
+import { logger } from "@/utils/logger";
+import type { ISession } from "@/types";
 
 const WORKER_URL = SOURCE_CONFIG.sessionWashUrl;
 
