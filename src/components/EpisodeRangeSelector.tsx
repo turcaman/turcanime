@@ -1,15 +1,10 @@
 import React, { memo, useEffect, useRef } from "react";
 import { FlatList, Text, View } from "react-native";
 import { AnimatedPressable } from "./AnimatedPressable";
+import type { EpisodeRange } from "../types";
 
 const RANGE_BADGE_WIDTH = 90;
 const RANGE_BADGE_GAP = 12;
-
-interface EpisodeRange {
-  label: string;
-  start: number;
-  end: number;
-}
 
 interface EpisodeRangeSelectorProps {
   ranges: EpisodeRange[];
