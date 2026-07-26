@@ -66,9 +66,7 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
 
       if (res.status === 403 || res.status === 401) {
         logger.info("fetch", "Auth error detected");
-        const error = new Error("Authentication failed - session invalid") as Error & { type: string };
-        error.type = "AUTH_ERROR";
-        throw error;
+        throw new SourceError("Authentication failed - session invalid", "AUTH_ERROR");
       }
 
       if (retryCount < 1) {
