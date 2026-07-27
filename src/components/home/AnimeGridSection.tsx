@@ -28,9 +28,9 @@ export const AnimeGridSection = memo(({ label, items }: AnimeGridSectionProps) =
     <View>
       <SectionTitle>{label}</SectionTitle>
       <View className="mb-3" />
-      <View style={{ gap: 12 }}>
+      <View className="gap-3">
         {rows.map((row, rowIdx) => (
-          <View key={rowIdx} style={{ flexDirection: "row", gap: 12 }}>
+          <View key={rowIdx} className="flex-row gap-3">
             {row.map((item) => (
               <View key={item.url} style={{ width: cardWidth }}>
                 <AnimeCard anime={item} width={cardWidth} />

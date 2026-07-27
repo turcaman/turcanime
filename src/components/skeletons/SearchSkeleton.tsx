@@ -8,15 +8,15 @@ export function SearchSkeleton() {
   const cardHeight = cardWidth * 1.4;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1">
       <View style={{ paddingBottom: TAB_BAR_OFFSET }}>
-        <View style={{ gap: 8 }}>
+        <View className="gap-2">
           {Array.from({ length: 3 }).map((_, rowIdx) => (
-            <View key={`row-${rowIdx}`} style={{ flexDirection: "row", gap: CARD_WIDTH_CONFIG.gap }}>
+            <View key={`row-${rowIdx}`} className="flex-row gap-3">
               {Array.from({ length: CARD_WIDTH_CONFIG.columns }).map((_, colIdx) => (
                 <View key={`card-${rowIdx}-${colIdx}`} style={{ width: cardWidth }}>
                   <Skeleton width={cardWidth} height={cardHeight} borderRadius={8} />
-                  <View className="mt-2" style={{ gap: 4 }}>
+                  <View className="mt-2 gap-1">
                     <Skeleton width="85%" height={13} borderRadius={4} />
                     <Skeleton width="55%" height={11} borderRadius={4} />
                   </View>

@@ -1,4 +1,4 @@
-import { ACCENT_COLOR } from "@/config/source";
+import { ACCENT_COLOR, MUTED_ICON } from "@/config/source";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { useUIStore } from "@/stores/uiStore";
@@ -92,7 +92,7 @@ export default function SettingsScreen() {
           <View className="mb-3" />
           <View className="rounded-xl border border-neutral-800 bg-neutral-900 overflow-hidden">
             <View className="flex-row items-center px-5 py-4">
-              <Feather name="bell" size={18} color="#737373" style={{ marginRight: 12 }} />
+              <Feather name="bell" size={18} color={MUTED_ICON} style={{ marginRight: 12 }} />
               <View className="flex-1">
                 <Text className="text-base font-medium text-white">
                   Buscar actualizaciones
@@ -162,7 +162,7 @@ export default function SettingsScreen() {
           <SectionTitle>Acerca de</SectionTitle>
           <View className="mb-3" />
           <View className="flex-row items-center px-5 py-4 rounded-xl border border-neutral-800 bg-neutral-900">
-            <Feather name="info" size={18} color="#737373" style={{ marginRight: 12 }} />
+            <Feather name="info" size={18} color={MUTED_ICON} style={{ marginRight: 12 }} />
             <View className="flex-1">
               <Text className="text-base font-medium text-white">Versión {appVersion}</Text>
               <Text className="mt-1 text-xs font-semibold tracking-wide text-neutral-400">Turcanime</Text>

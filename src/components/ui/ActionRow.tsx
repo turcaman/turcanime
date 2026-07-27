@@ -1,3 +1,4 @@
+import { MUTED_ICON } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
@@ -32,7 +33,7 @@ export const ActionRow = ({
         <Feather
           name={icon}
           size={18}
-          color="#737373"
+          color={MUTED_ICON}
           style={{ marginRight: 12 }}
         />
       )}
@@ -54,7 +55,7 @@ export const ActionRow = ({
         <Feather
           name="chevron-right"
           size={18}
-          color="#737373"
+          color={MUTED_ICON}
         />
       ) : null}
     </AnimatedPressable>

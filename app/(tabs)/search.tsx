@@ -7,7 +7,7 @@ import type { Anime } from "@/types";
 import { useSearchScreen } from "@/hooks/useSearchScreen";
 import { useTabBarManager } from "@/hooks/useTabBarManager";
 import { TAB_BAR_OFFSET, calcCardWidth } from "@/utils/layout";
-import { ACCENT_COLOR } from "@/config/source";
+import { ACCENT_COLOR, MUTED_ICON } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef } from "react";
 import { Animated, FlatList, RefreshControl, Text, TextInput, useWindowDimensions, View } from "react-native";
@@ -50,7 +50,7 @@ function SearchScreenContent() {
           <TextInput
             className="flex-1 text-white text-base font-normal h-12"
             placeholder="Buscar anime..."
-            placeholderTextColor="#737373"
+            placeholderTextColor={MUTED_ICON}
             value={searchTerm}
             onChangeText={handleTextChange}
             onSubmitEditing={() => handleSearch(searchTerm)}

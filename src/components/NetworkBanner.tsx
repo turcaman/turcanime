@@ -1,4 +1,4 @@
-import { ACCENT_COLOR } from "@/config/source";
+import { ACCENT_COLOR, MUTED_ICON } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import { Modal, Text, View } from "react-native";
@@ -13,7 +13,7 @@ interface NetworkBannerProps {
 
 const NetworkContent = ({ onRetry }: { onRetry?: () => void }) => (
   <View className="items-center">
-    <Feather name="wifi-off" size={48} color="#737373" />
+      <Feather name="wifi-off" size={48} color={MUTED_ICON} />
     <Text className="mt-2 text-lg font-bold text-white">
       Sin conexión
     </Text>
@@ -21,10 +21,10 @@ const NetworkContent = ({ onRetry }: { onRetry?: () => void }) => (
       Conectate a internet para continuar
     </Text>
     {onRetry && (
-      <AnimatedPressable className="mt-5 flex-row items-center p-4" onPress={onRetry}>
+      <AnimatedPressable className="mt-4 flex-row items-center px-6 py-3 rounded-xl bg-purple-500/15" onPress={onRetry}>
         <Feather name="refresh-cw" size={18} color={ACCENT_COLOR} />
-        <Text className="ml-2 text-base text-purple-500">
-          Intentar de nuevo
+        <Text className="ml-2 text-xs font-semibold text-purple-500">
+          Reintentar
         </Text>
       </AnimatedPressable>
     )}

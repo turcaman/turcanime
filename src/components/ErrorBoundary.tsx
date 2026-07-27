@@ -1,3 +1,4 @@
+import { MUTED_ICON } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
 import React, { type ErrorInfo, type ReactNode, Component } from "react";
 import { Text, View } from "react-native";
@@ -48,7 +49,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
 
       return (
         <View className="flex-1 items-center justify-center bg-black px-5">
-          <Feather name="alert-circle" size={48} color="#737373" />
+          <Feather name="alert-circle" size={48} color={MUTED_ICON} />
           <Text className="mt-2 text-lg font-bold text-white">Algo salió mal</Text>
           <Text className="text-neutral-500">
             {this.state.error?.message ?? "Error inesperado"}

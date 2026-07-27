@@ -18,7 +18,7 @@ export function DetailSkeleton() {
           <Skeleton width={70} height={11} borderRadius={2} />
         </View>
 
-        <View className="absolute inset-0" style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
+        <View className="absolute inset-0 px-5 pb-5">
           <View className="flex-1 justify-end">
             <Skeleton width="75%" height={26} borderRadius={4} />
             <View className="flex-row flex-wrap gap-1.5 mt-2">
@@ -30,9 +30,9 @@ export function DetailSkeleton() {
         </View>
       </View>
 
-      <View className="px-5 pt-5" style={{ gap: 8 }}>
+      <View className="px-5 pt-5 gap-2">
         <Skeleton width={60} height={14} borderRadius={4} />
-        <View style={{ gap: 6 }}>
+        <View className="gap-1.5">
           <Skeleton width="100%" height={14} borderRadius={4} />
           <Skeleton width="92%" height={14} borderRadius={4} />
           <Skeleton width="65%" height={14} borderRadius={4} />
@@ -45,7 +45,7 @@ export function DetailSkeleton() {
         <View className="flex-row gap-3 mt-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <View key={`rel-${i}`} className="w-[100px]">
-              <Skeleton width={100} height={140} borderRadius={10} />
+              <Skeleton width={100} height={140} borderRadius={8} />
               <Skeleton width="90%" height={12} borderRadius={4} className="mt-1" />
             </View>
           ))}
@@ -63,7 +63,7 @@ export function DetailSkeleton() {
         ))}
       </View>
 
-      <View className="px-5" style={{ marginTop: 4, gap: 12 }}>
+      <View className="px-5 mt-1 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <View
             key={`ep-${i}`}

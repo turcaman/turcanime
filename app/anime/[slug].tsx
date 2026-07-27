@@ -65,7 +65,7 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                   onBackPress={navigateBack}
                 />
                 <EpisodeRangeSelector ranges={ranges} activeRangeIdx={activeRangeIdx} setActiveRangeIdx={setActiveRangeIdx} isRestoring={isRestoring} />
-                <View style={{ paddingHorizontal: 20, marginTop: 4, gap: 12 }}>
+                <View className="px-5 mt-1 gap-3">
                   {visibleEpisodes.map((item) => {
                     const historyEntry = findHistoryEntry(useHistoryStore.getState().lastViewed, slug as string, item.number);
                     const hasProgress = historyEntry != null && (historyEntry.progress ?? 0) > 0 && (historyEntry.duration ?? 0) > 0;
