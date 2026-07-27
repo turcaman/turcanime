@@ -95,7 +95,7 @@ export function PlayerControls({
         pointerEvents={visible ? "box-none" : "none"}
         style={{ opacity: fadeAnim }}
       >
-        <View className="absolute inset-0 bg-black/50" style={{ zIndex: 1, elevation: 1 }} pointerEvents="none" />
+        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.6)", zIndex: 1, elevation: 1 }} pointerEvents="none" />
 
         <View
           className="absolute inset-0"
