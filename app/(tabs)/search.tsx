@@ -8,7 +8,7 @@ import { useSearchScreen } from "@/hooks/useSearchScreen";
 import { useTabBarManager } from "@/hooks/useTabBarManager";
 import { TAB_BAR_OFFSET, calcCardWidth } from "@/utils/layout";
 import { Feather } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Animated, FlatList, RefreshControl, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

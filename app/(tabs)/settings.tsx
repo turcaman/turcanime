@@ -4,7 +4,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { useUpdateStore } from "@/stores/updateStore";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Alert, Linking, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 

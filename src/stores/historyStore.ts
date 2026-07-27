@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { HistoryItem } from "../types";
-import { computeContinueWatching, removeBy, persistWithRollback } from "../utils/history";
+import { computeContinueWatching, persistWithRollback } from "../utils/history";
 import { storage } from "../utils/storage";
 
 const historyKey = "last_viewed";
@@ -10,8 +10,7 @@ interface HistoryState {
   continueWatching: HistoryItem[];
   initialize: (data: HistoryItem[]) => void;
   addToHistory: (item: HistoryItem) => Promise<void>;
-  removeFromHistory: (url: string) => Promise<void>;
-  clearHistory: () => Promise<void>;
+
 }
 
 export const useHistoryStore = create<HistoryState>((set, get) => ({
@@ -37,20 +36,5 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     );
   },
 
-  removeFromHistory: async (url: string) => {
-    const previous = get().lastViewed;
-    const updated = removeBy(previous, (i) => i.url !== url);
 
-    set({ lastViewed: updated, continueWatching: computeContinueWatching(updated) });
-    await persistWithRollback(
-      () => storage.set(historyKey, updated),
-      () => set({ lastViewed: previous, continueWatching: computeContinueWatching(previous) }),
-      "historyStore",
-    );
-  },
-
-  clearHistory: async () => {
-    set({ lastViewed: [], continueWatching: [] });
-    await storage.remove(historyKey);
-  },
 }));

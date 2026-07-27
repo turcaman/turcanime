@@ -6,11 +6,12 @@ import { useEpisodeNavigation } from "@/hooks/useEpisodeNavigation";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useHistoryStore } from "@/stores/historyStore";
+import { findHistoryEntry } from "@/utils/history";
 import { setupImmersiveMode, cleanupImmersiveMode } from "@/services/playerUI";
 import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useLocalSearchParams, router } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -88,10 +89,9 @@ function PlayerContent() {
       const seekKey = `${slug}_${currentEpNumber}`;
       if (seekKey !== lastSeekKey.current) {
         lastSeekKey.current = seekKey;
-        const match = useHistoryStore.getState().lastViewed.find(
-          (h) => h.url === slug && h.number === currentEpNumber && (h.progress ?? 0) > 10,
-        );
-        if (match?.progress != null) {
+        const match = findHistoryEntry(useHistoryStore.getState().lastViewed, slug, currentEpNumber);
+        const hasSignificantProgress = match != null && (match.progress ?? 0) > 10;
+        if (match?.progress != null && hasSignificantProgress) {
           try { player.currentTime = match.progress; } catch {}
         }
       }

@@ -23,7 +23,7 @@ interface HlsStream {
   url: string;
 }
 
-export interface ByseResult {
+interface ByseResult {
   url: string;
   headers: Record<string, string>;
 }

@@ -16,7 +16,6 @@ interface HomeState {
   error: AppError | null;
   fetchHome: (force?: boolean) => Promise<void>;
   prepareRefresh: () => void;
-  reset: () => void;
 }
 
 export const useHomeStore = create<HomeState>((set) => ({
@@ -92,8 +91,5 @@ export const useHomeStore = create<HomeState>((set) => ({
     await attempt(0, false);
   },
 
-  reset: () => {
-    homeController?.abort();
-    set({ homeData: { recent: [] }, error: null, isHomeLoading: false, isRefreshing: false });
-  },
+
 }));

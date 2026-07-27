@@ -3,11 +3,6 @@ export const SOURCE_CONFIG = {
   sessionWashUrl: "https://www.animelatinohd.com/",
   endpoints: {
     home: "/directorio",
-    suggestions: "/api/search",
-  },
-  features: {
-    hasSuggestions: true,
-    requiresSession: true,
   },
 };
 

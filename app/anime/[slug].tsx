@@ -10,10 +10,11 @@ import { navigateBack } from "@/utils/navigation";
 import { useHistoryStore } from "@/stores/historyStore";
 import { findHistoryEntry } from "@/utils/history";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { calcProgress } from "@/utils/math";
 import { TAB_BAR_OFFSET } from "@/utils/layout";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import React, { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
@@ -89,7 +90,7 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                   {visibleEpisodes.map((item) => {
                     const historyEntry = findHistoryEntry(useHistoryStore.getState().lastViewed, slug as string, item.number);
                     const hasProgress = historyEntry != null && (historyEntry.progress ?? 0) > 0 && (historyEntry.duration ?? 0) > 0;
-                    const pct = hasProgress ? (historyEntry.progress ?? 0) / (historyEntry.duration ?? 1) : 0;
+                    const pct = hasProgress ? calcProgress(historyEntry.progress, historyEntry.duration) : 0;
                     const barProgress = hasProgress && pct >= 0.9 ? historyEntry!.duration : historyEntry?.progress;
 
                     return (

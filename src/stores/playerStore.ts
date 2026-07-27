@@ -19,7 +19,6 @@ interface PlayerState {
   setStream: (url: string, headers: Record<string, string> | null) => void;
   setLastLanguage: (language: string) => void;
   reset: () => void;
-  clearError: () => void;
 }
 
 export const usePlayerStore = create<PlayerState>((set) => ({
@@ -200,7 +199,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
     }
   },
 
-  setStream: (url, headers) => set({ streamUrl: url, streamHeaders: headers, error: null }),
+  setStream: (url, headers) => set({ streamUrl: url, streamHeaders: headers }),
   setLastLanguage: (language) => set({ lastLanguage: language }),
   reset: () =>
     set({
@@ -211,5 +210,4 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       isLoading: false,
       error: null,
     }),
-  clearError: () => set({ error: null }),
 }));

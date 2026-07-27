@@ -1,5 +1,4 @@
 import { AnimatedPressable } from "@/components/AnimatedPressable";
-import { DarkOverlay } from "@/components/DarkOverlay";
 import { useAutoHide } from "@/hooks/useAutoHide";
 import { Feather } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
@@ -95,7 +94,7 @@ export function PlayerControls({
         pointerEvents={visible ? "box-none" : "none"}
         style={{ opacity: fadeAnim }}
       >
-        <DarkOverlay zIndex={1} elevation={1} />
+        <View className="absolute inset-0 bg-black/50" style={{ zIndex: 1, elevation: 1 }} pointerEvents="none" />
 
         <View
           className="absolute inset-0"
