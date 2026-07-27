@@ -93,7 +93,7 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
 const htmlParser = new HtmlParser();
 
 async function getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData> {
-  const homeEndpoint = SOURCE_CONFIG.endpoints?.home ?? "/";
+  const homeEndpoint = SOURCE_CONFIG.homeEndpoint;
   const res = await fetchWithSession(homeEndpoint, options ?? {});
   const html = await res.text();
   const recent = htmlParser.parseCards(html);

@@ -2,7 +2,7 @@ export const CACHE_PREFIXES = {
   HOME: "ch_home",
   SEARCH: "search",
   SUGGESTIONS: "suggestions",
-  DETAILS: "anime",
+  ANIME: "anime",
   STREAM: "stream",
   SERVERS: "servers",
 } as const;
@@ -25,6 +25,6 @@ export const LOG_LIMITS = {
 } as const;
 
 export const TIMEOUTS = {
-  SEARCH: 15000,
+  SEARCH_TIMEOUT: 15000,
   RETRY_DELAY: 1000,
 } as const;

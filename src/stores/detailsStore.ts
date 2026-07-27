@@ -28,7 +28,7 @@ export const useDetailsStore = create<DetailsState>((set) => ({
 
     set({ isDetailsLoading: true, error: null });
 
-    const cacheKey = `${CACHE_PREFIXES.DETAILS}_${slug}`;
+    const cacheKey = `${CACHE_PREFIXES.ANIME}_${slug}`;
 
     const result = await withCache(
       cacheKey,

@@ -5,7 +5,6 @@ import type { Episode, VideoServer } from "@/types";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { LANGUAGE_DISPLAY } from "@/config/source";
 
 interface AnimeEpisodeModalProps {
   visible: boolean;
@@ -60,7 +59,7 @@ export const AnimeEpisodeModal = ({
                 onPress={() => { onServerSelect(server); }}
               >
                 <Text className="text-white font-bold flex-1">
-                  {LANGUAGE_DISPLAY[server.language] ?? server.language ?? "Desconocido"}
+                  {server.language ?? "Desconocido"}
                 </Text>
               </AnimatedPressable>
               </Animated.View>

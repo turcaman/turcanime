@@ -4,7 +4,7 @@ import { logger } from "../utils/logger";
 import { storage } from "../utils/storage";
 import { webViewBridge } from "./webview";
 
-const SESSION_KEY = "scraper_session";
+export const SESSION_KEY = "scraper_session";
 
 class SessionManager {
   private sessionReadyPromise: Promise<void> | null = null;

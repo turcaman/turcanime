@@ -20,6 +20,10 @@ import { useEffect, useRef, useState } from "react";
 import { AppState, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+const SESSION_REFRESH_DELAY = 2000;
+const SESSION_REFRESH_COOLDOWN = 5 * 60 * 1000;
+const SAFETY_TIMER_DELAY = 12000;
+
 function RootInner() {
   const [ready, setReady] = useState(false);
   const { isInternetReachable, connectionType } = useNetworkStatus();
@@ -43,7 +47,7 @@ function RootInner() {
     const prev = prevReachable.current;
     prevReachable.current = isInternetReachable;
     if (prev === false && isInternetReachable === true) {
-      const timer = setTimeout(() => triggerSessionRefresh(), 2000);
+      const timer = setTimeout(() => triggerSessionRefresh(), SESSION_REFRESH_DELAY);
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -57,7 +61,7 @@ function RootInner() {
         return;
       }
       const elapsed = Date.now() - lastRefreshTime.current;
-      if (elapsed < 5 * 60 * 1000) return;
+      if (elapsed < SESSION_REFRESH_COOLDOWN) return;
       triggerSessionRefresh();
     });
     return () => sub.remove();
@@ -101,7 +105,7 @@ function RootInner() {
         logger.info("refresh", "Safety timer: data still empty, retrying fetch...");
         void useHomeStore.getState().fetchHome(true);
       }
-    }, 12000);
+    }, SAFETY_TIMER_DELAY);
 
     return () => clearTimeout(safetyTimer);
   }, [sessionRefreshTrigger, setSessionRefreshing]);

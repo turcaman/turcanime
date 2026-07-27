@@ -44,7 +44,7 @@ export const useSearchStore = create<SearchState>((set) => ({
       cacheKey,
       async (sig) => {
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("Search timeout")), TIMEOUTS.SEARCH);
+          setTimeout(() => reject(new Error("Search timeout")), TIMEOUTS.SEARCH_TIMEOUT);
         });
         const searchPromise = source.search(query, { signal: sig });
         return await Promise.race([searchPromise, timeoutPromise]);
