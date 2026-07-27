@@ -3,7 +3,7 @@ import type { HistoryItem } from "../types";
 import { computeContinueWatching, persistWithRollback } from "../utils/history";
 import { storage } from "../utils/storage";
 
-const historyKey = "last_viewed";
+export const HISTORY_KEY = "last_viewed";
 
 interface HistoryState {
   lastViewed: HistoryItem[];
@@ -30,7 +30,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
 
     set({ lastViewed: updated, continueWatching: computeContinueWatching(updated) });
     await persistWithRollback(
-      () => storage.set(historyKey, updated),
+      () => storage.set(HISTORY_KEY, updated),
       () => set({ lastViewed: previous, continueWatching: computeContinueWatching(previous) }),
       "historyStore",
     );

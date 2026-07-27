@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
 
-const EPISODE_ORDER_KEY = "episode_order";
+export const EPISODE_ORDER_KEY = "episode_order";
 
 interface SettingsState {
   episodeOrder: "asc" | "desc";

@@ -1,13 +1,14 @@
 import "../global.css";
+import { CACHE_PREFIXES } from "@/config/cache";
 import { NetworkBanner } from "@/components/NetworkBanner";
 import { WebViewWorker } from "@/components/WebViewWorker";
 import { useHomeStore } from "@/stores/homeStore";
 import { useUIStore } from "@/stores/uiStore";
-import { useSettingsStore } from "@/stores/settingsStore";
+import { useSettingsStore, EPISODE_ORDER_KEY } from "@/stores/settingsStore";
 import { useUserInitializationStore } from "@/stores/userIndex";
-import { useUpdateStore } from "@/stores/updateStore";
-import { useHistoryStore } from "@/stores/historyStore";
-import { useSearchHistoryStore } from "@/stores/searchHistoryStore";
+import { useUpdateStore, UPDATE_CHECK_KEY } from "@/stores/updateStore";
+import { useHistoryStore, HISTORY_KEY } from "@/stores/historyStore";
+import { useSearchHistoryStore, SEARCHES_KEY } from "@/stores/searchHistoryStore";
 import { useNetworkStatus, type ConnectionType } from "@/hooks/useNetworkStatus";
 import { sessionManager, refreshSession } from "@/services/session";
 import { storage } from "@/utils/storage";
@@ -80,7 +81,7 @@ function RootInner() {
 
         if (sessionOk) {
           const allKeys = await storage.getAllKeys();
-          const cacheKeys = allKeys.filter((k) => k.startsWith("ch_") || k.startsWith("search_") || k.startsWith("anime_") || k.startsWith("suggestions_") || k.startsWith("stream_") || k.startsWith("servers_"));
+          const cacheKeys = allKeys.filter((k) => Object.values(CACHE_PREFIXES).some((prefix) => k.startsWith(prefix)));
           await Promise.all(cacheKeys.map((k) => storage.remove(k)));
           void useHomeStore.getState().fetchHome(true);
           useSettingsStore.getState().invalidateCache();
@@ -111,10 +112,10 @@ function RootInner() {
       logger.setStorage(storage);
       await sessionManager.initialize();
       const [history, searches, order, updateCheckEnabled] = await Promise.all([
-        storage.get<HistoryItem[]>("last_viewed"),
-        storage.get<string[]>("recent_searches"),
-        storage.get<"asc" | "desc">("episode_order"),
-        storage.get<boolean>("update_check_enabled"),
+        storage.get<HistoryItem[]>(HISTORY_KEY),
+        storage.get<string[]>(SEARCHES_KEY),
+        storage.get<"asc" | "desc">(EPISODE_ORDER_KEY),
+        storage.get<boolean>(UPDATE_CHECK_KEY),
       ]);
       useHistoryStore.getState().initialize(history ?? []);
       useSearchHistoryStore.getState().initialize(searches ?? []);

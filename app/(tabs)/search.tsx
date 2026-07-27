@@ -1,4 +1,4 @@
-import AnimeCard from "@/components/AnimeCard";
+import { AnimeCard } from "@/components/AnimeCard";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RecentSearches } from "@/components/RecentSearches";
 import { SearchSkeleton } from "@/components/skeletons/SearchSkeleton";

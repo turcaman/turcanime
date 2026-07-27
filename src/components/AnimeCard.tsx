@@ -13,7 +13,7 @@ interface AnimeCardProps {
   episodeNumber?: string;
 }
 
-const AnimeCard = ({ anime, width, onPress, variant = "default", episodeNumber }: AnimeCardProps) => {
+export const AnimeCard = memo(function AnimeCard({ anime, width, onPress, variant = "default", episodeNumber }: AnimeCardProps) {
   const isContinue = variant === "continue";
   const cardHeight = isContinue ? width * 0.56 : width * 1.4;
 
@@ -51,6 +51,4 @@ const AnimeCard = ({ anime, width, onPress, variant = "default", episodeNumber }
       </Text>
     </AnimatedPressable>
   );
-};
-
-export default memo(AnimeCard);
+});

@@ -4,7 +4,7 @@ import { Text, View } from "react-native";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { logger } from "@/utils/logger";
 
-interface Props {
+interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
@@ -16,8 +16,8 @@ interface State {
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }

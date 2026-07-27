@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { prependDedup, removeBy, persistWithRollback } from "../utils/history";
 import { storage } from "../utils/storage";
 
-const searchesKey = "recent_searches";
+export const SEARCHES_KEY = "recent_searches";
 
 interface SearchHistoryState {
   recentSearches: string[];
@@ -22,7 +22,7 @@ export const useSearchHistoryStore = create<SearchHistoryState>((set, get) => ({
     const updated = prependDedup(previous, term, 10);
     set({ recentSearches: updated });
     await persistWithRollback(
-      () => storage.set(searchesKey, updated),
+      () => storage.set(SEARCHES_KEY, updated),
       () => set({ recentSearches: previous }),
       "searchHistoryStore",
     );
@@ -33,7 +33,7 @@ export const useSearchHistoryStore = create<SearchHistoryState>((set, get) => ({
     const updated = removeBy(previous, (t) => t !== term);
     set({ recentSearches: updated });
     await persistWithRollback(
-      () => storage.set(searchesKey, updated),
+      () => storage.set(SEARCHES_KEY, updated),
       () => set({ recentSearches: previous }),
       "searchHistoryStore",
     );
@@ -41,6 +41,6 @@ export const useSearchHistoryStore = create<SearchHistoryState>((set, get) => ({
 
   clearRecentSearches: async () => {
     set({ recentSearches: [] });
-    await storage.remove(searchesKey);
+    await storage.remove(SEARCHES_KEY);
   },
 }));

@@ -1,11 +1,10 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Episode, VideoServer } from "../types";
 import { usePlayerStore } from "../stores/playerStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useHistoryStore } from "../stores/historyStore";
 import { useAnimeData } from "./useAnimeData";
 import { usePersistedRange, useServerFetcher } from "./useAnimeDetail";
-import { useEpisodeUI } from "./useEpisodeUI";
 import { computeEpisodePagination } from "./episodeHelpers";
 import { findHistoryEntry, makeHistoryEntry, addToHistorySafe } from "../utils/history";
 import { navigateToPlayer } from "../utils/navigation";
@@ -18,8 +17,8 @@ export function useAnimeDetailScreen(slug: string) {
   const episodeOrder = useSettingsStore((s) => s.episodeOrder);
   const setEpisodeOrder = useSettingsStore((s) => s.setEpisodeOrder);
   const addToHistory = useHistoryStore((s) => s.addToHistory);
-  const episodeUI = useEpisodeUI();
-  const { selectedEpisode, setSelectedEpisode } = episodeUI;
+  const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const [activeRangeIdx, setActiveRangeIdx, isRestoring] = usePersistedRange(slug);
   const { ranges, visibleEpisodes } = useMemo(
@@ -30,10 +29,10 @@ export function useAnimeDetailScreen(slug: string) {
 
   const handleEpisodePress = useCallback(
     (ep: Episode) => {
-      episodeUI.selectEpisode(ep);
+      setSelectedEpisode(ep);
       void fetchAndSet(ep);
     },
-    [fetchAndSet, episodeUI],
+    [fetchAndSet, setSelectedEpisode],
   );
 
   const handleServerSelect = useCallback(
@@ -79,6 +78,11 @@ export function useAnimeDetailScreen(slug: string) {
     visibleEpisodes,
     handleEpisodePress,
     handleServerSelect,
-    ...episodeUI,
+    selectedEpisode,
+    setSelectedEpisode,
+    isExpanded,
+    setIsExpanded,
+    selectEpisode: setSelectedEpisode,
+    closeModal: () => setSelectedEpisode(null),
   };
 }

@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
 
-const UPDATE_CHECK_KEY = "update_check_enabled";
+export const UPDATE_CHECK_KEY = "update_check_enabled";
 const GITHUB_RELEASES_URL =
   "https://api.github.com/repos/turcaman/turcanime/releases/latest";
 

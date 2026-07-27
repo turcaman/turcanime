@@ -1,7 +1,7 @@
 import { useWindowDimensions, View } from "react-native";
 import type { Anime } from "@/types";
 import React, { memo, useMemo } from "react";
-import AnimeCard from "@/components/AnimeCard";
+import { AnimeCard } from "@/components/AnimeCard";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { calcCardWidth } from "@/utils/layout";
 
