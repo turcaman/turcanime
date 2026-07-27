@@ -1,3 +1,4 @@
+import { ACCENT_COLOR } from "@/config/source";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { useUIStore } from "@/stores/uiStore";
@@ -73,7 +74,7 @@ export default function SettingsScreen() {
           <Feather
             name="refresh-cw"
             size={18}
-            color="#A855F7"
+            color={ACCENT_COLOR}
             style={{ marginRight: 12 }}
           />
           <View className="flex-1">
@@ -103,7 +104,7 @@ export default function SettingsScreen() {
               <Switch
                 value={updateCheckEnabled}
                 onValueChange={(v) => { void setUpdateCheckEnabled(v); }}
-                trackColor={{ false: "#404040", true: "#A855F7" }}
+                trackColor={{ false: "#404040", true: ACCENT_COLOR }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -114,7 +115,7 @@ export default function SettingsScreen() {
               className="flex-row items-center px-5 py-4"
               style={{ opacity: checkingForUpdates ? 0.5 : 1 }}
             >
-              <Feather name="download" size={18} color="#A855F7" style={{ marginRight: 12 }} />
+              <Feather name="download" size={18} color={ACCENT_COLOR} style={{ marginRight: 12 }} />
               <View className="flex-1 min-w-0">
                 <Text className="text-base font-medium text-white">
                   Buscar actualización
@@ -150,7 +151,7 @@ export default function SettingsScreen() {
                   <Text className="text-xs font-semibold tracking-wide text-purple-400">
                     Descargar
                   </Text>
-                  <Feather name="external-link" size={11} color="#A855F7" />
+                  <Feather name="external-link" size={11} color={ACCENT_COLOR} />
                 </AnimatedPressable>
               )}
             </AnimatedPressable>

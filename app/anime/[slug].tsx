@@ -14,12 +14,12 @@ import { calcProgress } from "@/utils/math";
 import { TAB_BAR_OFFSET } from "@/utils/layout";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
-import { memo, useEffect, useRef, useState } from "react";
+import { ACCENT_COLOR } from "@/config/source";
+import { memo } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-
-const CROSSFADE_DURATION = 250;
+import Animated from "react-native-reanimated";
+import { useCrossfade } from "@/hooks/useCrossfade";
 
 const AnimeDetailsContent = memo(function AnimeDetailsContent() {
   const { slug } = useLocalSearchParams();
@@ -33,28 +33,7 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
 
   const showContent = anime != null && anime.url === slug;
 
-  const [keepSkeleton, setKeepSkeleton] = useState(!showContent);
-  const skeletonOpacity = useSharedValue(1);
-  const contentOpacity = useSharedValue(showContent ? 1 : 0);
-  const wasShowingSkeleton = useRef(!showContent);
-
-  useEffect(() => {
-    if (!showContent) {
-      skeletonOpacity.value = 1;
-      contentOpacity.value = 0;
-      setKeepSkeleton(true);
-    }
-    if (wasShowingSkeleton.current && showContent) {
-      skeletonOpacity.value = withTiming(0, { duration: CROSSFADE_DURATION });
-      contentOpacity.value = withTiming(1, { duration: CROSSFADE_DURATION }, (finished) => {
-        if (finished) runOnJS(setKeepSkeleton)(false);
-      });
-    }
-    wasShowingSkeleton.current = !showContent;
-  }, [showContent, skeletonOpacity, contentOpacity]);
-
-  const skeletonStyle = useAnimatedStyle(() => ({ opacity: skeletonOpacity.value }));
-  const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
+  const { keepSkeleton, skeletonStyle, contentStyle } = useCrossfade(showContent);
 
   if (!anime && error) {
     return (
@@ -73,7 +52,7 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
               <ScrollView
                 contentContainerStyle={{ paddingBottom: TAB_BAR_OFFSET }}
                 showsVerticalScrollIndicator={false}
-                refreshControl={<RefreshControl refreshing={hasLoaded && isAnimeLoading} onRefresh={refresh} tintColor="#A855F7" />}
+                refreshControl={<RefreshControl refreshing={hasLoaded && isAnimeLoading} onRefresh={refresh} tintColor={ACCENT_COLOR} />}
               >
                 <AnimeDetailsHeader
                   anime={anime!}
@@ -98,7 +77,7 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                         <View className="rounded-xl bg-neutral-950 border border-neutral-800 overflow-hidden">
                           <View className="flex-row items-center justify-between p-4">
                             <Text className="font-semibold text-white">Episodio {item.number}</Text>
-                            <Feather name="play" size={16} color="#A855F7" />
+                            <Feather name="play" size={16} color={ACCENT_COLOR} />
                           </View>
                           {hasProgress && (
                             <ProgressBar progress={barProgress} duration={historyEntry.duration} />

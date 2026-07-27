@@ -1,3 +1,4 @@
+import { ACCENT_COLOR } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import React from "react";
@@ -83,7 +84,7 @@ export function FloatingTabBar({
 
           const iconName = ICONS[route.name];
           const color = isFocused
-            ? "#A855F7"
+            ? ACCENT_COLOR
             : "#a3a3a3";
 
           return (

@@ -6,47 +6,24 @@ import { HomeSkeleton } from "@/components/skeletons/HomeSkeleton";
 import { useHomeScreen, type SectionItem } from "@/hooks/useHomeScreen";
 import { useTabBarManager } from "@/hooks/useTabBarManager";
 import { TAB_BAR_OFFSET } from "@/utils/layout";
-import React, { useEffect, useRef, useState } from "react";
+import { ACCENT_COLOR } from "@/config/source";
+import React, { useEffect } from "react";
 import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-
-const CROSSFADE_DURATION = 250;
+import Animated from "react-native-reanimated";
+import { useCrossfade } from "@/hooks/useCrossfade";
 
 const HomeContent = React.memo(function HomeContent() {
   const { sections, isLoading, error, fetchHome, hasContent } = useHomeScreen();
   const { handleScroll, reset } = useTabBarManager({ threshold: 8 });
   const insets = useSafeAreaInsets();
 
-  const [keepSkeleton, setKeepSkeleton] = useState(!hasContent);
-  const skeletonOpacity = useSharedValue(1);
-  const contentOpacity = useSharedValue(hasContent ? 1 : 0);
-  const wasReady = useRef(hasContent);
-
-  useEffect(() => {
-    if (!hasContent) {
-      skeletonOpacity.value = 1;
-      contentOpacity.value = 0;
-      setKeepSkeleton(true);
-      wasReady.current = false;
-      return;
-    }
-    if (!wasReady.current) {
-      wasReady.current = true;
-      skeletonOpacity.value = withTiming(0, { duration: CROSSFADE_DURATION });
-      contentOpacity.value = withTiming(1, { duration: CROSSFADE_DURATION }, (finished) => {
-        if (finished) runOnJS(setKeepSkeleton)(false);
-      });
-    }
-  }, [hasContent, skeletonOpacity, contentOpacity]);
+  const { keepSkeleton, skeletonStyle, contentStyle } = useCrossfade(hasContent);
 
   useEffect(() => {
     void fetchHome();
     reset();
   }, [fetchHome, reset]);
-
-  const skeletonStyle = useAnimatedStyle(() => ({ opacity: skeletonOpacity.value }));
-  const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
 
   if (!hasContent && error) {
     return <ErrorState onRetry={() => void fetchHome(true)} />;
@@ -72,7 +49,7 @@ const HomeContent = React.memo(function HomeContent() {
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => void fetchHome(true)} tintColor="#A855F7" />}
+            refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => void fetchHome(true)} tintColor={ACCENT_COLOR} />}
           />
         </Animated.View>
       )}

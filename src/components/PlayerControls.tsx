@@ -1,3 +1,4 @@
+import { ACCENT_COLOR } from "@/config/source";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { useAutoHide } from "@/hooks/useAutoHide";
 import { Feather } from "@expo/vector-icons";
@@ -176,9 +177,9 @@ export function PlayerControls({
                   setSlidingValue(null);
                   restartTimer();
                 }}
-                minimumTrackTintColor="#A855F7"
+                minimumTrackTintColor={ACCENT_COLOR}
                 maximumTrackTintColor="rgba(255,255,255,0.25)"
-                thumbTintColor="#A855F7"
+                thumbTintColor={ACCENT_COLOR}
               />
             </View>
 

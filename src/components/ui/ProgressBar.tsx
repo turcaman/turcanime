@@ -1,6 +1,7 @@
 import React from "react";
 import { View } from "react-native";
 import { calcProgress } from "@/utils/math";
+import { ACCENT_COLOR } from "@/config/source";
 
 interface ProgressBarProps {
   progress?: number;
@@ -14,7 +15,7 @@ export function ProgressBar({ progress, duration, color, className }: ProgressBa
 
   return (
     <View className={`h-0.5 bg-neutral-800 ${className ?? ""}`}>
-      <View className="h-full" style={{ width: `${pct * 100}%`, backgroundColor: color ?? "#A855F7" }} />
+      <View className="h-full" style={{ width: `${pct * 100}%`, backgroundColor: color ?? ACCENT_COLOR }} />
     </View>
   );
 }

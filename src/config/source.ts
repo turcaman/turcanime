@@ -1,3 +1,5 @@
+export const ACCENT_COLOR = "#A855F7";
+
 export const SOURCE_CONFIG = {
   baseUrl: "https://www.animelatinohd.com",
   sessionWashUrl: "https://www.animelatinohd.com/",

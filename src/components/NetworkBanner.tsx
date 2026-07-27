@@ -1,3 +1,4 @@
+import { ACCENT_COLOR } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
 import React, { useEffect } from "react";
 import { Modal, Text, View } from "react-native";
@@ -21,7 +22,7 @@ const NetworkContent = ({ onRetry }: { onRetry?: () => void }) => (
     </Text>
     {onRetry && (
       <AnimatedPressable className="mt-5 flex-row items-center p-4" onPress={onRetry}>
-        <Feather name="refresh-cw" size={18} color="#A855F7" />
+        <Feather name="refresh-cw" size={18} color={ACCENT_COLOR} />
         <Text className="ml-2 text-base text-purple-500">
           Intentar de nuevo
         </Text>

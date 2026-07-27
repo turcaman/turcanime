@@ -1,3 +1,4 @@
+import { ACCENT_COLOR } from "@/config/source";
 import { useEffect } from "react";
 import { ActivityIndicator, Text } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing } from "react-native-reanimated";
@@ -28,7 +29,7 @@ export function PlayerLoadingOverlay({ visible }: PlayerLoadingOverlayProps) {
       style={[{ backgroundColor: "rgba(0,0,0,0.7)", zIndex: 50 }, animatedStyle]}
       pointerEvents="none"
     >
-      <ActivityIndicator size="large" color="#A855F7" />
+      <ActivityIndicator size="large" color={ACCENT_COLOR} />
       <Text className="mt-4 text-sm font-medium text-neutral-400">
         Cargando video...
       </Text>

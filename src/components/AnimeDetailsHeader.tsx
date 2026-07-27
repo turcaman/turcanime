@@ -1,3 +1,4 @@
+import { ACCENT_COLOR } from "@/config/source";
 import { FlashList } from "@shopify/flash-list";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -172,7 +173,7 @@ export const AnimeDetailsHeader = memo(
             <Feather
               name={isAscending ? "chevron-up" : "chevron-down"}
               size={20}
-              color="#A855F7"
+              color={ACCENT_COLOR}
             />
           </AnimatedPressable>
         </View>

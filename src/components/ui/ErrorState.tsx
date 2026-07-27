@@ -1,3 +1,4 @@
+import { ACCENT_COLOR } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Text, View } from "react-native";
@@ -16,7 +17,7 @@ export function ErrorState({ onRetry, title = "Error al cargar" }: ErrorStatePro
         {title}
       </Text>
       <AnimatedPressable className="mt-2 flex-row items-center px-4 py-2" onPress={onRetry}>
-        <Feather name="refresh-cw" size={16} color="#A855F7" />
+        <Feather name="refresh-cw" size={16} color={ACCENT_COLOR} />
         <Text className="ml-2 text-xs font-semibold tracking-wide text-purple-500">
           Reintentar
         </Text>

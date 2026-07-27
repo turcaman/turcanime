@@ -1,3 +1,4 @@
+import { ACCENT_COLOR } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
 import React, { memo } from "react";
 import { FlatList, Text, View } from "react-native";
@@ -31,7 +32,7 @@ export const RecentSearches = memo(({ searches, onSelect, onRemove, onClearAll }
         renderItem={({ item }) => (
           <AnimatedPressable className="mb-2 flex-row items-center justify-between border-b border-neutral-800 py-2" onPress={() => { onSelect(item); }}>
             <View className="flex-1 flex-row items-center">
-              <Feather name="clock" size={18} color="#A855F7" />
+              <Feather name="clock" size={18} color={ACCENT_COLOR} />
               <Text className="ml-3 text-base text-white">{item}</Text>
             </View>
             <AnimatedPressable className="p-2" onPress={(e) => { e.stopPropagation(); onRemove(item); }}>

@@ -7,6 +7,7 @@ import type { Anime } from "@/types";
 import { useSearchScreen } from "@/hooks/useSearchScreen";
 import { useTabBarManager } from "@/hooks/useTabBarManager";
 import { TAB_BAR_OFFSET, calcCardWidth } from "@/utils/layout";
+import { ACCENT_COLOR } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef } from "react";
 import { Animated, FlatList, RefreshControl, Text, TextInput, useWindowDimensions, View } from "react-native";
@@ -91,7 +92,7 @@ function SearchScreenContent() {
               showsVerticalScrollIndicator={false}
               onScroll={handleScroll}
               scrollEventThrottle={16}
-              refreshControl={<RefreshControl refreshing={isLoading} onRefresh={retrySearch} tintColor="#A855F7" />}
+              refreshControl={<RefreshControl refreshing={isLoading} onRefresh={retrySearch} tintColor={ACCENT_COLOR} />}
               ListEmptyComponent={!isLoading ? (
                 <View className="flex-1 justify-start items-center px-5 pt-20">
                   <Feather name="frown" size={48} color="#404040" />
