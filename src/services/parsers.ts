@@ -2,41 +2,39 @@ import type { Anime, AnimeRelations, Episode } from "../types";
 import { TMDB_IMAGE_BASE } from "../config/source";
 import { logger } from "../utils/logger";
 
-export class ParserUtils {
-  static sanitizeTitle(title: string): string {
-    return title
-      .replace(/&amp;/g, "&")
-      .replace(/<[^>]*>/g, "")
-      .trim();
-  }
+export function sanitizeTitle(title: string): string {
+  return title
+    .replace(/&amp;/g, "&")
+    .replace(/<[^>]*>/g, "")
+    .trim();
+}
 
-  static extractJson(text: string, key: string, sChar: string, eChar: string): string {
-    const idx = text.indexOf(key);
-    if (idx === -1) return "";
-    const start = text.indexOf(sChar, idx + key.length);
-    if (start === -1) return "";
-    let depth = 1;
-    let end = start + 1;
-    while (depth > 0 && end < text.length) {
-      if (text[end] === sChar) depth++;
-      else if (text[end] === eChar) depth--;
-      end++;
-    }
-    return text.slice(start, end);
+export function extractJson(text: string, key: string, sChar: string, eChar: string): string {
+  const idx = text.indexOf(key);
+  if (idx === -1) return "";
+  const start = text.indexOf(sChar, idx + key.length);
+  if (start === -1) return "";
+  let depth = 1;
+  let end = start + 1;
+  while (depth > 0 && end < text.length) {
+    if (text[end] === sChar) depth++;
+    else if (text[end] === eChar) depth--;
+    end++;
   }
+  return text.slice(start, end);
+}
 
-  static cleanUrl(url: string): string {
-    return url.replace(/^\/+/, "").replace(/\/+$/, "");
-  }
+export function cleanUrl(url: string): string {
+  return url.replace(/^\/+/, "").replace(/\/+$/, "");
 }
 
 const CARD_LINK_REGEX = /<a[^>]*class="group block"[^>]*href="\/anime\/([^"]+)"[^>]*>[\s\S]*?<img[^>]*(?:src|data-src)="([^"]*)"[\s\S]*?alt="([^"]*)"/g;
 
 function createAnimeCard(url: string, image: string, title: string): Anime {
   return {
-    title: cleanTitle(ParserUtils.sanitizeTitle(title)),
+    title: cleanTitle(sanitizeTitle(title)),
     image,
-    url: ParserUtils.cleanUrl(url),
+    url: cleanUrl(url),
     status: "",
   };
 }
@@ -76,7 +74,7 @@ export class HtmlParser {
       }
     };
 
-    const rawJsonMatch = ParserUtils.extractJson(html, '"episodes":', "[", "]");
+    const rawJsonMatch = extractJson(html, '"episodes":', "[", "]");
     if (rawJsonMatch) {
       logger.info("HtmlParser", `Extracted episodes via raw HTML for ${slug}`);
       return parse(rawJsonMatch);
@@ -85,7 +83,7 @@ export class HtmlParser {
     const scripts = html.matchAll(/<script[^>]*>(.*?)<\/script>/gs);
     for (const match of scripts) {
       const text = match[1]!.replace(/\\"/g, '"');
-      const scriptJsonMatch = ParserUtils.extractJson(text, '"episodes":', "[", "]");
+      const scriptJsonMatch = extractJson(text, '"episodes":', "[", "]");
       if (scriptJsonMatch) {
         logger.info("HtmlParser", `Extracted episodes via script JSON for ${slug}`);
         return parse(scriptJsonMatch);

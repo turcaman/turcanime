@@ -6,7 +6,7 @@ import { useHistoryStore } from "../stores/historyStore";
 import { source } from "../services/source";
 import { refreshSession } from "../services/session";
 import { isAuthError } from "../utils/errors";
-import { findHistoryEntry } from "../utils/history";
+import { findHistoryEntry, makeHistoryEntry, addToHistorySafe } from "../utils/history";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
   const { setStream, setLastLanguage, lastLanguage } = usePlayerStore();
@@ -22,15 +22,14 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
 
       const ct = player.currentTime;
       if (ct > 10 && prevEpNumber && prevEpNumber !== targetEp.number) {
-        addToHistory({
+        addToHistorySafe(addToHistory, makeHistoryEntry({
           title: animeTitle,
           url: targetSlug,
           image: animeImage,
           number: prevEpNumber,
           progress: ct,
           duration: player.duration,
-          timestamp: Date.now(),
-        }).catch(() => {});
+        }));
       }
 
       setLoading(true);
@@ -54,15 +53,14 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
         setCurrentEpNumber(targetEp.number);
         setStream(streamResult.url, headers ?? null);
         setLastLanguage(server.language);
-        addToHistory({
+        addToHistorySafe(addToHistory, makeHistoryEntry({
           title: animeTitle,
           url: targetSlug,
           image: animeImage,
           number: targetEp.number,
           progress: existing?.progress,
           duration: existing?.duration,
-          timestamp: Date.now(),
-        }).catch(() => {});
+        }));
       };
 
       try {

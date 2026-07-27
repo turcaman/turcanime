@@ -7,7 +7,7 @@ import { useAnimeData } from "./useAnimeData";
 import { usePersistedRange, useServerFetcher } from "./useAnimeDetail";
 import { useEpisodeUI } from "./useEpisodeUI";
 import { computeEpisodePagination } from "./episodeHelpers";
-import { findHistoryEntry } from "../utils/history";
+import { findHistoryEntry, makeHistoryEntry, addToHistorySafe } from "../utils/history";
 import { navigateToPlayer } from "../utils/navigation";
 
 export function useAnimeDetailScreen(slug: string) {
@@ -42,15 +42,14 @@ export function useAnimeDetailScreen(slug: string) {
       void resolveStream(server);
       setSelectedEpisode(null);
       const existing = findHistoryEntry(useHistoryStore.getState().lastViewed, slug, selectedEpisode.number);
-      addToHistory({
+      addToHistorySafe(addToHistory, makeHistoryEntry({
         title: anime.title,
         image: anime.image,
         url: slug,
         number: selectedEpisode.number,
         progress: existing?.progress,
         duration: existing?.duration,
-        timestamp: Date.now(),
-      }).catch(() => {});
+      }));
       navigateToPlayer({
         slug,
         number: selectedEpisode.number,

@@ -1,10 +1,10 @@
 import { TIMEOUTS } from "../config/cache";
-import { SOURCE_CONFIG, TMDB_IMAGE_BASE } from "../config/source";
+import { SOURCE_CONFIG, TMDB_IMAGE_BASE, LANGUAGE_MAP } from "../config/source";
 import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { unwrapCookies, mergeCookies } from "./cookies";
 import { sessionManager } from "./session";
-import { HtmlParser, ParserUtils, cleanTitle } from "./parsers";
+import { HtmlParser, cleanTitle, extractJson } from "./parsers";
 import { extractBest } from "./extractors";
 import type {
   Anime,
@@ -91,12 +91,6 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
 }
 
 const htmlParser = new HtmlParser();
-
-const LANGUAGE_MAP: Record<string, string> = {
-  SUB: "SUB",
-  LAT: "LATINO",
-  ESP: "CASTELLANO",
-};
 
 async function getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData> {
   const homeEndpoint = SOURCE_CONFIG.endpoints?.home ?? "/";
@@ -188,7 +182,7 @@ async function getEpisodeServers(slug: string, number: string, options?: { signa
     const p = htmlParser.parseRscPayload(text);
     if (!p || !p.includes('"players":')) continue;
 
-    const j = ParserUtils.extractJson(p, '"players":', "[", "]");
+    const j = extractJson(p, '"players":', "[", "]");
     if (!j) continue;
 
     try {

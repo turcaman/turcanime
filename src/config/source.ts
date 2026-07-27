@@ -14,3 +14,9 @@ export const LANGUAGE_DISPLAY: Record<string, string> = {
   LATINO: "Latino",
   CASTELLANO: "Castellano",
 };
+
+export const LANGUAGE_MAP: Record<string, string> = {
+  SUB: "SUB",
+  LAT: "LATINO",
+  ESP: "CASTELLANO",
+};
