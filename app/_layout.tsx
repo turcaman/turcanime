@@ -25,6 +25,12 @@ const SESSION_REFRESH_COOLDOWN = 5 * 60 * 1000;
 const SAFETY_TIMER_DELAY = 12000;
 const UPDATE_CHECK_ATTEMPTS = 3;
 const UPDATE_CHECK_RETRY_DELAY = 2000;
+// Caches whose content may depend on the origin session and must be wiped on renewal
+const SESSION_SENSITIVE_CACHE_PREFIXES = [
+  CACHE_PREFIXES.HOME,
+  CACHE_PREFIXES.SEARCH,
+  CACHE_PREFIXES.SUGGESTIONS,
+];
 
 function runUpdateCheckWithRetry(attempt = 1): void {
   void useUpdateStore.getState().checkForUpdates().then((ok) => {
@@ -106,8 +112,11 @@ function RootInner() {
           // Cooldown counts only successful refreshes so failures can be retried soon
           lastRefreshTime.current = Date.now();
           setSessionRefreshFailed(false);
+          // Only wipe session-sensitive caches; anime/servers/stream data stays valid across sessions
           const allKeys = await storage.getAllKeys();
-          const cacheKeys = allKeys.filter((k) => Object.values(CACHE_PREFIXES).some((prefix) => k.startsWith(prefix)));
+          const cacheKeys = allKeys.filter((k) =>
+            SESSION_SENSITIVE_CACHE_PREFIXES.some((prefix) => k.startsWith(prefix)),
+          );
           await Promise.all(cacheKeys.map((k) => storage.remove(k)));
           // invalidateCache makes the home screen refetch after the cache wipe
           useSettingsStore.getState().invalidateCache();

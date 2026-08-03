@@ -6,6 +6,7 @@ import { useHistoryStore } from "../stores/historyStore";
 import { source } from "../services/source";
 import { refreshSession } from "../services/session";
 import { isAuthError } from "../utils/errors";
+import { getCachedStream, setCachedStream } from "../utils/cache";
 import { findHistoryEntry, makeHistoryEntry, addToHistorySafe } from "../utils/history";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
@@ -38,22 +39,35 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       setError(null);
 
       const attempt = async (_retried?: boolean): Promise<void> => {
-        const servers = await source.getEpisodeServers(targetSlug, targetEp.number);
+        // Reuse the cached server list from playerStore.fetchServers instead of re-fetching /ver/...
+        await usePlayerStore.getState().fetchServers(targetSlug, targetEp.number);
+        if (usePlayerStore.getState().error != null) {
+          throw new Error(usePlayerStore.getState().error ?? "No hay servidor disponible");
+        }
+        const servers = usePlayerStore.getState().servers;
         const server: VideoServer | undefined =
           lastLanguage != null
             ? servers.find((s) => s.language === lastLanguage) ?? servers[0]
             : servers[0];
         if (server == null) throw new Error("No hay servidor disponible");
 
-        const streamResult = await source.resolveStreamUrl(server.url);
-        if (streamResult == null) throw new Error("No se pudo resolver el stream");
+        // Reuse the cached resolved stream (shared with playerStore.resolveStream)
+        let resolved = await getCachedStream(server);
+        if (resolved == null) {
+          const fresh = await source.resolveStreamUrl(server.url);
+          if (fresh != null) {
+            void setCachedStream(server, fresh);
+            resolved = fresh;
+          }
+        }
+        if (resolved == null) throw new Error("No se pudo resolver el stream");
 
-        const headers = streamResult.headers;
+        const headers = resolved.headers;
 
         const existing = findHistoryEntry(useHistoryStore.getState().lastViewed, targetSlug, targetEp.number);
 
         setCurrentEpNumber(targetEp.number);
-        setStream(streamResult.url, headers ?? null);
+        setStream(resolved.url, headers ?? null);
         setLastLanguage(server.language);
         addToHistorySafe(addToHistory, makeHistoryEntry({
           title: animeTitle,

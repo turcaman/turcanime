@@ -1,5 +1,5 @@
-import type { CacheEntry } from "../types";
-import { LIMITS } from "../config/cache";
+import type { CacheEntry, StreamUrlResult } from "../types";
+import { CACHE_PREFIXES, CACHE_TTL, LIMITS } from "../config/cache";
 import { storage } from "./storage";
 import { logger } from "./logger";
 
@@ -54,4 +54,19 @@ export async function withCache<T>(
     }
     return { data: null, error: e instanceof Error ? e : new Error(String(e)), fromCache: false };
   }
+}
+
+// Shared resolved-stream cache used by both playerStore.resolveStream and useEpisodeNavigation
+function streamCacheKey(server: { url: string; id: string }): string {
+  return `${CACHE_PREFIXES.STREAM}_${server.url}_${server.id}`;
+}
+
+export async function getCachedStream(server: { url: string; id: string }): Promise<StreamUrlResult | null> {
+  const cached = await storage.get<CacheEntry<StreamUrlResult>>(streamCacheKey(server));
+  if (cached != null && Date.now() < cached.expiration) return cached.payload;
+  return null;
+}
+
+export function setCachedStream(server: { url: string; id: string }, result: StreamUrlResult): Promise<void> {
+  return storage.set(streamCacheKey(server), { payload: result, expiration: Date.now() + CACHE_TTL.STREAM });
 }

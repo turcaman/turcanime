@@ -3,6 +3,7 @@ import { source } from "../services/source";
 import { refreshSession } from "../services/session";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { storage } from "../utils/storage";
+import { getCachedStream, setCachedStream } from "../utils/cache";
 import { logger } from "../utils/logger";
 import { isAuthError } from "../utils/errors";
 import type { VideoServer } from "../types";
@@ -114,19 +115,14 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   resolveStream: async (server: VideoServer) => {
     set({ isLoading: true, streamUrl: null, streamHeaders: null, lastLanguage: server.language, error: null });
 
-    const cacheKey = `${CACHE_PREFIXES.STREAM}_${server.url}_${server.id}`;
-
-    try {
-      const cached = await storage.get<{ payload: { url: string; headers?: Record<string, string> }; expiration: number }>(cacheKey);
-      if (cached && Date.now() < cached.expiration) {
-        set({
-          streamUrl: cached.payload.url,
-          streamHeaders: cached.payload.headers ?? null,
-          isLoading: false,
-        });
-        return;
-      }
-    } catch {
+    const cached = await getCachedStream(server);
+    if (cached != null) {
+      set({
+        streamUrl: cached.url,
+        streamHeaders: cached.headers ?? null,
+        isLoading: false,
+      });
+      return;
     }
 
     const doResolve = async (): Promise<boolean> => {
@@ -135,10 +131,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
 
       const headers = streamResult.headers;
 
-      void storage.set(cacheKey, {
-        payload: { url: streamResult.url, headers },
-        expiration: Date.now() + CACHE_TTL.STREAM,
-      });
+      void setCachedStream(server, { url: streamResult.url, headers });
 
       set({
         streamUrl: streamResult.url,
@@ -174,10 +167,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
             return;
           }
           const headers = streamResult.headers;
-          void storage.set(cacheKey, {
-            payload: { url: streamResult.url, headers },
-            expiration: Date.now() + CACHE_TTL.STREAM,
-          });
+          void setCachedStream(server, { url: streamResult.url, headers });
           set({
             streamUrl: streamResult.url,
             streamHeaders: headers ?? null,
