@@ -7,19 +7,20 @@ import { useDebounce } from "./useDebounce";
 type SearchStatus = "idle" | "typing" | "searching" | "searched";
 
 export function useSearchScreen() {
-  const {
-    fetchSearch,
-    fetchSuggestions,
-    searchAnimes,
-    suggestions,
-    isSearchLoading: isLoading,
-    lastSearchTerm,
-    setSearchTerm: setStoreSearchTerm,
-    resetSearch: resetStoreSearch,
-    cancelSearch,
-  } = useSearchStore();
+  const fetchSearch = useSearchStore((s) => s.fetchSearch);
+  const fetchSuggestions = useSearchStore((s) => s.fetchSuggestions);
+  const searchAnimes = useSearchStore((s) => s.searchAnimes);
+  const suggestions = useSearchStore((s) => s.suggestions);
+  const isLoading = useSearchStore((s) => s.isSearchLoading);
+  const lastSearchTerm = useSearchStore((s) => s.lastSearchTerm);
+  const setStoreSearchTerm = useSearchStore((s) => s.setSearchTerm);
+  const resetStoreSearch = useSearchStore((s) => s.resetSearch);
+  const cancelSearch = useSearchStore((s) => s.cancelSearch);
 
-  const { recentSearches, saveRecentSearch, removeRecentSearch, clearRecentSearches } = useSearchHistoryStore();
+  const recentSearches = useSearchHistoryStore((s) => s.recentSearches);
+  const saveRecentSearch = useSearchHistoryStore((s) => s.saveRecentSearch);
+  const removeRecentSearch = useSearchHistoryStore((s) => s.removeRecentSearch);
+  const clearRecentSearches = useSearchHistoryStore((s) => s.clearRecentSearches);
 
   const [state, setState] = useState<{ term: string; status: SearchStatus }>({
     term: lastSearchTerm,

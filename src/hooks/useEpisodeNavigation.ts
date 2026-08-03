@@ -9,8 +9,10 @@ import { isAuthError } from "../utils/errors";
 import { findHistoryEntry, makeHistoryEntry, addToHistorySafe } from "../utils/history";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
-  const { setStream, setLastLanguage, lastLanguage } = usePlayerStore();
-  const { addToHistory } = useHistoryStore();
+  const setStream = usePlayerStore((s) => s.setStream);
+  const setLastLanguage = usePlayerStore((s) => s.setLastLanguage);
+  const lastLanguage = usePlayerStore((s) => s.lastLanguage);
+  const addToHistory = useHistoryStore((s) => s.addToHistory);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

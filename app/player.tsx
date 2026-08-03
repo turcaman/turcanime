@@ -23,8 +23,10 @@ function PlayerContent() {
   const image = params.image ?? "";
   const insets = useSafeAreaInsets();
 
-  const { streamUrl, streamHeaders, reset: clearStream } = usePlayerStore();
-  const { addToHistory } = useHistoryStore();
+  const streamUrl = usePlayerStore((s) => s.streamUrl);
+  const streamHeaders = usePlayerStore((s) => s.streamHeaders);
+  const clearStream = usePlayerStore((s) => s.reset);
+  const addToHistory = useHistoryStore((s) => s.addToHistory);
   const { anime } = useAnimeData(slug);
   const { isInternetReachable: networkOk } = useNetworkStatus();
   const networkOkRef = useRef<boolean | null>(null);
