@@ -1,7 +1,6 @@
 export const CACHE_PREFIXES = {
   HOME: "ch_home",
   SEARCH: "search",
-  SUGGESTIONS: "suggestions",
   ANIME: "anime",
   STREAM: "stream",
   SERVERS: "servers",
@@ -10,7 +9,6 @@ export const CACHE_PREFIXES = {
 export const CACHE_TTL = {
   HOME: 6 * 60 * 60 * 1000,
   SEARCH: 30 * 60 * 1000,
-  SUGGESTIONS: 5 * 60 * 1000,
   DETAILS: 12 * 60 * 60 * 1000,
   SERVERS: 10 * 60 * 1000,
   STREAM: 5 * 60 * 1000,

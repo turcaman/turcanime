@@ -26,11 +26,7 @@ const SAFETY_TIMER_DELAY = 12000;
 const UPDATE_CHECK_ATTEMPTS = 3;
 const UPDATE_CHECK_RETRY_DELAY = 2000;
 // Caches whose content may depend on the origin session and must be wiped on renewal
-const SESSION_SENSITIVE_CACHE_PREFIXES = [
-  CACHE_PREFIXES.HOME,
-  CACHE_PREFIXES.SEARCH,
-  CACHE_PREFIXES.SUGGESTIONS,
-];
+const SESSION_SENSITIVE_CACHE_PREFIXES = [CACHE_PREFIXES.HOME, CACHE_PREFIXES.SEARCH];
 
 function runUpdateCheckWithRetry(attempt = 1): void {
   void useUpdateStore.getState().checkForUpdates().then((ok) => {

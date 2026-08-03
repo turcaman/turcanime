@@ -1,5 +1,5 @@
 import { TIMEOUTS } from "../config/cache";
-import { SOURCE_CONFIG, TMDB_IMAGE_BASE, LANGUAGE_MAP } from "../config/source";
+import { SOURCE_CONFIG, LANGUAGE_MAP } from "../config/source";
 import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { unwrapCookies, mergeCookies } from "./cookies";
@@ -7,9 +7,7 @@ import { sessionManager } from "./session";
 import { HtmlParser, cleanTitle, extractJson } from "./parsers";
 import { extractBest } from "./extractors";
 import type {
-  Anime,
   AnimeDetail,
-  AutocompleteAnime,
   HomeData,
   VideoServer,
   StreamUrlResult,
@@ -103,32 +101,21 @@ async function getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData
   return { recent };
 }
 
-async function search(query: string, options?: { signal?: AbortSignal }): Promise<Anime[]> {
-  const res = await fetchWithSession(`/api/anime/search?q=${encodeURIComponent(query)}`, options ?? {});
-  if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
-  const json = await res.json();
-  const items = json.data ?? [];
-  if (!Array.isArray(items)) throw new SourceError(`Unexpected response format for query: ${query}`, "UNKNOWN");
-  return items.map((item: { name: string; slug: string; poster: string }) => ({
-    title: cleanTitle(item.name),
-    image: item.poster ? (item.poster.startsWith("http") ? item.poster : `${TMDB_IMAGE_BASE}${item.poster}`) : "",
-    url: item.slug,
-    status: "",
-  }));
+export interface RawSearchItem {
+  name: string;
+  slug: string;
+  poster: string;
+  type?: string;
 }
 
-async function getSuggestions(query: string, options?: { signal?: AbortSignal }): Promise<AutocompleteAnime[]> {
+// Raw search data shared by search results and suggestions so both hit the endpoint once per query
+async function searchRaw(query: string, options?: { signal?: AbortSignal }): Promise<RawSearchItem[]> {
   const res = await fetchWithSession(`/api/anime/search?q=${encodeURIComponent(query)}`, options ?? {});
   if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
   const json = await res.json();
   const items = json.data ?? [];
   if (!Array.isArray(items)) throw new SourceError(`Unexpected response format for query: ${query}`, "UNKNOWN");
-  return items.map((item: { name: string; slug: string; poster: string; type: string }) => ({
-    name: item.name,
-    slug: item.slug,
-    type: item.type,
-    poster: item.poster,
-  }));
+  return items as RawSearchItem[];
 }
 
 async function getDetails(slug: string, options?: { signal?: AbortSignal }): Promise<AnimeDetail | null> {
@@ -240,8 +227,7 @@ async function resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSign
 
 export const source = {
   getHomeData,
-  search,
-  getSuggestions,
+  searchRaw,
   getDetails,
   getEpisodeServers,
   resolveStreamUrl,
