@@ -175,7 +175,7 @@ function RootInner() {
 
   return (
     <View className="flex-1 bg-black">
-      <NetworkBanner visible={isInternetReachable === false} blocking={false} />
+      <NetworkBanner visible={isInternetReachable === false} />
       <StatusBar style="light" />
       <Stack
         screenOptions={{
