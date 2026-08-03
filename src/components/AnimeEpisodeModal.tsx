@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Episode, VideoServer } from "@/types";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
@@ -18,6 +19,8 @@ interface AnimeEpisodeModalProps {
 export const AnimeEpisodeModal = ({
   visible, onClose, episode, servers, isLoading, onServerSelect
 }: AnimeEpisodeModalProps) => {
+  const insets = useSafeAreaInsets();
+
   if (!visible) return null;
 
   const delta = servers.filter((s) => s.title.toLowerCase().includes("delta"));
@@ -27,7 +30,10 @@ export const AnimeEpisodeModal = ({
     <View className="absolute inset-0 bg-black/80 justify-end">
       <Pressable className="absolute inset-0" onPress={onClose} />
 
-      <View className="bg-neutral-900 rounded-t-xl px-5 pt-5 pb-6">
+      <View
+        className="bg-neutral-900 rounded-t-xl px-5 pt-5"
+        style={{ paddingBottom: insets.bottom + 16 }}
+      >
 
         <View className="flex-row justify-between items-center mb-2">
           <Text className="text-white text-xl font-bold">Episodio {episode?.number}</Text>
