@@ -6,14 +6,19 @@ import { useUpdateStore } from "@/stores/updateStore";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Alert, Linking, Switch, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Switch, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const isRefreshingSession = useUIStore((s) => s.isRefreshingSession);
+  const sessionRefreshFailed = useUIStore((s) => s.sessionRefreshFailed);
   const [refreshed, setRefreshed] = useState(false);
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const userInitiatedRefresh = useRef(false);
   const refreshedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const failedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevRefreshing = useRef(isRefreshingSession);
 
   const updateCheckEnabled = useUpdateStore((s) => s.updateCheckEnabled);
   const setUpdateCheckEnabled = useUpdateStore((s) => s.setUpdateCheckEnabled);
@@ -28,9 +33,34 @@ export default function SettingsScreen() {
   useEffect(() => () => {
     const t = refreshedTimer.current;
     if (t != null) clearTimeout(t);
+    const ft = failedTimer.current;
+    if (ft != null) clearTimeout(ft);
   }, []);
 
+  // Show the real refresh outcome only when the user initiated it
+  useEffect(() => {
+    const wasRefreshing = prevRefreshing.current;
+    prevRefreshing.current = isRefreshingSession;
+    if (!wasRefreshing || isRefreshingSession || !userInitiatedRefresh.current) return;
+    userInitiatedRefresh.current = false;
+    if (sessionRefreshFailed) {
+      setRefreshFailed(true);
+      if (failedTimer.current != null) clearTimeout(failedTimer.current);
+      failedTimer.current = setTimeout(() => setRefreshFailed(false), 3000);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } else {
+      setRefreshed(true);
+      if (refreshedTimer.current != null) clearTimeout(refreshedTimer.current);
+      refreshedTimer.current = setTimeout(() => setRefreshed(false), 2000);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [isRefreshingSession, sessionRefreshFailed]);
+
   const handleRefresh = useCallback(() => {
+    if (useUIStore.getState().isRefreshingSession) {
+      Alert.alert("Renovación en curso", "Ya hay una renovación de conexión en curso. Esperá a que termine.");
+      return;
+    }
     Alert.alert(
       "Renovar conexión",
       "Si el contenido no carga o ves errores, esto renueva la conexión con el servidor para intentar solucionarlo.",
@@ -40,11 +70,10 @@ export default function SettingsScreen() {
           text: "Renovar",
           style: "default",
           onPress: () => {
+            // Re-check: a refresh may have started while the Alert was open
+            if (useUIStore.getState().isRefreshingSession) return;
+            userInitiatedRefresh.current = true;
             useUIStore.getState().triggerSessionRefresh();
-            setRefreshed(true);
-            if (refreshedTimer.current != null) clearTimeout(refreshedTimer.current);
-            refreshedTimer.current = setTimeout(() => setRefreshed(false), 2000);
-            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           },
         },
       ],
@@ -71,18 +100,23 @@ export default function SettingsScreen() {
           className="flex-row items-center w-full px-5 py-4 rounded-xl border border-neutral-800 bg-neutral-900"
           style={{ opacity: isRefreshingSession ? 0.5 : 1 }}
         >
-          <Feather
-            name="refresh-cw"
-            size={18}
-            color={ACCENT_COLOR}
-            style={{ marginRight: 12 }}
-          />
+          {isRefreshingSession ? (
+            <ActivityIndicator size="small" color={ACCENT_COLOR} style={{ marginRight: 12 }} />
+          ) : (
+            <Feather name="refresh-cw" size={18} color={ACCENT_COLOR} style={{ marginRight: 12 }} />
+          )}
           <View className="flex-1">
             <Text className="text-base font-medium text-white">
-              {refreshed ? "Conexión renovada" : "Renovar conexión"}
+              {isRefreshingSession
+                ? "Renovando conexión..."
+                : refreshFailed
+                  ? "Error al renovar"
+                  : refreshed
+                    ? "Conexión renovada"
+                    : "Renovar conexión"}
             </Text>
             <Text className="mt-1 text-xs font-semibold tracking-wide text-neutral-400">
-              Refresca sesión y caché
+              {isRefreshingSession ? "Renovando sesión y caché..." : "Refresca sesión y caché"}
             </Text>
           </View>
         </AnimatedPressable>
@@ -110,8 +144,9 @@ export default function SettingsScreen() {
             </View>
             <View className="h-px bg-neutral-800" />
             <AnimatedPressable
-              onPress={checkingForUpdates || updateAvailable ? undefined : handleManualCheck}
-              hapticFeedback={true}
+              onPress={updateAvailable ? undefined : handleManualCheck}
+              disabled={checkingForUpdates}
+              hapticFeedback={!checkingForUpdates && !updateAvailable}
               className="flex-row items-center px-5 py-4"
               style={{ opacity: checkingForUpdates ? 0.5 : 1 }}
             >

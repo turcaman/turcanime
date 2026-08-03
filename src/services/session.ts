@@ -5,6 +5,8 @@ import { storage } from "../utils/storage";
 import { webViewBridge } from "./webview";
 
 export const SESSION_KEY = "scraper_session";
+// Bound the session wash so a stalled Cloudflare challenge can't freeze the app for 60s
+const SESSION_REFRESH_TIMEOUT = 15_000;
 
 class SessionManager {
   private sessionReadyPromise: Promise<void> | null = null;
@@ -114,7 +116,10 @@ class SessionManager {
   private async executeRefresh(): Promise<void> {
     await this.invalidateCookies();
     webViewBridge.navigateTo(SOURCE_CONFIG.sessionWashUrl);
-    await this.waitForCookies();
+    await Promise.race([
+      this.waitForCookies(),
+      new Promise<void>((resolve) => setTimeout(resolve, SESSION_REFRESH_TIMEOUT)),
+    ]);
     const session = await this.getSession();
     if (!session?.cookies) {
       throw new Error("Session refresh failed - no cookies received");

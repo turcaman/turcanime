@@ -38,7 +38,10 @@ function runUpdateCheckWithRetry(attempt = 1): void {
 function RootInner() {
   const [ready, setReady] = useState(false);
   const { isInternetReachable, connectionType } = useNetworkStatus();
-  const { sessionRefreshTrigger, triggerSessionRefresh, setSessionRefreshing } = useUIStore();
+  const sessionRefreshTrigger = useUIStore((s) => s.sessionRefreshTrigger);
+  const triggerSessionRefresh = useUIStore((s) => s.triggerSessionRefresh);
+  const setSessionRefreshing = useUIStore((s) => s.setSessionRefreshing);
+  const setSessionRefreshFailed = useUIStore((s) => s.setSessionRefreshFailed);
   const prevConnectionType = useRef<ConnectionType>(null);
   const prevReachable = useRef<boolean | null>(null);
   const lastRefreshTime = useRef(0);
@@ -89,7 +92,6 @@ function RootInner() {
 
     const doRefresh = async () => {
       try {
-        lastRefreshTime.current = Date.now();
         useHomeStore.getState().prepareRefresh();
 
         let sessionOk = false;
@@ -101,12 +103,16 @@ function RootInner() {
         }
 
         if (sessionOk) {
+          // Cooldown counts only successful refreshes so failures can be retried soon
+          lastRefreshTime.current = Date.now();
+          setSessionRefreshFailed(false);
           const allKeys = await storage.getAllKeys();
           const cacheKeys = allKeys.filter((k) => Object.values(CACHE_PREFIXES).some((prefix) => k.startsWith(prefix)));
           await Promise.all(cacheKeys.map((k) => storage.remove(k)));
-          void useHomeStore.getState().fetchHome(true);
+          // invalidateCache makes the home screen refetch after the cache wipe
           useSettingsStore.getState().invalidateCache();
         } else {
+          setSessionRefreshFailed(true);
           void useHomeStore.getState().fetchHome(false);
         }
       } finally {
@@ -125,7 +131,7 @@ function RootInner() {
     }, SAFETY_TIMER_DELAY);
 
     return () => clearTimeout(safetyTimer);
-  }, [sessionRefreshTrigger, setSessionRefreshing]);
+  }, [sessionRefreshTrigger, setSessionRefreshing, setSessionRefreshFailed]);
 
   useEffect(() => {
     let cancelled = false;
@@ -164,7 +170,7 @@ function RootInner() {
 
   return (
     <View className="flex-1 bg-black">
-      <NetworkBanner visible={isInternetReachable === false} />
+      <NetworkBanner visible={isInternetReachable === false} blocking={false} />
       <StatusBar style="light" />
       <Stack
         screenOptions={{
