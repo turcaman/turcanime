@@ -23,6 +23,17 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 const SESSION_REFRESH_DELAY = 2000;
 const SESSION_REFRESH_COOLDOWN = 5 * 60 * 1000;
 const SAFETY_TIMER_DELAY = 12000;
+const UPDATE_CHECK_ATTEMPTS = 3;
+const UPDATE_CHECK_RETRY_DELAY = 2000;
+
+function runUpdateCheckWithRetry(attempt = 1): void {
+  void useUpdateStore.getState().checkForUpdates().then((ok) => {
+    const { updateCheckEnabled } = useUpdateStore.getState();
+    if (!ok && updateCheckEnabled !== false && attempt < UPDATE_CHECK_ATTEMPTS) {
+      setTimeout(() => runUpdateCheckWithRetry(attempt + 1), UPDATE_CHECK_RETRY_DELAY * attempt);
+    }
+  });
+}
 
 function RootInner() {
   const [ready, setReady] = useState(false);
@@ -47,7 +58,13 @@ function RootInner() {
     const prev = prevReachable.current;
     prevReachable.current = isInternetReachable;
     if (prev === false && isInternetReachable === true) {
-      const timer = setTimeout(() => triggerSessionRefresh(), SESSION_REFRESH_DELAY);
+      const timer = setTimeout(() => {
+        triggerSessionRefresh();
+        const updateState = useUpdateStore.getState();
+        if (updateState.updateCheckEnabled !== false) {
+          void updateState.checkForUpdates();
+        }
+      }, SESSION_REFRESH_DELAY);
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -129,7 +146,7 @@ function RootInner() {
       if (!cancelled) setReady(true);
 
       if (updateCheckEnabled !== false) {
-        void useUpdateStore.getState().checkForUpdates();
+        runUpdateCheckWithRetry();
       }
     };
     init().catch((error) => {

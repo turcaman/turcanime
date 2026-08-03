@@ -27,4 +27,5 @@ export const LOG_LIMITS = {
 export const TIMEOUTS = {
   SEARCH_TIMEOUT: 15000,
   RETRY_DELAY: 1000,
+  UPDATE_CHECK: 10000,
 } as const;

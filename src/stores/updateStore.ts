@@ -1,5 +1,6 @@
 import Constants from "expo-constants";
 import { create } from "zustand";
+import { TIMEOUTS } from "../config/cache";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
 
@@ -31,7 +32,7 @@ interface UpdateState {
   currentVersion: string | null;
   initialize: (enabled: boolean) => void;
   setUpdateCheckEnabled: (enabled: boolean) => Promise<void>;
-  checkForUpdates: () => Promise<void>;
+  checkForUpdates: () => Promise<boolean>;
 }
 
 export const useUpdateStore = create<UpdateState>((set, get) => ({
@@ -61,14 +62,19 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     const current = Constants.expoConfig?.version;
     if (!current) {
       set({ lastCheckError: "Error al obtener versión" });
-      return;
+      return false;
     }
     set({ checkingForUpdates: true, lastCheckError: null });
     try {
-      const res = await fetch(
-        `${GITHUB_RELEASES_URL}?_=${Date.now()}`,
-        { headers: { "User-Agent": "Turcanime-Android" } },
-      );
+      const res = await Promise.race([
+        fetch(
+          `${GITHUB_RELEASES_URL}?_=${Date.now()}`,
+          { headers: { "User-Agent": "Turcanime-Android" } },
+        ),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Update check timeout")), TIMEOUTS.UPDATE_CHECK),
+        ),
+      ]);
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = (await res.json()) as { tag_name?: string };
       const latest = (data.tag_name ?? "").replace(/^v/, "").trim();
@@ -81,12 +87,14 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
         checkingForUpdates: false,
         lastCheckError: null,
       });
+      return true;
     } catch (err) {
       set({
         checkingForUpdates: false,
         lastCheckError: "Error al buscar actualizaciones",
       });
       logger.error("updateStore", "Failed to check for updates", err);
+      return false;
     }
   },
 }));
