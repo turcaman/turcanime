@@ -35,6 +35,7 @@ export function FloatingTabBar({
   const insets = useSafeAreaInsets();
   const visible = useUIStore((state) => state.tabBarVisible);
   const updateAvailable = useUpdateStore((state) => state.updateAvailable);
+  const updateCheckEnabled = useUpdateStore((state) => state.updateCheckEnabled);
 
   const translateY = useSharedValue(0);
 
@@ -98,7 +99,7 @@ export function FloatingTabBar({
               {route.name === "settings" ? (
                 <View className="relative">
                   <Feather name={iconName} size={20} color={color} />
-                  {updateAvailable && (
+                  {updateCheckEnabled && updateAvailable && (
                     <View className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-purple-400" />
                   )}
                 </View>

@@ -16,7 +16,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   episodeOrder: "asc",
   cacheInvalidationTimestamp: 0,
 
-  initialize: (order: "asc" | "desc") => set({ episodeOrder: order }),
+  initialize: (order) =>
+    set({ episodeOrder: order === "asc" || order === "desc" ? order : "asc" }),
 
   setEpisodeOrder: async (order: "asc" | "desc") => {
     const previous = get().episodeOrder;
