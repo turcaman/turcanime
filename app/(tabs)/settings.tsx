@@ -6,7 +6,8 @@ import { useUpdateStore } from "@/stores/updateStore";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ActivityIndicator, Alert, Linking, Switch, Text, View } from "react-native";
+import { Alert, Linking, Switch, Text, View } from "react-native";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SettingsScreen() {
@@ -29,6 +30,20 @@ export default function SettingsScreen() {
   const checkForUpdates = useUpdateStore((s) => s.checkForUpdates);
 
   const appVersion = currentVersion ?? "—";
+
+  const spin = useSharedValue(0);
+
+  useEffect(() => {
+    if (isRefreshingSession) {
+      spin.value = withRepeat(withTiming(360, { duration: 1200, easing: Easing.linear }), -1);
+    } else {
+      spin.value = withTiming(0, { duration: 0 });
+    }
+  }, [isRefreshingSession, spin]);
+
+  const spinStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${spin.value}deg` }],
+  }));
 
   useEffect(() => () => {
     const t = refreshedTimer.current;
@@ -100,11 +115,9 @@ export default function SettingsScreen() {
           className="flex-row items-center w-full px-5 py-4 rounded-xl border border-neutral-800 bg-neutral-900"
           style={{ opacity: isRefreshingSession ? 0.5 : 1 }}
         >
-          {isRefreshingSession ? (
-            <ActivityIndicator size="small" color={ACCENT_COLOR} style={{ marginRight: 12 }} />
-          ) : (
-            <Feather name="refresh-cw" size={18} color={ACCENT_COLOR} style={{ marginRight: 12 }} />
-          )}
+          <Animated.View style={[spinStyle, { marginRight: 12 }]}>
+            <Feather name="refresh-cw" size={18} color={ACCENT_COLOR} />
+          </Animated.View>
           <View className="flex-1">
             <Text className="text-base font-medium text-white">
               {isRefreshingSession
