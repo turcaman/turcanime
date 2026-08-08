@@ -4,6 +4,7 @@ import { withCache } from "../utils/cache";
 import { refreshSession } from "../services/session";
 import { logger } from "../utils/logger";
 import { isAuthError } from "../utils/errors";
+import { backoffDelay } from "../utils/math";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import type { AppError, HomeData } from "../types";
 
@@ -59,8 +60,7 @@ export const useHomeStore = create<HomeState>((set) => ({
           logger.warn("homeStore", "Session refresh threw, continuing retry anyway");
         }
         if (signal.aborted) return;
-        const backoff = retryCount === 0 ? 1000 : 2000;
-        await new Promise((resolve) => setTimeout(resolve, backoff));
+        await new Promise((resolve) => setTimeout(resolve, backoffDelay(retryCount)));
         return attempt(retryCount + 1, true);
       }
 

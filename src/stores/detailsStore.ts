@@ -4,6 +4,7 @@ import { withCache } from "../utils/cache";
 import { refreshSession } from "../services/session";
 import { logger } from "../utils/logger";
 import { isAuthError } from "../utils/errors";
+import { backoffDelay } from "../utils/math";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import type { AnimeDetail, AppError } from "../types";
 
@@ -43,6 +44,7 @@ export const useDetailsStore = create<DetailsState>((set) => ({
       try {
         await refreshSession();
         if (signal.aborted) return;
+        await new Promise((resolve) => setTimeout(resolve, backoffDelay(0)));
         const retryResult = await withCache(
           cacheKey,
           (sig) => source.getDetails(slug, { signal: sig }),

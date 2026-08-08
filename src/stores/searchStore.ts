@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { source, type RawSearchItem } from "../services/source";
 import { cleanTitle } from "../services/parsers";
 import { withCache } from "../utils/cache";
-import { CACHE_PREFIXES, CACHE_TTL, TIMEOUTS } from "../config/cache";
+import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { TMDB_IMAGE_BASE } from "../config/source";
 import type { Anime, AppError, AutocompleteAnime } from "../types";
 
@@ -62,12 +62,7 @@ export const useSearchStore = create<SearchState>((set) => ({
 
     const result = await withCache<RawSearchItem[]>(
       cacheKey,
-      async (sig) => {
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("Search timeout")), TIMEOUTS.SEARCH_TIMEOUT);
-        });
-        return await Promise.race([source.searchRaw(query, { signal: sig }), timeoutPromise]);
-      },
+      (sig) => source.searchRaw(query, { signal: sig }),
       { ttl: CACHE_TTL.SEARCH, signal, force },
     );
 
