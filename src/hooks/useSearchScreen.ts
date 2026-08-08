@@ -12,6 +12,7 @@ export function useSearchScreen() {
   const searchAnimes = useSearchStore((s) => s.searchAnimes);
   const suggestions = useSearchStore((s) => s.suggestions);
   const isLoading = useSearchStore((s) => s.isSearchLoading);
+  const error = useSearchStore((s) => s.error);
   const lastSearchTerm = useSearchStore((s) => s.lastSearchTerm);
   const setStoreSearchTerm = useSearchStore((s) => s.setSearchTerm);
   const resetStoreSearch = useSearchStore((s) => s.resetSearch);
@@ -95,6 +96,7 @@ export function useSearchScreen() {
     suggestions,
     recentSearches,
     isLoading,
+    error,
     isIdle: state.status === "idle",
     isTyping: state.status === "typing",
     isSearched: state.status === "searched",

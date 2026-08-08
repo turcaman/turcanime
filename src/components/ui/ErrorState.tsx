@@ -15,6 +15,9 @@ export function ErrorState({ onRetry, title = "Error al cargar" }: ErrorStatePro
       <Text className="mt-2 text-lg font-bold text-neutral-500">
         {title}
       </Text>
+      <Text className="mt-2 max-w-[300px] text-center text-sm text-neutral-600">
+        El sitio está tardando más de lo normal en responder. Inténtalo de nuevo en un momento.
+      </Text>
       <AnimatedPressable className="mt-4 flex-row items-center px-6 py-3 rounded-xl bg-purple-500/15" onPress={onRetry}>
         <Feather name="refresh-cw" size={16} color={ACCENT_COLOR} />
         <Text className="ml-2 text-xs font-semibold tracking-wide text-purple-500">
