@@ -2,6 +2,7 @@ import { TIMEOUTS } from "../config/cache";
 import { SOURCE_CONFIG, LANGUAGE_MAP } from "../config/source";
 import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
+import { backoffDelay } from "../utils/math";
 import { unwrapCookies, mergeCookies } from "./cookies";
 import { sessionManager } from "./session";
 import { HtmlParser, cleanTitle, extractJson } from "./parsers";
@@ -14,7 +15,7 @@ import type {
 } from "../types";
 
 
-async function fetchWithSession(path: string, options: RequestInit = {}, retryCount = 0): Promise<Response> {
+async function fetchWithSession(path: string, options: RequestInit = {}): Promise<Response> {
   await sessionManager.waitForCookies();
 
   const session = await sessionManager.getSession();
@@ -38,54 +39,83 @@ async function fetchWithSession(path: string, options: RequestInit = {}, retryCo
 
   const url = path.startsWith("http") ? path : `${baseUrl}${path}`;
 
-  try {
-    const res = await fetch(url, { ...options, headers, signal: options.signal });
+  for (let attempt = 0; attempt < TIMEOUTS.MAX_ATTEMPTS; attempt++) {
+    let timedOut = false;
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, TIMEOUTS.REQUEST_TIMEOUT);
+    const onExternalAbort = () => controller.abort();
+    if (options.signal) {
+      if (options.signal.aborted) controller.abort();
+      else options.signal.addEventListener("abort", onExternalAbort, { once: true });
+    }
+    const hasMoreAttempts = attempt < TIMEOUTS.MAX_ATTEMPTS - 1;
 
-    const setCookies: string[] = [];
-    res.headers.forEach((value, key) => {
-      if (key.toLowerCase() === "set-cookie") {
-        setCookies.push(value);
-      }
-    });
-    if (setCookies.length > 0) {
-      try {
-        const s = await sessionManager.getSession();
-        if (s) {
-          const merged = mergeCookies(s.cookies, setCookies);
-          await sessionManager.setSession({ ...s, cookies: merged });
+    try {
+      const res = await fetch(url, { ...options, headers, signal: controller.signal });
+
+      const setCookies: string[] = [];
+      res.headers.forEach((value, key) => {
+        if (key.toLowerCase() === "set-cookie") {
+          setCookies.push(value);
         }
-      } catch {
-        // Don't let cookie capture fail the request
+      });
+      if (setCookies.length > 0) {
+        try {
+          const s = await sessionManager.getSession();
+          if (s) {
+            const merged = mergeCookies(s.cookies, setCookies);
+            await sessionManager.setSession({ ...s, cookies: merged });
+          }
+        } catch {
+          // Don't let cookie capture fail the request
+        }
       }
-    }
 
-    if (!res.ok) {
-      logger.info("fetch", `HTTP ${res.status} for ${url}`);
+      if (!res.ok) {
+        logger.info("fetch", `HTTP ${res.status} for ${url}`);
 
-      if (res.status === 403 || res.status === 401) {
-        logger.info("fetch", "Auth error detected");
-        throw new SourceError("Authentication failed - session invalid", "AUTH_ERROR");
+        if (res.status === 403 || res.status === 401) {
+          logger.info("fetch", "Auth error detected");
+          throw new SourceError("Authentication failed - session invalid", "AUTH_ERROR");
+        }
+
+        // Retry only transient statuses (5xx, 429); 4xx errors are final
+        const retryable = res.status >= 500 || res.status === 429;
+        if (retryable && hasMoreAttempts) {
+          logger.info("fetch", `Retrying (${attempt + 1}/${TIMEOUTS.MAX_ATTEMPTS}) for HTTP ${res.status}: ${url}`);
+          await new Promise((resolve) => setTimeout(resolve, backoffDelay(attempt)));
+          continue;
+        }
       }
-
-      if (retryCount < 1) {
-        logger.info("fetch", `Smart retry (1/1) for HTTP ${res.status}: ${url}`);
-        await new Promise((resolve) => setTimeout(resolve, TIMEOUTS.RETRY_DELAY));
-        return fetchWithSession(path, options, retryCount + 1);
+      return res;
+    } catch (error) {
+      if (error instanceof SourceError) {
+        throw error;
       }
-    }
-    return res;
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
+      if (error instanceof Error && error.name === "AbortError") {
+        if (timedOut && !options.signal?.aborted) {
+          logger.warn("fetch", `Timeout (${TIMEOUTS.REQUEST_TIMEOUT / 1000}s) for ${url}`);
+          throw new SourceError("Request timed out", "TIMEOUT");
+        }
+        throw error; // external abort: navigation away, not a failure
+      }
+      logger.warn("fetch", `Network error for ${url}`, error);
+      if (hasMoreAttempts) {
+        logger.info("fetch", `Retrying (${attempt + 1}/${TIMEOUTS.MAX_ATTEMPTS}) for network error: ${url}`);
+        await new Promise((resolve) => setTimeout(resolve, backoffDelay(attempt)));
+        continue;
+      }
       throw error;
+    } finally {
+      clearTimeout(timer);
+      options.signal?.removeEventListener("abort", onExternalAbort);
     }
-    logger.warn("fetch", `Network error for ${url}`, error);
-    if (retryCount < 1) {
-      logger.info("fetch", `Smart retry (1/1) for network error: ${url}`);
-      await new Promise((resolve) => setTimeout(resolve, TIMEOUTS.RETRY_DELAY));
-      return fetchWithSession(path, options, retryCount + 1);
-    }
-    throw error;
   }
+
+  throw new Error("Unreachable: MAX_ATTEMPTS is 0");
 }
 
 const htmlParser = new HtmlParser();
