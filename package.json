@@ -32,7 +32,7 @@
     "expo-video": "~55.0.18",
     "nativewind": "^5.0.0-preview.4",
     "react": "19.2.0",
-    "react-native": "0.83.6",
+    "react-native": "0.83.10",
     "react-native-css": "^3.0.7",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-reanimated": "4.2.1",
