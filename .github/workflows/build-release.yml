@@ -14,6 +14,7 @@ env:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,6 +33,15 @@ jobs:
 
       - name: Run TypeScript check
         run: npx tsc --noEmit
+
+      - name: Check version consistency
+        run: |
+          APP_VERSION=$(node -p "require('./app.json').expo.version")
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$APP_VERSION" != "$PKG_VERSION" ]; then
+            echo "Version mismatch: app.json=$APP_VERSION package.json=$PKG_VERSION" >&2
+            exit 1
+          fi
 
   build-android:
     needs: validate
@@ -62,7 +72,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
@@ -79,7 +89,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm ci
-          npm install -g eas-cli@latest
+          npm install -g eas-cli@18
 
       - name: Verify EAS authentication
         run: |
