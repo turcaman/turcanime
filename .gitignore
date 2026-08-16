@@ -45,6 +45,8 @@ app-example
 # signing
 release-key.jks
 key.properties
+credentials.json
+*.keystore
 
 # pre-indexed knowledge graph
 .codegraph

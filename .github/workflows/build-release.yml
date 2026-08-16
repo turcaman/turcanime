@@ -36,7 +36,7 @@ jobs:
   build-android:
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -46,6 +46,12 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -60,12 +66,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Cache Expo/EAS
+      - name: Cache EAS
         uses: actions/cache@v4
         with:
           path: |
             ~/.eas
-            ~/Library/Caches/eas
+            ~/.cache/eas
           key: ${{ runner.os }}-eas-${{ hashFiles('**/eas.json') }}
           restore-keys: |
             ${{ runner.os }}-eas-
@@ -75,19 +81,10 @@ jobs:
           npm ci
           npm install -g eas-cli@latest
 
-      - name: Verify EAS CLI
-        run: eas --version
-
-      - name: Generate native project
-        run: npx expo prebuild --platform android --non-interactive
-
-      - name: Decode Keystore
+      - name: Verify EAS authentication
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
-          echo "storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}" > android/key.properties
-          echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
-          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=release.keystore" >> android/key.properties
+          eas --version
+          eas whoami
 
       - name: Read version
         id: ver

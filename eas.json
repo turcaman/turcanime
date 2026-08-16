@@ -9,10 +9,8 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
       "android": {
-        "buildType": "apk",
-        "ndk": "27.1.12297006"
+        "buildType": "apk"
       }
     }
   },
