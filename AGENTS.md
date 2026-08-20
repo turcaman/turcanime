@@ -68,3 +68,4 @@ Expo 55 + React Native 0.83. **Android-only** (no iOS/web). File-based routing v
 - Do NOT add iOS/web code — Android-only
 - Do NOT add a test framework — none configured
 - Do NOT add dependencies if existing stack covers the need
+- Do NOT include AI attribution in commits (no `Co-Authored-By`, `Generated with`, or similar footers)
