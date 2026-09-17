@@ -27,7 +27,12 @@ export function mergeCookies(existing: string, setCookieHeaders: string[]): stri
     if (eqIdx === -1) continue;
     const name = nv.slice(0, eqIdx).trim();
     const value = nv.slice(eqIdx + 1).trim();
-    if (name) map.set(name, value);
+    if (!name) continue;
+    // Deletion cookies (empty value / past Expires) wipe valid cookies like
+    // cf_clearance when servers expire them; keep the old value instead
+    const attrs = semiIdx === -1 ? "" : header.slice(semiIdx).toLowerCase();
+    if (value === "" || attrs.includes("expires=thu, 01 jan 1970") || attrs.includes("max-age=0")) continue;
+    map.set(name, value);
   }
 
   return Array.from(map.entries())
