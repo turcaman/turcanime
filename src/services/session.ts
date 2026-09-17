@@ -5,8 +5,8 @@ import { storage } from "../utils/storage";
 import { webViewBridge } from "./webview";
 
 export const SESSION_KEY = "scraper_session";
-// Bound the session wash so a stalled Cloudflare challenge can't freeze the app for 60s
-const SESSION_REFRESH_TIMEOUT = 15_000;
+// Slow devices can take well over 15s to clear a Cloudflare challenge
+const SESSION_REFRESH_TIMEOUT = 30_000;
 
 class SessionManager {
   private sessionReadyPromise: Promise<void> | null = null;
@@ -92,17 +92,6 @@ class SessionManager {
     }
   }
 
-  async invalidateCookies(): Promise<void> {
-    const session = await this.getSession();
-    if (session) {
-      await this.setSession({ userAgent: session.userAgent, cookies: "" });
-      logger.info("SessionManager", "Cookies invalidated due to auth errors");
-    }
-    this.sessionReadyPromise = new Promise((resolve) => {
-      this.sessionReadyResolver = resolve;
-    });
-  }
-
   async acquireFreshSession(): Promise<void> {
     if (this.refreshPromise) return this.refreshPromise;
     this.refreshPromise = this.executeRefresh();
@@ -114,7 +103,12 @@ class SessionManager {
   }
 
   private async executeRefresh(): Promise<void> {
-    await this.invalidateCookies();
+    // Atomic swap: keep the current session in storage while the WebView fetches
+    // a new one. Clearing cookies up front killed every request that raced the
+    // refresh and left the app dead when the challenge timed out.
+    this.sessionReadyPromise = new Promise((resolve) => {
+      this.sessionReadyResolver = resolve;
+    });
     webViewBridge.navigateTo(SOURCE_CONFIG.sessionWashUrl);
     await Promise.race([
       this.waitForCookies(),
