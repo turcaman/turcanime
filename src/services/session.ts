@@ -7,6 +7,9 @@ import { webViewBridge } from "./webview";
 export const SESSION_KEY = "scraper_session";
 // Slow devices can take well over 15s to clear a Cloudflare challenge
 const SESSION_REFRESH_TIMEOUT = 30_000;
+// CF clearance cookies typically outlive this; refresh proactively before the
+// origin discovers expiry with a 403
+const SESSION_MAX_AGE = 50 * 60 * 1000;
 
 class SessionManager {
   private sessionReadyPromise: Promise<void> | null = null;
@@ -45,7 +48,8 @@ class SessionManager {
 
   async setSession(session: ISession): Promise<void> {
     try {
-      await storage.set(SESSION_KEY, session);
+      const withMeta: ISession = { ...session, fetchedAt: Date.now() };
+      await storage.set(SESSION_KEY, withMeta);
       if (session.cookies && session.cookies.length > 0 && this.sessionReadyResolver) {
         logger.info("SessionManager", `Session updated with ${session.cookies.length} cookies`);
         this.sessionReadyResolver();
@@ -127,4 +131,22 @@ export const sessionManager = new SessionManager();
 export async function refreshSession(): Promise<void> {
   logger.info("infrastructure", "refreshSession called");
   await sessionManager.acquireFreshSession();
+}
+
+/**
+ * Refresh proactively when the stored cookies are older than SESSION_MAX_AGE,
+ * so an expired clearance never surfaces as a user-facing 403.
+ * Boot flow (no cookies yet) and legacy sessions (no fetchedAt) are left alone.
+ */
+export async function ensureFreshSession(): Promise<void> {
+  try {
+    const session = await sessionManager.getSession();
+    if (!session?.cookies || !session.fetchedAt) return;
+    const age = Date.now() - session.fetchedAt;
+    if (age < SESSION_MAX_AGE) return;
+    logger.info("infrastructure", `Session is ${Math.round(age / 60000)}min old, refreshing proactively`);
+    await refreshSession();
+  } catch (error) {
+    logger.warn("infrastructure", "Proactive session refresh failed", error);
+  }
 }

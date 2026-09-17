@@ -4,7 +4,7 @@ import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { backoffDelay } from "../utils/math";
 import { unwrapCookies, mergeCookies } from "./cookies";
-import { sessionManager } from "./session";
+import { sessionManager, ensureFreshSession } from "./session";
 import { HtmlParser, cleanTitle, extractJson } from "./parsers";
 import { extractBest } from "./extractors";
 import type {
@@ -17,6 +17,8 @@ import type {
 
 async function fetchWithSession(path: string, options: RequestInit = {}): Promise<Response> {
   await sessionManager.waitForCookies();
+  // Proactive refresh for aged sessions so expiry surfaces here, not as a 403
+  void ensureFreshSession();
 
   const session = await sessionManager.getSession();
   const rawCookies = unwrapCookies(session?.cookies ?? "");
