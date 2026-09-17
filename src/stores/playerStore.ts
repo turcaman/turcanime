@@ -82,11 +82,30 @@ export const usePlayerStore = create<PlayerState>((set) => ({
           set({ servers: data, isLoading: false });
           return;
         } catch (e2: unknown) {
-          if (e2 instanceof Error) {
-            if (e2.name === "AbortError") {
-              set({ isLoading: false });
+          if (e2 instanceof Error && e2.name === "AbortError") {
+            set({ isLoading: false });
+            return;
+          }
+          // The first retry often races the fresh challenge; one more attempt
+          if (isAuthError(e2)) {
+            logger.info("playerStore", "Second auth error on fetchServers, retrying once more...");
+            try {
+              await refreshSession();
+              const data = await source.getEpisodeServers(slug, number, { signal });
+              void storage.set(cacheKey, { payload: data, expiration: Date.now() + CACHE_TTL.SERVERS });
+              set({ servers: data, isLoading: false });
+              return;
+            } catch (e3: unknown) {
+              if (e3 instanceof Error && e3.name === "AbortError") {
+                set({ isLoading: false });
+                return;
+              }
+              logger.error("playerStore", "fetchServers final retry failed", e3);
+              set({ servers: [], isLoading: false, error: e3 instanceof Error ? e3.message : "Error al cargar servidores" });
               return;
             }
+          }
+          if (e2 instanceof Error) {
             logger.error("playerStore", "fetchServers retry failed", e2);
             set({
               servers: [],

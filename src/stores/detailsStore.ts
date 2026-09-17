@@ -10,6 +10,9 @@ import type { AnimeDetail, AppError } from "../types";
 
 let detailsController: AbortController | null = null;
 
+// Cloudflare can re-challenge repeatedly; one retry often races the challenge
+const MAX_AUTH_RETRIES = 2;
+
 interface DetailsState {
   activeAnime: AnimeDetail | null;
   isDetailsLoading: boolean;
@@ -31,38 +34,42 @@ export const useDetailsStore = create<DetailsState>((set) => ({
 
     const cacheKey = `${CACHE_PREFIXES.ANIME}_${slug}`;
 
-    const result = await withCache(
-      cacheKey,
-      (sig) => source.getDetails(slug, { signal: sig }),
-      { ttl: CACHE_TTL.DETAILS, signal, force },
-    );
+    const fetchFresh = (sig: AbortSignal, force = true) =>
+      withCache(cacheKey, (s) => source.getDetails(slug, { signal: s }), {
+        ttl: CACHE_TTL.DETAILS,
+        signal: sig,
+        force,
+      });
+
+    const result = await fetchFresh(signal, force);
 
     if (signal.aborted) return;
 
-    if (isAuthError(result.error)) {
-      logger.info("detailsStore", "Auth error, refreshing session and retrying...");
-      try {
-        await refreshSession();
+    let lastError = result.error;
+    if (isAuthError(lastError)) {
+      for (let retry = 0; retry < MAX_AUTH_RETRIES; retry++) {
+        logger.info("detailsStore", `Auth error, refreshing session and retrying (${retry + 1}/${MAX_AUTH_RETRIES})...`);
+        try {
+          await refreshSession();
+        } catch {
+          logger.info("detailsStore", "Auto-recovery failed, falling through to error state");
+          break;
+        }
         if (signal.aborted) return;
-        await new Promise((resolve) => setTimeout(resolve, backoffDelay(0)));
-        const retryResult = await withCache(
-          cacheKey,
-          (sig) => source.getDetails(slug, { signal: sig }),
-          { ttl: CACHE_TTL.DETAILS, signal, force: true },
-        );
+        await new Promise((resolve) => setTimeout(resolve, backoffDelay(retry)));
+        const retryResult = await fetchFresh(signal);
         if (signal.aborted) return;
         if (retryResult.data) {
           set({ activeAnime: retryResult.data, isDetailsLoading: false, error: null });
           return;
         }
-        result.error = retryResult.error ?? result.error;
-      } catch {
-        logger.info("detailsStore", "Auto-recovery failed, falling through to error state");
+        lastError = retryResult.error;
+        if (!isAuthError(lastError)) break;
       }
     }
 
-    if (result.error) {
-      set({ error: { type: "UNKNOWN", message: result.error.message }, isDetailsLoading: false });
+    if (lastError) {
+      set({ error: { type: "UNKNOWN", message: lastError.message }, isDetailsLoading: false });
     } else {
       set({ activeAnime: result.data ?? null, isDetailsLoading: false, error: null });
     }
