@@ -135,7 +135,7 @@ jobs:
           name: turcanime-apk
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           draft: true
           name: "v${{ steps.build-info.outputs.version }}"
