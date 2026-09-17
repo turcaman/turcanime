@@ -15,6 +15,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const NEXT_EPISODE_COUNTDOWN_SECONDS = 10;
+
 function PlayerContent() {
   const params = useLocalSearchParams<{ slug?: string; number?: string; title?: string; image?: string }>();
   const slug = params.slug ?? "";
@@ -73,6 +75,48 @@ function PlayerContent() {
     return () => clearInterval(interval);
   }, [player]);
 
+  const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState<number | null>(null);
+  const nextEpisodeTimer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const nextEpisodeCountdownRef = useRef<number | null>(null);
+
+  const clearNextEpisodeTimer = useCallback(() => {
+    if (nextEpisodeTimer.current) {
+      clearInterval(nextEpisodeTimer.current);
+      nextEpisodeTimer.current = undefined;
+    }
+    nextEpisodeCountdownRef.current = null;
+    setNextEpisodeCountdown(null);
+  }, []);
+
+  const confirmNextEpisode = useCallback(() => {
+    clearNextEpisodeTimer();
+    if (nextEpisode) {
+      saveProgressRef.current();
+      void resolveAndPlay(slug, nextEpisode);
+    }
+  }, [clearNextEpisodeTimer, nextEpisode, slug, resolveAndPlay]);
+
+  const cancelNextEpisode = useCallback(() => {
+    clearNextEpisodeTimer();
+  }, [clearNextEpisodeTimer]);
+
+  const startNextEpisodeCountdown = useCallback(() => {
+    if (!nextEpisode) return;
+    nextEpisodeCountdownRef.current = NEXT_EPISODE_COUNTDOWN_SECONDS;
+    setNextEpisodeCountdown(NEXT_EPISODE_COUNTDOWN_SECONDS);
+    nextEpisodeTimer.current = setInterval(() => {
+      const prev = nextEpisodeCountdownRef.current;
+      if (prev === null || prev <= 0) {
+        clearNextEpisodeTimer();
+        saveProgressRef.current();
+        void resolveAndPlay(slug, nextEpisode);
+        return;
+      }
+      nextEpisodeCountdownRef.current = prev - 1;
+      setNextEpisodeCountdown(prev - 1);
+    }, 1000);
+  }, [nextEpisode, clearNextEpisodeTimer, slug, resolveAndPlay]);
+
   const handlePrev = useCallback(() => { if (prevEpisode) void resolveAndPlay(slug, prevEpisode); }, [prevEpisode, slug, resolveAndPlay]);
   const handleNext = useCallback(() => { if (nextEpisode) void resolveAndPlay(slug, nextEpisode); }, [nextEpisode, slug, resolveAndPlay]);
   const handleBack = useCallback(() => router.back(), []);
@@ -93,7 +137,8 @@ function PlayerContent() {
         lastSeekKey.current = seekKey;
         const match = findHistoryEntry(useHistoryStore.getState().lastViewed, slug, currentEpNumber);
         const hasSignificantProgress = match != null && (match.progress ?? 0) > 10;
-        if (match?.progress != null && hasSignificantProgress) {
+        const isCompleted = match != null && match.progress != null && match.duration != null && match.duration > 0 && match.progress / match.duration >= 0.9;
+        if (match?.progress != null && hasSignificantProgress && !isCompleted) {
           try { player.currentTime = match.progress; } catch {}
         }
       }
@@ -111,7 +156,9 @@ function PlayerContent() {
       const ct = player.currentTime;
       const dur = player.duration;
       if (ct > 0 && dur > 0) {
-        void addToHistory({ ...historyCtx.current, progress: ct, duration: dur, timestamp: Date.now() });
+        let progress = ct;
+        if (dur > 0 && progress / dur >= 0.9) progress = dur;
+        void addToHistory({ ...historyCtx.current, progress, duration: dur, timestamp: Date.now() });
       }
     } catch {}
   }, [player, addToHistory]);
@@ -129,6 +176,29 @@ function PlayerContent() {
     };
   }, [saveProgress]);
 
+  const hasPlayedRef = useRef(false);
+
+  useEffect(() => {
+    const sub = player.addListener("playingChange", ({ isPlaying: playing }) => {
+      if (playing) hasPlayedRef.current = true;
+    });
+    return () => { sub.remove(); };
+  }, [player]);
+
+  useEffect(() => {
+    const sub = player.addListener("playToEnd", () => {
+      if (nextEpisode && hasPlayedRef.current) {
+        hasPlayedRef.current = false;
+        startNextEpisodeCountdown();
+      }
+    });
+    return () => { sub.remove(); };
+  }, [player, nextEpisode, startNextEpisodeCountdown]);
+
+  useEffect(() => {
+    clearNextEpisodeTimer();
+  }, [currentEpNumber, clearNextEpisodeTimer]);
+
   return (
     <View className="flex-1 bg-black">
       <StatusBar hidden />
@@ -144,9 +214,13 @@ function PlayerContent() {
         hasNext={nextEpisode != null}
         loading={loading || streamUrl == null}
         insetTop={insets.top}
+        nextEpisodeCountdown={nextEpisodeCountdown}
+        nextEpisodeNumber={nextEpisode?.number ?? null}
         onPrev={handlePrev}
         onNext={handleNext}
         onBack={handleBack}
+        onCancelNextEpisode={cancelNextEpisode}
+        onConfirmNextEpisode={confirmNextEpisode}
       />
       {error != null && (
         <View className="absolute bottom-20 left-4 right-4 bg-neutral-900 rounded-lg border border-neutral-800 p-3">
