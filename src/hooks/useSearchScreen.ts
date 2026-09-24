@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchStore } from "../stores/searchStore";
 import { useSearchHistoryStore } from "../stores/searchHistoryStore";
 import { navigateToAnime } from "../utils/navigation";
@@ -31,6 +31,9 @@ export function useSearchScreen() {
     term: lastSearchTerm,
     status: lastSearchTerm ? "searched" : "idle",
   });
+  // Latest state for async completions that must not clobber newer UI changes
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const debouncedTerm = useDebounce(state.term, 300);
 
   useEffect(() => {
@@ -57,9 +60,14 @@ export function useSearchScreen() {
       setStoreSearchTerm(trimmed);
       try {
         await fetchSearch(trimmed, force);
-        void saveRecentSearch(trimmed);
       } finally {
-        setState({ term, status: "searched" });
+        // The search was superseded (input cleared or replaced while in flight):
+        // don't resurrect "searched", which would show empty results over idle
+        const current = stateRef.current;
+        if (current.status === "searching" && current.term === term) {
+          void saveRecentSearch(trimmed);
+          setState({ term, status: "searched" });
+        }
       }
     },
     [fetchSearch, setStoreSearchTerm, saveRecentSearch, cancelSearch],
