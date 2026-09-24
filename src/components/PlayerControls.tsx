@@ -189,8 +189,10 @@ export function PlayerControls({
                       player.scrubbingModeOptions = { scrubbingModeEnabled: true };
                     }}
                     onSlidingComplete={(v) => {
-                      if (loading) return;
+                      // Must run even if loading: leaving scrubbing enabled
+                      // suppresses playback on Android indefinitely
                       player.scrubbingModeOptions = { scrubbingModeEnabled: false };
+                      if (loading) return;
                       player.currentTime = v;
                       setPendingSeek(v);
                       setSlidingValue(null);
