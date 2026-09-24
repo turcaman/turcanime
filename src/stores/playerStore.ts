@@ -6,6 +6,7 @@ import { storage } from "../utils/storage";
 import { getCachedStream, setCachedStream } from "../utils/cache";
 import { logger } from "../utils/logger";
 import { isAuthError } from "../utils/errors";
+import { backoffDelay } from "../utils/math";
 import type { VideoServer } from "../types";
 
 interface PlayerState {
@@ -91,6 +92,8 @@ export const usePlayerStore = create<PlayerState>((set) => ({
             logger.info("playerStore", "Second auth error on fetchServers, retrying once more...");
             try {
               await refreshSession();
+              // Jittered wait so the fresh challenge settles, same as detailsStore
+              await new Promise((resolve) => setTimeout(resolve, backoffDelay(0)));
               const data = await source.getEpisodeServers(slug, number, { signal });
               void storage.set(cacheKey, { payload: data, expiration: Date.now() + CACHE_TTL.SERVERS });
               set({ servers: data, isLoading: false });
