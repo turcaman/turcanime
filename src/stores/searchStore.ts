@@ -35,6 +35,7 @@ interface SearchState {
   error: AppError | null;
   fetchSearch: (query: string, force?: boolean) => Promise<void>;
   fetchSuggestions: (query: string) => Promise<void>;
+  clearSuggestions: () => void;
   cancelSearch: () => void;
   resetSearch: () => void;
   setSearchTerm: (term: string) => void;
@@ -52,6 +53,10 @@ export const useSearchStore = create<SearchState>((set) => ({
       set({ searchAnimes: [], suggestions: [], error: null });
       return;
     }
+    // A search supersedes suggestions; both hit the same heavy endpoint and
+    // running concurrently over one session makes each other time out
+    suggestionsController?.abort();
+    suggestionsController = null;
     if (searchController) searchController.abort();
     searchController = new AbortController();
     const signal = searchController.signal;
@@ -90,6 +95,12 @@ export const useSearchStore = create<SearchState>((set) => ({
 
     if (signal.aborted) return;
     set({ suggestions: (result.data ?? []).map(toSuggestion) });
+  },
+
+  clearSuggestions: () => {
+    suggestionsController?.abort();
+    suggestionsController = null;
+    set({ suggestions: [] });
   },
 
   cancelSearch: () => {

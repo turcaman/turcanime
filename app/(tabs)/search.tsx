@@ -5,7 +5,7 @@ import { RecentSearches } from "@/components/RecentSearches";
 import { SearchSkeleton } from "@/components/skeletons/SearchSkeleton";
 import { SuggestionsList } from "@/components/SuggestionsList";
 import type { Anime } from "@/types";
-import { useSearchScreen } from "@/hooks/useSearchScreen";
+import { useSearchScreen, MIN_SEARCH_LENGTH } from "@/hooks/useSearchScreen";
 import { useTabBarManager } from "@/hooks/useTabBarManager";
 import { TAB_BAR_OFFSET, calcCardWidth } from "@/utils/layout";
 import { ACCENT_COLOR, MUTED_ICON } from "@/config/source";
@@ -42,6 +42,8 @@ function SearchScreenContent() {
   const showIdleContent = isIdle && !isTyping && !isSearched && !isLoading;
   const showHint = showIdleContent && recentSearches.length === 0;
   const showSearchSkeleton = !isSearched && !isIdle && !isTyping && isLoading;
+  const trimmedLength = searchTerm.trim().length;
+  const showMinLengthHint = isTyping && trimmedLength >= 1 && trimmedLength < MIN_SEARCH_LENGTH;
 
   return (
     <View className="flex-1 bg-black">
@@ -78,6 +80,14 @@ function SearchScreenContent() {
         )}
         {isTyping && suggestions.length > 0 && (
           <SuggestionsList suggestions={suggestions} onSelect={handleSelectSuggestion} onScroll={handleScroll} tabBarOffset={TAB_BAR_OFFSET} />
+        )}
+        {showMinLengthHint && (
+          <View className="flex-1 justify-start items-center pt-20">
+            <Feather name="type" size={48} color="#404040" />
+            <Text className="mt-4 text-sm text-neutral-500">
+              {`Escribí al menos ${MIN_SEARCH_LENGTH} caracteres para buscar`}
+            </Text>
+          </View>
         )}
         {showSearchSkeleton && <SearchSkeleton />}
         {isSearched && (
