@@ -169,6 +169,9 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
   },
 
   beginDownload: async () => {
+    // Re-entrant call (double tap, or AppState resume racing the settings flow)
+    if (get().phase === "downloading") return;
+
     const { apkUrl } = get();
     if (apkUrl == null) return;
 
