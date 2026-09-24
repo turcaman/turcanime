@@ -23,23 +23,25 @@ export function UpdateModal() {
   const confirmUpdate = useUpdateStore((s) => s.confirmUpdate);
   const beginDownload = useUpdateStore((s) => s.beginDownload);
   const cancelDownload = useUpdateStore((s) => s.cancelDownload);
+  const resumeAfterPermission = useUpdateStore((s) => s.resumeAfterPermission);
   const insets = useSafeAreaInsets();
 
-  // After granting permission in system settings, resume automatically
+  // After granting permission in system settings, resume automatically.
+  // resumeAfterPermission is armed only when the settings screen is actually
+  // opened, so an unrelated app switch while this modal is up never starts a
+  // download without permission
   const resumeOnReturn = useRef(false);
   useEffect(() => {
-    if (phase !== "permission") {
-      resumeOnReturn.current = false;
-      return;
-    }
-    resumeOnReturn.current = true;
+    resumeOnReturn.current = resumeAfterPermission;
+    if (!resumeAfterPermission) return;
     const sub = AppState.addEventListener("change", (state) => {
       if (state !== "active" || !resumeOnReturn.current) return;
       resumeOnReturn.current = false;
+      useUpdateStore.setState({ resumeAfterPermission: false });
       void beginDownload();
     });
     return () => sub.remove();
-  }, [phase, beginDownload]);
+  }, [resumeAfterPermission, beginDownload]);
 
   if (phase === "idle" || phase === "ready") return null;
 

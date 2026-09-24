@@ -52,6 +52,8 @@ interface UpdateState {
   errorMessage: string | null;
   apkUrl: string | null;
   installPermissionGranted: boolean;
+  /** True only while the user is away granting the install permission */
+  resumeAfterPermission: boolean;
   initialize: (enabled: boolean) => void;
   setUpdateCheckEnabled: (enabled: boolean) => Promise<void>;
   checkForUpdates: () => Promise<boolean>;
@@ -75,6 +77,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
   errorMessage: null,
   apkUrl: null,
   installPermissionGranted: false,
+  resumeAfterPermission: false,
 
   initialize: (enabled) => {
     const currentVersion = Constants.expoConfig?.version ?? null;
@@ -157,7 +160,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
       downloadAbort?.abort();
       downloadAbort = null;
     }
-    set({ phase: "idle", errorMessage: null });
+    set({ phase: "idle", errorMessage: null, resumeAfterPermission: false });
   },
 
   confirmUpdate: async () => {
@@ -220,6 +223,10 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
 export async function grantInstallPermissionAndDownload(): Promise<void> {
   const store = useUpdateStore.getState();
   try {
+    // Arm the AppState resume only now: merely being in the "permission" phase
+    // (e.g. an unrelated background/foreground cycle) must not auto-download
+    // without the permission granted
+    useUpdateStore.setState({ resumeAfterPermission: true });
     await openInstallPermissionSettings();
     await storage.set(INSTALL_PERMISSION_KEY, true);
     useUpdateStore.setState({ installPermissionGranted: true });
