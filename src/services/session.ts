@@ -50,7 +50,15 @@ class SessionManager {
 
   async setSession(session: ISession): Promise<void> {
     try {
-      const withMeta: ISession = { ...session, fetchedAt: Date.now() };
+      // Preserve the original capture time when cookies are unchanged: every
+      // response echoing the same Set-Cookie values would otherwise reset the
+      // age and perpetually defer the proactive refresh
+      let fetchedAt = Date.now();
+      const current = await this.getSession();
+      if (current != null && current.cookies === session.cookies && current.fetchedAt != null) {
+        fetchedAt = current.fetchedAt;
+      }
+      const withMeta: ISession = { ...session, fetchedAt };
       await storage.set(SESSION_KEY, withMeta);
       if (session.cookies && session.cookies.length > 0 && this.sessionReadyResolver) {
         logger.info("SessionManager", `Session updated with ${session.cookies.length} cookies`);
