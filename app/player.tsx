@@ -37,7 +37,17 @@ function PlayerContent() {
   const saveProgressRef = useRef<() => void>(() => {});
   const [playState, setPlayState] = useState({ currentTime: 0, duration: 0, isPlaying: false });
 
-  const player = useVideoPlayer(null, (instance) => { instance.loop = false; });
+  const player = useVideoPlayer(null, (instance) => {
+    instance.loop = false;
+    // Default Android buffer is 20s; short skips then fall outside the buffer and stall
+    instance.bufferOptions = {
+      preferredForwardBufferDuration: 90,
+      prioritizeTimeOverSizeThreshold: true,
+    };
+    // Exact seeks force re-decoding from the previous keyframe; a small tolerance lets
+    // ExoPlayer snap to a nearby keyframe, making ±10s skips near-instant
+    instance.seekTolerance = { toleranceBefore: 1, toleranceAfter: 1 };
+  });
 
   useEffect(() => {
     const prev = prevNetworkOk.current;

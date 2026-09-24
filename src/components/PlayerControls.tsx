@@ -75,13 +75,14 @@ export function PlayerControls({
 
   const seekBack = useCallback(() => {
     if (loading) return;
-    player.currentTime = Math.max(0, player.currentTime - 10);
+    // seekBy lets the player snap to a nearby keyframe instead of an exact frame
+    player.seekBy(-10);
     restartTimer();
   }, [player, loading, restartTimer]);
 
   const seekForward = useCallback(() => {
     if (loading) return;
-    player.currentTime = Math.min(player.duration || 1, player.currentTime + 10);
+    player.seekBy(10);
     restartTimer();
   }, [player, loading, restartTimer]);
 
@@ -181,8 +182,15 @@ export function PlayerControls({
                       clearTimer();
                       setSlidingValue(v);
                     }}
+                    onSlidingStart={() => {
+                      clearTimer();
+                      setSlidingValue(player.currentTime);
+                      // Boosts codec rate and avoids decoder flush while dragging
+                      player.scrubbingModeOptions = { scrubbingModeEnabled: true };
+                    }}
                     onSlidingComplete={(v) => {
                       if (loading) return;
+                      player.scrubbingModeOptions = { scrubbingModeEnabled: false };
                       player.currentTime = v;
                       setPendingSeek(v);
                       setSlidingValue(null);
