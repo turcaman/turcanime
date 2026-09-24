@@ -1,7 +1,7 @@
-import { ACCENT_COLOR, MUTED_ICON } from "@/config/source";
+import { MUTED_ICON } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
 import React, { memo } from "react";
-import { FlatList, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { SectionTitle } from "./ui/SectionTitle";
 
@@ -25,23 +25,29 @@ export const RecentSearches = memo(({ searches, onSelect, onRemove, onClearAll }
           </AnimatedPressable>
         )}
       </View>
-      <View className="mb-3" />
-      <FlatList
-        data={searches}
-        keyExtractor={(item) => item}
-        renderItem={({ item }) => (
-          <AnimatedPressable className="mb-2 flex-row items-center justify-between border-b border-neutral-800 py-2" onPress={() => { onSelect(item); }}>
-            <View className="flex-1 flex-row items-center">
-              <Feather name="clock" size={18} color={ACCENT_COLOR} />
-              <Text className="ml-3 text-base text-white">{item}</Text>
-            </View>
-            <AnimatedPressable className="p-2" onPress={(e) => { e.stopPropagation(); onRemove(item); }}>
-              <Feather name="x" size={18} color={MUTED_ICON} />
+      <View className="mt-3 flex-row flex-wrap gap-2">
+        {searches.map((term) => (
+          <AnimatedPressable
+            key={term}
+            onPress={() => { onSelect(term); }}
+            className="max-w-full flex-row items-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 py-2.5 pl-3 pr-2"
+            accessibilityLabel={`Buscar: ${term}`}
+          >
+            <Feather name="clock" size={14} color={MUTED_ICON} />
+            <Text className="text-sm text-neutral-200" numberOfLines={1} style={{ flexShrink: 1 }}>
+              {term}
+            </Text>
+            <AnimatedPressable
+              className="p-2"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={(e) => { e.stopPropagation(); onRemove(term); }}
+              accessibilityLabel={`Eliminar búsqueda: ${term}`}
+            >
+              <Feather name="x" size={14} color={MUTED_ICON} />
             </AnimatedPressable>
           </AnimatedPressable>
-        )}
-        scrollEnabled={false}
-      />
+        ))}
+      </View>
     </View>
   );
 });

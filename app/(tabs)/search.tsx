@@ -82,7 +82,7 @@ function SearchScreenContent() {
           </View>
         )}
         {isTyping && suggestions.length > 0 && (
-          <SuggestionsList suggestions={suggestions} onSelect={handleSelectSuggestion} onScroll={handleScroll} tabBarOffset={TAB_BAR_OFFSET} />
+          <SuggestionsList suggestions={suggestions} searchTerm={searchTerm} onSelect={handleSelectSuggestion} onScroll={handleScroll} tabBarOffset={TAB_BAR_OFFSET} />
         )}
         {showMinLengthHint && (
           <View className="flex-1 justify-start items-center pt-20">
