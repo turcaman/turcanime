@@ -43,6 +43,10 @@ async function fetchWithSession(path: string, options: RequestInit = {}): Promis
 
   for (let attempt = 0; attempt < TIMEOUTS.MAX_ATTEMPTS; attempt++) {
     let timedOut = false;
+    if (options.signal?.aborted) {
+      // Navigation away or a newer request superseded this one: don't fire it
+      throw new SourceError("Request cancelled", "NETWORK_ERROR");
+    }
     const controller = new AbortController();
     const timer = setTimeout(() => {
       timedOut = true;
