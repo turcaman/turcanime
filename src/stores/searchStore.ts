@@ -14,6 +14,32 @@ function normalizeSearchKey(query: string): string {
   return query.toLowerCase().replace(/[^a-z0-9]/g, "_");
 }
 
+// Large result sets exceed the storage cache limit and get dropped, so repeat
+// searches re-hit the network and the site throttles them with an empty 200.
+// This in-memory layer has no size limit and serves repeats instantly.
+const MEMORY_MAX_ENTRIES = 12;
+const memoryResults = new Map<string, { payload: RawSearchItem[]; expiresAt: number }>();
+
+function memoryGet(key: string): RawSearchItem[] | null {
+  const entry = memoryResults.get(key);
+  if (entry == null) return null;
+  if (Date.now() >= entry.expiresAt) {
+    memoryResults.delete(key);
+    return null;
+  }
+  return entry.payload;
+}
+
+function memorySet(key: string, payload: RawSearchItem[]): void {
+  if (payload.length === 0) return;
+  memoryResults.delete(key);
+  memoryResults.set(key, { payload, expiresAt: Date.now() + CACHE_TTL.SEARCH });
+  if (memoryResults.size > MEMORY_MAX_ENTRIES) {
+    const oldest = memoryResults.keys().next().value;
+    if (oldest != null) memoryResults.delete(oldest);
+  }
+}
+
 function toAnime(item: RawSearchItem): Anime {
   return {
     title: cleanTitle(item.name),
@@ -65,6 +91,14 @@ export const useSearchStore = create<SearchState>((set) => ({
 
     const cacheKey = `${CACHE_PREFIXES.SEARCH}_${normalizeSearchKey(query)}`;
 
+    if (!force) {
+      const memory = memoryGet(cacheKey);
+      if (memory != null) {
+        set({ searchAnimes: memory.map(toAnime), isSearchLoading: false, error: null });
+        return;
+      }
+    }
+
     const result = await withCache<RawSearchItem[]>(
       cacheKey,
       (sig) => source.searchRaw(query, { signal: sig }),
@@ -72,6 +106,10 @@ export const useSearchStore = create<SearchState>((set) => ({
     );
 
     if (signal.aborted) return;
+
+    if (result.data != null && result.data.length > 0) {
+      memorySet(cacheKey, result.data);
+    }
 
     if (result.error) {
       set({ error: { type: "UNKNOWN", message: result.error.message }, isSearchLoading: false });

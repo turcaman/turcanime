@@ -41,13 +41,12 @@ export function useSearchScreen() {
     }
     // Stale suggestions must not linger while the term is below the minimum
     // (e.g. editing a searched term from "jojo" down to "jo")
+    // Never reset results here: with debouncedTerm lagging behind a fresh
+    // search this effect would wipe just-loaded results
     if (length < MIN_SEARCH_LENGTH && suggestions.length > 0) {
       clearSuggestions();
     }
-    if (length === 0 && searchAnimes.length > 0) {
-      resetStoreSearch();
-    }
-  }, [debouncedTerm, fetchSuggestions, state.status, suggestions.length, searchAnimes.length, clearSuggestions, resetStoreSearch]);
+  }, [debouncedTerm, fetchSuggestions, state.status, suggestions.length, clearSuggestions]);
 
   const executeSearch = useCallback(
     async (term: string, force = false) => {
@@ -80,8 +79,15 @@ export function useSearchScreen() {
 
   const handleTextChange = useCallback((text: string) => {
     const trimmed = text.trim();
-    setState({ term: text, status: trimmed.length > 0 ? "typing" : "idle" });
-  }, []);
+    if (trimmed.length === 0) {
+      // Clearing the input resets immediately; doing it here (not in the
+      // debounced effect) avoids wiping results of an in-flight search
+      resetStoreSearch();
+      setState({ term: text, status: "idle" });
+      return;
+    }
+    setState({ term: text, status: "typing" });
+  }, [resetStoreSearch]);
 
   const resetSearch = useCallback(() => {
     cancelSearch();
