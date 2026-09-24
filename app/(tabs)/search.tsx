@@ -11,6 +11,7 @@ import { TAB_BAR_OFFSET, calcCardWidth } from "@/utils/layout";
 import { ACCENT_COLOR, MUTED_ICON } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Animated, FlatList, RefreshControl, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -42,8 +43,10 @@ function SearchScreenContent() {
   const showIdleContent = isIdle && !isTyping && !isSearched && !isLoading;
   const showHint = showIdleContent && recentSearches.length === 0;
   const showSearchSkeleton = !isSearched && !isIdle && !isTyping && isLoading;
-  const trimmedLength = searchTerm.trim().length;
-  const showMinLengthHint = isTyping && trimmedLength >= 1 && trimmedLength < MIN_SEARCH_LENGTH;
+  // debouncedTerm gates the hint so it only shows once typing pauses,
+  // matching when the app would otherwise fire a request
+  const debouncedLength = useDebounce(searchTerm, 300).trim().length;
+  const showMinLengthHint = isTyping && debouncedLength >= 1 && debouncedLength < MIN_SEARCH_LENGTH;
 
   return (
     <View className="flex-1 bg-black">
