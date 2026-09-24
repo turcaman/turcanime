@@ -28,6 +28,8 @@ export default function SettingsScreen() {
   const lastCheckError = useUpdateStore((s) => s.lastCheckError);
   const currentVersion = useUpdateStore((s) => s.currentVersion);
   const checkForUpdates = useUpdateStore((s) => s.checkForUpdates);
+  const apkUrl = useUpdateStore((s) => s.apkUrl);
+  const startUpdate = useUpdateStore((s) => s.startUpdate);
 
   const appVersion = currentVersion ?? "—";
 
@@ -100,8 +102,13 @@ export default function SettingsScreen() {
   }, [checkForUpdates]);
 
   const handleDownloadUpdate = useCallback(() => {
+    if (apkUrl != null) {
+      startUpdate();
+      return;
+    }
+    // Fallback: release without an APK asset, open the download page
     void Linking.openURL("https://turcanime.pages.dev");
-  }, []);
+  }, [apkUrl, startUpdate]);
 
   return (
     <View className="flex-1 bg-black" style={{ paddingTop: insets.top + 16 }}>
@@ -157,9 +164,9 @@ export default function SettingsScreen() {
             </View>
             <View className="h-px bg-neutral-800" />
             <AnimatedPressable
-              onPress={updateAvailable ? undefined : handleManualCheck}
+              onPress={updateAvailable ? handleDownloadUpdate : handleManualCheck}
               disabled={checkingForUpdates}
-              hapticFeedback={!checkingForUpdates && !updateAvailable}
+              hapticFeedback={!checkingForUpdates}
               className="flex-row items-center px-5 py-4"
               style={{ opacity: checkingForUpdates ? 0.5 : 1 }}
             >
@@ -197,9 +204,9 @@ export default function SettingsScreen() {
                   className="flex-row items-center gap-1 ml-auto flex-shrink-0"
                 >
                   <Text className="text-xs font-semibold tracking-wide text-purple-400">
-                    Descargar
+                    Actualizar
                   </Text>
-                  <Feather name="external-link" size={11} color={ACCENT_COLOR} />
+                  <Feather name="arrow-right" size={11} color={ACCENT_COLOR} />
                 </AnimatedPressable>
               )}
             </AnimatedPressable>

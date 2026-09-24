@@ -20,11 +20,13 @@
       },
       "package": "com.turcanime.app",
       "softwareKeyboardLayoutMode": "pan",
-      "versionCode": 11100
+      "versionCode": 11100,
+      "permissions": ["REQUEST_INSTALL_PACKAGES"]
     },
     "plugins": [
       "expo-router",
       "expo-video",
+      "./plugins/withInstallerQueries.js",
       [
         "expo-build-properties",
         {

@@ -3,8 +3,16 @@ import { create } from "zustand";
 import { TIMEOUTS } from "../config/cache";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
+import {
+  downloadApkWithProgress,
+  installApk,
+  cleanupOldApk,
+  openInstallPermissionSettings,
+  type DownloadProgress,
+} from "../services/updater";
 
 export const UPDATE_CHECK_KEY = "update_check_enabled";
+const INSTALL_PERMISSION_KEY = "install_permission_granted";
 const GITHUB_RELEASES_URL =
   "https://api.github.com/repos/turcaman/turcanime/releases/latest";
 
@@ -24,16 +32,37 @@ function isNewer(latest: string, current: string): boolean {
   return false;
 }
 
+export type UpdatePhase =
+  | "idle"
+  | "confirm"
+  | "permission"
+  | "downloading"
+  | "installing"
+  | "error"
+  | "ready";
+
 interface UpdateState {
   updateCheckEnabled: boolean;
   updateAvailable: string | null;
   checkingForUpdates: boolean;
   lastCheckError: string | null;
   currentVersion: string | null;
+  phase: UpdatePhase;
+  progress: DownloadProgress;
+  errorMessage: string | null;
+  apkUrl: string | null;
+  installPermissionGranted: boolean;
   initialize: (enabled: boolean) => void;
   setUpdateCheckEnabled: (enabled: boolean) => Promise<void>;
   checkForUpdates: () => Promise<boolean>;
+  startUpdate: () => void;
+  closeUpdate: () => void;
+  confirmUpdate: () => Promise<void>;
+  beginDownload: () => Promise<void>;
+  cancelDownload: () => void;
 }
+
+let downloadAbort: AbortController | null = null;
 
 export const useUpdateStore = create<UpdateState>((set, get) => ({
   updateCheckEnabled: true,
@@ -41,10 +70,20 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
   checkingForUpdates: false,
   lastCheckError: null,
   currentVersion: null,
+  phase: "idle",
+  progress: { receivedBytes: 0, totalBytes: null },
+  errorMessage: null,
+  apkUrl: null,
+  installPermissionGranted: false,
 
   initialize: (enabled) => {
     const currentVersion = Constants.expoConfig?.version ?? null;
     set({ updateCheckEnabled: enabled, currentVersion });
+    cleanupOldApk();
+    void storage
+      .get<boolean>(INSTALL_PERMISSION_KEY)
+      .then((granted) => set({ installPermissionGranted: granted === true }))
+      .catch(() => {});
   },
 
   setUpdateCheckEnabled: async (enabled) => {
@@ -76,13 +115,18 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
         ),
       ]);
       if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = (await res.json()) as { tag_name?: string };
+      const data = (await res.json()) as {
+        tag_name?: string;
+        assets?: { name: string; browser_download_url: string }[];
+      };
       const latest = (data.tag_name ?? "").replace(/^v/, "").trim();
       if (!latest) throw new Error("No tag");
 
-      const available = isNewer(latest, current) ? latest : null;
+      const apkAsset = data.assets?.find((a) => a.name.toLowerCase().endsWith(".apk"));
+
       set({
-        updateAvailable: available,
+        updateAvailable: isNewer(latest, current) ? latest : null,
+        apkUrl: apkAsset?.browser_download_url ?? null,
         currentVersion: current,
         checkingForUpdates: false,
         lastCheckError: null,
@@ -97,4 +141,91 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
       return false;
     }
   },
+
+  startUpdate: () => {
+    const { updateAvailable, apkUrl } = get();
+    if (updateAvailable == null) return;
+    if (apkUrl == null) {
+      set({ phase: "error", errorMessage: "No hay archivo de instalación disponible para esta versión." });
+      return;
+    }
+    set({ phase: "confirm", errorMessage: null });
+  },
+
+  closeUpdate: () => {
+    if (get().phase === "downloading") {
+      downloadAbort?.abort();
+      downloadAbort = null;
+    }
+    set({ phase: "idle", errorMessage: null });
+  },
+
+  confirmUpdate: async () => {
+    if (!get().installPermissionGranted) {
+      set({ phase: "permission" });
+      return;
+    }
+    await get().beginDownload();
+  },
+
+  beginDownload: async () => {
+    const { apkUrl } = get();
+    if (apkUrl == null) return;
+
+    downloadAbort = new AbortController();
+    set({
+      phase: "downloading",
+      progress: { receivedBytes: 0, totalBytes: null },
+      errorMessage: null,
+    });
+
+    try {
+      const { file, cancelled } = await downloadApkWithProgress(
+        apkUrl,
+        (progress) => set({ progress }),
+        downloadAbort.signal,
+      );
+      if (cancelled) {
+        set({ phase: "idle" });
+        return;
+      }
+      set({ phase: "installing" });
+      await installApk(file);
+      set({ phase: "ready" });
+    } catch (err) {
+      if (err instanceof Error && err.message === "cancelled") {
+        set({ phase: "idle" });
+        return;
+      }
+      logger.error("updateStore", "Download/install failed", err);
+      set({
+        phase: "error",
+        errorMessage: err instanceof Error ? err.message : "No se pudo completar la actualización.",
+      });
+    } finally {
+      downloadAbort = null;
+    }
+  },
+
+  cancelDownload: () => {
+    downloadAbort?.abort();
+    downloadAbort = null;
+    set({ phase: "idle" });
+  },
 }));
+
+export async function grantInstallPermissionAndDownload(): Promise<void> {
+  const store = useUpdateStore.getState();
+  try {
+    await openInstallPermissionSettings();
+    await storage.set(INSTALL_PERMISSION_KEY, true);
+    useUpdateStore.setState({ installPermissionGranted: true });
+    await store.beginDownload();
+  } catch (err) {
+    logger.error("updateStore", "Permission flow failed", err);
+    useUpdateStore.setState({
+      phase: "error",
+      errorMessage: "No se pudo abrir los ajustes de instalación.",
+    });
+  }
+}

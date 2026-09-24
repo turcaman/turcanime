@@ -7,6 +7,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { useSettingsStore, EPISODE_ORDER_KEY } from "@/stores/settingsStore";
 import { useUserInitializationStore } from "@/stores/userIndex";
 import { useUpdateStore, UPDATE_CHECK_KEY } from "@/stores/updateStore";
+import { UpdateModal } from "@/components/UpdateModal";
 import { useHistoryStore, HISTORY_KEY } from "@/stores/historyStore";
 import { useSearchHistoryStore, SEARCHES_KEY } from "@/stores/searchHistoryStore";
 import { useNetworkStatus, type ConnectionType } from "@/hooks/useNetworkStatus";
@@ -190,6 +191,7 @@ function RootInner() {
         <Stack.Screen name="player" options={{ headerShown: false, animation: "fade_from_bottom", statusBarHidden: true }} />
       </Stack>
       <WebViewWorker />
+      <UpdateModal />
     </View>
   );
 }

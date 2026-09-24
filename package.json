@@ -22,6 +22,7 @@
     "expo-constants": "~55.0.9",
     "expo-font": "~55.0.8",
     "expo-haptics": "~55.0.18",
+    "expo-intent-launcher": "~55.0.16",
     "expo-linear-gradient": "~55.0.18",
     "expo-linking": "~55.0.17",
     "expo-navigation-bar": "~55.0.17",
