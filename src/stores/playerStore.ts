@@ -77,6 +77,9 @@ export const usePlayerStore = create<PlayerState>((set) => ({
           set({ isLoading: false });
           return;
         }
+        // refreshSession resolves as soon as cookies are stored; the retry still
+        // races the fresh challenge, so wait the same way detailsStore does
+        await new Promise((resolve) => setTimeout(resolve, backoffDelay(0)));
         try {
           const data = await source.getEpisodeServers(slug, number, { signal });
           void storage.set(cacheKey, { payload: data, expiration: Date.now() + CACHE_TTL.SERVERS });
@@ -87,13 +90,12 @@ export const usePlayerStore = create<PlayerState>((set) => ({
             set({ isLoading: false });
             return;
           }
-          // The first retry often races the fresh challenge; one more attempt
+          // Last resort: one more attempt with a longer backoff
           if (isAuthError(e2)) {
             logger.info("playerStore", "Second auth error on fetchServers, retrying once more...");
             try {
               await refreshSession();
-              // Jittered wait so the fresh challenge settles, same as detailsStore
-              await new Promise((resolve) => setTimeout(resolve, backoffDelay(0)));
+              await new Promise((resolve) => setTimeout(resolve, backoffDelay(1)));
               const data = await source.getEpisodeServers(slug, number, { signal });
               void storage.set(cacheKey, { payload: data, expiration: Date.now() + CACHE_TTL.SERVERS });
               set({ servers: data, isLoading: false });
@@ -182,6 +184,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
           set({ isLoading: false, error: "Error de sesión al resolver stream" });
           return;
         }
+        await new Promise((resolve) => setTimeout(resolve, backoffDelay(0)));
         try {
           const streamResult = await source.resolveStreamUrl(server.url);
           if (streamResult == null) {
