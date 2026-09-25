@@ -51,7 +51,6 @@ export interface VideoServer {
 
 export interface HomeData {
   recent: Anime[];
-  sections?: { items: Anime[] }[];
 }
 
 export interface HistoryItem {

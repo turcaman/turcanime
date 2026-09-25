@@ -17,7 +17,7 @@ export async function withCache<T>(
     signal?: AbortSignal;
     force?: boolean;
   } = {},
-): Promise<{ data: T | null; error: Error | null; fromCache: boolean }> {
+): Promise<{ data: T | null; error: Error | null }> {
   const { ttl, signal, force } = options;
 
   if (!force) {
@@ -26,7 +26,7 @@ export async function withCache<T>(
       if (cached && typeof cached.expiration === "number" && Date.now() < cached.expiration) {
         const isStale = cached.expiration - Date.now() < (ttl ?? 0) * 0.3;
         if (!isStale) {
-          return { data: cached.payload, error: null, fromCache: true };
+          return { data: cached.payload, error: null };
         }
       }
     } catch {
@@ -47,13 +47,13 @@ export async function withCache<T>(
     } catch {
     }
 
-    return { data, error: null, fromCache: false };
+    return { data, error: null };
   } catch (e: unknown) {
     const err = e as { name?: string };
     if (err.name === "AbortError") {
-      return { data: null, error: null, fromCache: false };
+      return { data: null, error: null };
     }
-    return { data: null, error: e instanceof Error ? e : new Error(String(e)), fromCache: false };
+    return { data: null, error: e instanceof Error ? e : new Error(String(e)) };
   }
 }
 

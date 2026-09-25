@@ -9,13 +9,10 @@ interface AnimeCardProps {
   anime: Anime | HistoryItem;
   width: number;
   onPress?: () => void;
-  variant?: "default" | "continue";
-  episodeNumber?: string;
 }
 
-export const AnimeCard = memo(function AnimeCard({ anime, width, onPress, variant = "default", episodeNumber }: AnimeCardProps) {
-  const isContinue = variant === "continue";
-  const cardHeight = isContinue ? width * 0.56 : width * 1.4;
+export const AnimeCard = memo(function AnimeCard({ anime, width, onPress }: AnimeCardProps) {
+  const cardHeight = width * 1.4;
 
   const handlePress = useCallback(() => {
     if (onPress) {
@@ -38,13 +35,6 @@ export const AnimeCard = memo(function AnimeCard({ anime, width, onPress, varian
           uri={anime.image}
           style={[{ width, height: cardHeight } as import("react-native").ImageStyle]}
         />
-        {isContinue && episodeNumber != null && episodeNumber !== '' && (
-          <View className="absolute bottom-2 right-2 rounded bg-black/60 px-2 py-1">
-            <Text className="text-[10px] font-bold tracking-wide text-purple-500">
-              Ep. {episodeNumber}
-            </Text>
-          </View>
-        )}
       </View>
       <Text className="mt-2 text-sm font-medium text-white" numberOfLines={2}>
         {anime.title}

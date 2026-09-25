@@ -92,24 +92,6 @@ class Logger {
     }
     return String(error);
   }
-
-  async getLogs(): Promise<LogEntry[]> {
-    if (!this.persistenceEnabled || !this.storage) return [];
-    try {
-      return (await this.storage.get<LogEntry[]>(LOG_STORAGE_KEY)) ?? [];
-    } catch {
-      return [];
-    }
-  }
-
-  async clearLogs(): Promise<void> {
-    this.logs = [];
-    if (!this.persistenceEnabled || !this.storage) return;
-    try {
-      await this.storage.remove(LOG_STORAGE_KEY);
-    } catch {
-    }
-  }
 }
 
 export const logger = new Logger();
