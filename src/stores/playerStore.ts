@@ -1,12 +1,10 @@
 import { create } from "zustand";
 import { source } from "../services/source";
-import { refreshSession } from "../services/session";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { storage } from "../utils/storage";
 import { getCachedStream, setCachedStream } from "../utils/cache";
 import { logger } from "../utils/logger";
-import { isAuthError } from "../utils/errors";
-import { backoffDelay } from "../utils/math";
+import { SessionRefreshError, withAuthRetry } from "../utils/retry";
 import type { VideoServer } from "../types";
 
 interface PlayerState {
@@ -21,6 +19,13 @@ interface PlayerState {
   setStream: (url: string, headers: Record<string, string> | null) => void;
   setLastLanguage: (language: string) => void;
   reset: () => void;
+}
+
+const SERVERS_ERROR = "Error al cargar servidores";
+const STREAM_ERROR = "Error al resolver stream";
+
+function errorMessage(e: unknown, fallback: string): string {
+  return e instanceof Error ? e.message : fallback;
 }
 
 export const usePlayerStore = create<PlayerState>((set) => ({
@@ -51,87 +56,28 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       }
     }
 
-    try {
+    const fetchAndStore = async (): Promise<VideoServer[]> => {
       const data = await source.getEpisodeServers(slug, number, { signal });
       void storage.set(cacheKey, { payload: data, expiration: Date.now() + CACHE_TTL.SERVERS });
+      return data;
+    };
+
+    try {
+      const data = await withAuthRetry(fetchAndStore, { signal, tag: "playerStore" });
       set({ servers: data, isLoading: false });
     } catch (e: unknown) {
       if (e instanceof Error && e.name === "AbortError") {
         set({ isLoading: false });
         return;
       }
-      if (isAuthError(e)) {
-        logger.info("playerStore", "Auth error on fetchServers, refreshing session and retrying...");
-        try {
-          await refreshSession();
-        } catch {
-          logger.info("playerStore", "Session refresh failed, falling through to error");
-          set({
-            servers: [],
-            isLoading: false,
-            error: "Error de sesión al cargar servidores",
-          });
-          return;
-        }
-        if (signal != null && signal.aborted) {
-          set({ isLoading: false });
-          return;
-        }
-        // refreshSession resolves as soon as cookies are stored; the retry still
-        // races the fresh challenge, so wait the same way detailsStore does
-        await new Promise((resolve) => setTimeout(resolve, backoffDelay(0)));
-        try {
-          const data = await source.getEpisodeServers(slug, number, { signal });
-          void storage.set(cacheKey, { payload: data, expiration: Date.now() + CACHE_TTL.SERVERS });
-          set({ servers: data, isLoading: false });
-          return;
-        } catch (e2: unknown) {
-          if (e2 instanceof Error && e2.name === "AbortError") {
-            set({ isLoading: false });
-            return;
-          }
-          // Last resort: one more attempt with a longer backoff
-          if (isAuthError(e2)) {
-            logger.info("playerStore", "Second auth error on fetchServers, retrying once more...");
-            try {
-              await refreshSession();
-              await new Promise((resolve) => setTimeout(resolve, backoffDelay(1)));
-              const data = await source.getEpisodeServers(slug, number, { signal });
-              void storage.set(cacheKey, { payload: data, expiration: Date.now() + CACHE_TTL.SERVERS });
-              set({ servers: data, isLoading: false });
-              return;
-            } catch (e3: unknown) {
-              if (e3 instanceof Error && e3.name === "AbortError") {
-                set({ isLoading: false });
-                return;
-              }
-              logger.error("playerStore", "fetchServers final retry failed", e3);
-              set({ servers: [], isLoading: false, error: e3 instanceof Error ? e3.message : "Error al cargar servidores" });
-              return;
-            }
-          }
-          if (e2 instanceof Error) {
-            logger.error("playerStore", "fetchServers retry failed", e2);
-            set({
-              servers: [],
-              isLoading: false,
-              error: e2.message,
-            });
-            return;
-          }
-          set({
-            servers: [],
-            isLoading: false,
-            error: "Error al cargar servidores",
-          });
-          return;
-        }
-      }
       logger.error("playerStore", "fetchServers failed", e);
       set({
         servers: [],
         isLoading: false,
-        error: e instanceof Error ? e.message : "Error al cargar servidores",
+        error:
+          e instanceof SessionRefreshError
+            ? "Error de sesión al cargar servidores"
+            : errorMessage(e, SERVERS_ERROR),
       });
     }
   },
@@ -139,77 +85,35 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   resolveStream: async (server: VideoServer) => {
     set({ isLoading: true, streamUrl: null, streamHeaders: null, lastLanguage: server.language, error: null });
 
+    const applyStream = (url: string, headers?: Record<string, string>) => {
+      set({ streamUrl: url, streamHeaders: headers ?? null, isLoading: false });
+    };
+
     const cached = await getCachedStream(server);
     if (cached != null) {
-      set({
-        streamUrl: cached.url,
-        streamHeaders: cached.headers ?? null,
-        isLoading: false,
-      });
+      applyStream(cached.url, cached.headers);
       return;
     }
 
-    const doResolve = async (): Promise<boolean> => {
-      const streamResult = await source.resolveStreamUrl(server.url);
-      if (streamResult == null) return false;
-
-      const headers = streamResult.headers;
-
-      void setCachedStream(server, { url: streamResult.url, headers });
-
-      set({
-        streamUrl: streamResult.url,
-        streamHeaders: headers ?? null,
-        isLoading: false,
-      });
-      return true;
-    };
-
     try {
-      const ok = await doResolve();
-      if (ok) return;
-
-      logger.info("playerStore", "Stream resolve failed, refreshing session...");
-      await refreshSession();
-      const ok2 = await doResolve();
-      if (!ok2) {
-        set({ isLoading: false, error: "No se pudo resolver el stream" });
-      }
+      const result = await withAuthRetry(async () => {
+        const fresh = await source.resolveStreamUrl(server.url);
+        if (fresh == null) throw new Error("No se pudo resolver el stream");
+        void setCachedStream(server, fresh);
+        return fresh;
+      }, { tag: "playerStore" });
+      applyStream(result.url, result.headers);
     } catch (e: unknown) {
-      if (isAuthError(e)) {
-        logger.info("playerStore", "Auth error on resolveStream, refreshing session and retrying...");
-        try {
-          await refreshSession();
-        } catch {
-          set({ isLoading: false, error: "Error de sesión al resolver stream" });
-          return;
-        }
-        await new Promise((resolve) => setTimeout(resolve, backoffDelay(0)));
-        try {
-          const streamResult = await source.resolveStreamUrl(server.url);
-          if (streamResult == null) {
-            set({ isLoading: false, error: "No se pudo resolver el stream" });
-            return;
-          }
-          const headers = streamResult.headers;
-          void setCachedStream(server, { url: streamResult.url, headers });
-          set({
-            streamUrl: streamResult.url,
-            streamHeaders: headers ?? null,
-            isLoading: false,
-          });
-          return;
-        } catch (e2: unknown) {
-          set({
-            isLoading: false,
-            error: e2 instanceof Error ? e2.message : "Error al resolver stream",
-          });
-          return;
-        }
+      if (e instanceof Error && e.name === "AbortError") {
+        set({ isLoading: false });
+        return;
       }
       set({
         isLoading: false,
-        error: e instanceof Error ? e.message : "Error al resolver stream",
+        error:
+          e instanceof SessionRefreshError
+            ? "Error de sesión al resolver stream"
+            : errorMessage(e, STREAM_ERROR),
       });
     }
   },

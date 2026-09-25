@@ -1,10 +1,7 @@
 import { create } from "zustand";
 import { source } from "../services/source";
 import { withCache } from "../utils/cache";
-import { refreshSession } from "../services/session";
-import { logger } from "../utils/logger";
-import { isAuthError } from "../utils/errors";
-import { backoffDelay } from "../utils/math";
+import { withAuthRetry } from "../utils/retry";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import type { AppError, HomeData } from "../types";
 
@@ -41,55 +38,31 @@ export const useHomeStore = create<HomeState>((set) => ({
       error: null,
     });
 
-    const attempt = async (retryCount: number, isRetry: boolean): Promise<void> => {
-      if (signal.aborted) return;
-
-      const result = await withCache(
+    const load = (attempt: number) =>
+      withCache(
         CACHE_PREFIXES.HOME,
         (sig) => source.getHomeData({ signal: sig }),
-        { ttl: CACHE_TTL.HOME, signal, force: isRetry ? true : force },
+        { ttl: CACHE_TTL.HOME, signal, force: attempt > 0 ? true : force },
       );
 
-      if (signal.aborted) return;
+    if (signal.aborted) return;
 
-      if (isAuthError(result.error) && retryCount < 2) {
-        logger.info("homeStore", `Auth error, refreshing session and retrying (attempt ${retryCount + 1}/3)...`);
-        try {
-          await refreshSession();
-        } catch {
-          logger.warn("homeStore", "Session refresh threw, continuing retry anyway");
-        }
-        if (signal.aborted) return;
-        await new Promise((resolve) => setTimeout(resolve, backoffDelay(retryCount)));
-        return attempt(retryCount + 1, true);
-      }
+    const result = await withAuthRetry(load, {
+      signal,
+      maxRetries: 2,
+      // The fresh challenge may still land after a failed refresh
+      continueAfterRefreshFailure: true,
+      tag: "homeStore",
+    });
 
-      if (signal.aborted) return;
+    if (signal.aborted) return;
 
-      if (result.data && result.data.recent.length > 0) {
-        set({
-          homeData: result.data,
-          isHomeLoading: false,
-          isRefreshing: false,
-          error: null,
-        });
-      } else if (result.error) {
-        set({
-          isHomeLoading: false,
-          isRefreshing: false,
-          error: { type: "UNKNOWN", message: result.error.message },
-        });
-      } else {
-        set({
-          homeData: { recent: [] },
-          isHomeLoading: false,
-          isRefreshing: false,
-        });
-      }
-    };
-
-    await attempt(0, false);
+    if (result.data && result.data.recent.length > 0) {
+      set({ homeData: result.data, isHomeLoading: false, isRefreshing: false, error: null });
+    } else if (result.error) {
+      set({ isHomeLoading: false, isRefreshing: false, error: { type: "UNKNOWN", message: result.error.message } });
+    } else {
+      set({ homeData: { recent: [] }, isHomeLoading: false, isRefreshing: false });
+    }
   },
-
-
 }));

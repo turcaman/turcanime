@@ -4,9 +4,8 @@ import type { Episode, VideoServer } from "../types";
 import { usePlayerStore } from "../stores/playerStore";
 import { useHistoryStore } from "../stores/historyStore";
 import { source } from "../services/source";
-import { refreshSession } from "../services/session";
-import { isAuthError } from "../utils/errors";
 import { getCachedStream, setCachedStream } from "../utils/cache";
+import { withAuthRetry } from "../utils/retry";
 import { findHistoryEntry, makeHistoryEntry, addToHistorySafe } from "../utils/history";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
@@ -51,7 +50,6 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
             : servers[0];
         if (server == null) throw new Error("No hay servidor disponible");
 
-        // Reuse the cached resolved stream (shared with playerStore.resolveStream)
         let resolved = await getCachedStream(server);
         if (resolved == null) {
           const fresh = await source.resolveStreamUrl(server.url);
@@ -80,24 +78,10 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       };
 
       try {
-        await attempt();
+        await withAuthRetry(() => attempt(), { tag: "episodeNavigation" });
       } catch (e: unknown) {
-        if (isAuthError(e)) {
-          try {
-            await refreshSession();
-          } catch {
-            setError("Error al renovar sesión");
-            setLoading(false);
-            return;
-          }
-          try {
-            await attempt(true);
-          } catch (e2: unknown) {
-            setError(e2 instanceof Error ? e2.message : "Error desconocido");
-          }
-        } else {
-          setError(e instanceof Error ? e.message : "Error desconocido");
-        }
+        // SessionRefreshError carries the user-facing refresh-failure message
+        setError(e instanceof Error ? e.message : "Error desconocido");
       }
       setLoading(false);
     },
