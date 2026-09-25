@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { source } from "../services/source";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { storage } from "../utils/storage";
-import { getCachedStream, setCachedStream } from "../utils/cache";
+import { getCachedStream, resolveStreamCached } from "../utils/cache";
 import { logger } from "../utils/logger";
 import { SessionRefreshError, withAuthRetry } from "../utils/retry";
 import type { VideoServer } from "../types";
@@ -97,9 +97,8 @@ export const usePlayerStore = create<PlayerState>((set) => ({
 
     try {
       const result = await withAuthRetry(async () => {
-        const fresh = await source.resolveStreamUrl(server.url);
+        const fresh = await resolveStreamCached(server);
         if (fresh == null) throw new Error("No se pudo resolver el stream");
-        void setCachedStream(server, fresh);
         return fresh;
       }, { tag: "playerStore" });
       applyStream(result.url, result.headers);

@@ -2,6 +2,7 @@ import type { CacheEntry, StreamUrlResult } from "../types";
 import { CACHE_PREFIXES, CACHE_TTL, LIMITS } from "../config/cache";
 import { storage } from "./storage";
 import { logger } from "./logger";
+import { source } from "../services/source";
 
 /**
  * Fetch data with caching.
@@ -69,4 +70,17 @@ export async function getCachedStream(server: { url: string; id: string }): Prom
 
 export function setCachedStream(server: { url: string; id: string }, result: StreamUrlResult): Promise<void> {
   return storage.set(streamCacheKey(server), { payload: result, expiration: Date.now() + CACHE_TTL.STREAM });
+}
+
+/**
+ * Cache-aside stream resolution with a single owner. Both playerStore.resolveStream
+ * and useEpisodeNavigation used to reimplement this read→resolve→write sequence.
+ * Returns null when the bridge yields no stream.
+ */
+export async function resolveStreamCached(server: { url: string; id: string }): Promise<StreamUrlResult | null> {
+  const cached = await getCachedStream(server);
+  if (cached != null) return cached;
+  const fresh = await source.resolveStreamUrl(server.url);
+  if (fresh != null) void setCachedStream(server, fresh);
+  return fresh;
 }

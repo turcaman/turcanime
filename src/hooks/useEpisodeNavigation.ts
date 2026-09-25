@@ -3,8 +3,7 @@ import type { VideoPlayer } from "expo-video";
 import type { Episode, VideoServer } from "../types";
 import { usePlayerStore } from "../stores/playerStore";
 import { useHistoryStore } from "../stores/historyStore";
-import { source } from "../services/source";
-import { getCachedStream, setCachedStream } from "../utils/cache";
+import { resolveStreamCached } from "../utils/cache";
 import { withAuthRetry } from "../utils/retry";
 import { findHistoryEntry, makeHistoryEntry, addToHistorySafe } from "../utils/history";
 
@@ -50,14 +49,7 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
             : servers[0];
         if (server == null) throw new Error("No hay servidor disponible");
 
-        let resolved = await getCachedStream(server);
-        if (resolved == null) {
-          const fresh = await source.resolveStreamUrl(server.url);
-          if (fresh != null) {
-            void setCachedStream(server, fresh);
-            resolved = fresh;
-          }
-        }
+        const resolved = await resolveStreamCached(server);
         if (resolved == null) throw new Error("No se pudo resolver el stream");
 
         const headers = resolved.headers;
