@@ -55,5 +55,5 @@ export function computeContinueWatching(lastViewed: HistoryItem[]): HistoryItem[
       latestPerAnime.set(item.url, item);
     }
   }
-  return Array.from(latestPerAnime.values()).slice(0, 8);
+  return Array.from(latestPerAnime.values()).slice(0, 16);
 }
