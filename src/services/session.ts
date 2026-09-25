@@ -18,8 +18,23 @@ class SessionManager {
   private sessionReadyResolver: (() => void) | null = null;
   private refreshPromise: Promise<void> | null = null;
 
+  // The gate blocks request traffic until non-empty cookies exist: arming
+  // creates a fresh closed gate, and only a session with cookies opens it
+  private armGate(): void {
+    this.sessionReadyPromise = new Promise((resolve) => {
+      this.sessionReadyResolver = resolve;
+    });
+  }
+
+  private resolveGate(): void {
+    if (this.sessionReadyResolver) {
+      this.sessionReadyResolver();
+      this.sessionReadyResolver = null;
+    }
+  }
+
   async initialize(): Promise<void> {
-    let promiseResolver: (() => void) | null = null;
+    let hasCookies = false;
 
     try {
       const existingSession = await this.getSession();
@@ -27,16 +42,14 @@ class SessionManager {
         logger.info("SessionManager", "No existing session, creating initial session");
         await this.setSession({ userAgent: "", cookies: "" });
       } else if (existingSession.cookies && existingSession.cookies.length > 0) {
-        promiseResolver = () => {};
+        hasCookies = true;
       }
     } catch (error) {
       logger.error("SessionManager", "Failed to load session", error);
     }
 
-    this.sessionReadyPromise = new Promise((resolve) => {
-      this.sessionReadyResolver = resolve;
-      if (promiseResolver) resolve();
-    });
+    this.armGate();
+    if (hasCookies) this.resolveGate();
   }
 
   async getSession(): Promise<ISession | null> {
@@ -60,10 +73,9 @@ class SessionManager {
       }
       const withMeta: ISession = { ...session, fetchedAt };
       await storage.set(SESSION_KEY, withMeta);
-      if (session.cookies && session.cookies.length > 0 && this.sessionReadyResolver) {
+      if (session.cookies && session.cookies.length > 0) {
         logger.info("SessionManager", `Session updated with ${session.cookies.length} cookies`);
-        this.sessionReadyResolver();
-        this.sessionReadyResolver = null;
+        this.resolveGate();
       }
     } catch (error) {
       logger.error("SessionManager", "Failed to set session", error);
@@ -120,9 +132,7 @@ class SessionManager {
     // Atomic swap: keep the current session in storage while the WebView fetches
     // a new one. Clearing cookies up front killed every request that raced the
     // refresh and left the app dead when the challenge timed out.
-    this.sessionReadyPromise = new Promise((resolve) => {
-      this.sessionReadyResolver = resolve;
-    });
+    this.armGate();
     webViewBridge.navigateTo(SOURCE_CONFIG.sessionWashUrl);
     await Promise.race([
       this.waitForCookies(),
