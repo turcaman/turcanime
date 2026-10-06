@@ -133,7 +133,7 @@ async function getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData
   const html = await res.text();
   const recent = htmlParser.parseCards(html);
   if (recent.length === 0) {
-    logger.info("getHomeData", "No cards extracted — site structure may have changed");
+    throw new SourceError("No cards extracted — site structure may have changed", "UNKNOWN");
   }
   return { recent };
 }
