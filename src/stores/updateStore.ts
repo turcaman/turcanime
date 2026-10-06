@@ -204,10 +204,15 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
         return;
       }
       logger.error("updateStore", "Download/install failed", err);
-      set({
-        phase: "error",
-        errorMessage: err instanceof Error ? err.message : "No se pudo completar la actualización.",
-      });
+      const message =
+        err instanceof Error && err.message === "stalled"
+          ? "La descarga se detuvo por conexión lenta. Reintentá cuando tengas mejor señal."
+          : err instanceof Error && err.message === "timeout"
+            ? "La descarga tardó demasiado. Reintentá con mejor conexión."
+            : err instanceof Error
+              ? err.message
+              : "No se pudo completar la actualización.";
+      set({ phase: "error", errorMessage: message });
     } finally {
       downloadAbort = null;
     }

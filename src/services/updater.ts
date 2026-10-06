@@ -31,6 +31,7 @@ export async function downloadApkWithProgress(
 
   const totalFromHeaders = await fetchTotalSize(url);
   let cancelled = false;
+  let abortReason: "user" | "stall" | "timeout" | null = null;
   let lastSize = 0;
   let stalledSince: number | null = null;
   const abortController = new AbortController();
@@ -42,6 +43,7 @@ export async function downloadApkWithProgress(
         stalledSince ??= Date.now();
         if (Date.now() - stalledSince > PROGRESS_STALL_TIMEOUT_MS) {
           logger.warn("updater", "Download stalled, aborting download");
+          abortReason = "stall";
           abortController.abort();
         }
         return;
@@ -61,6 +63,7 @@ export async function downloadApkWithProgress(
     }
     signal.addEventListener("abort", () => {
       cancelled = true;
+      abortReason = "user";
       abortController.abort();
     });
   }
@@ -72,12 +75,17 @@ export async function downloadApkWithProgress(
       { idempotent: true, headers: { "User-Agent": "Turcanime-Android" } },
     );
 
-    const timeout = setTimeout(() => abortController.abort(), DOWNLOAD_TIMEOUT_MS);
+    const timeout = setTimeout(() => {
+      abortReason ??= "timeout";
+      abortController.abort();
+    }, DOWNLOAD_TIMEOUT_MS);
 
     const file = await Promise.race([
       download,
       new Promise<never>((_, reject) =>
-        abortController.signal.addEventListener("abort", () => reject(new Error("cancelled"))),
+        abortController.signal.addEventListener("abort", () =>
+          reject(new Error(abortReason === "user" ? "cancelled" : (abortReason ?? "cancelled"))),
+        ),
       ),
     ]);
     clearTimeout(timeout);
