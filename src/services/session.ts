@@ -2,6 +2,7 @@ import { SOURCE_CONFIG } from "../config/source";
 import type { ISession } from "../types";
 import { logger } from "../utils/logger";
 import { storage } from "../utils/storage";
+import { unwrapCookies } from "./cookies";
 import { webViewBridge } from "./webview";
 
 export const SESSION_KEY = "scraper_session";
@@ -12,6 +13,21 @@ const SESSION_REFRESH_TIMEOUT = 40_000;
 // CF clearance cookies typically outlive this; refresh proactively before the
 // origin discovers expiry with a 403
 const SESSION_MAX_AGE = 50 * 60 * 1000;
+
+export function isValidSessionCookies(raw: string | undefined | null): boolean {
+  if (!raw) return false;
+  const unwrapped = unwrapCookies(raw);
+  for (const pair of unwrapped.split(";")) {
+    const trimmed = pair.trim();
+    if (!trimmed) continue;
+    const eqIdx = trimmed.indexOf("=");
+    if (eqIdx === -1) continue;
+    const name = trimmed.slice(0, eqIdx).trim();
+    const value = trimmed.slice(eqIdx + 1).trim();
+    if (name === "cf_clearance" && value.length > 0) return true;
+  }
+  return false;
+}
 
 class SessionManager {
   private sessionReadyPromise: Promise<void> | null = null;
@@ -34,22 +50,23 @@ class SessionManager {
   }
 
   async initialize(): Promise<void> {
-    let hasCookies = false;
+    let hasValidCookies = false;
 
     try {
       const existingSession = await this.getSession();
       if (!existingSession) {
         logger.info("SessionManager", "No existing session, creating initial session");
         await this.setSession({ userAgent: "", cookies: "" });
-      } else if (existingSession.cookies && existingSession.cookies.length > 0) {
-        hasCookies = true;
+      } else if (isValidSessionCookies(existingSession.cookies)) {
+        const age = existingSession.fetchedAt != null ? Date.now() - existingSession.fetchedAt : null;
+        hasValidCookies = age == null || age < SESSION_MAX_AGE;
       }
     } catch (error) {
       logger.error("SessionManager", "Failed to load session", error);
     }
 
     this.armGate();
-    if (hasCookies) this.resolveGate();
+    if (hasValidCookies) this.resolveGate();
   }
 
   async getSession(): Promise<ISession | null> {
@@ -63,17 +80,22 @@ class SessionManager {
 
   async setSession(session: ISession): Promise<void> {
     try {
+      const valid = isValidSessionCookies(session.cookies);
+      const current = await this.getSession();
+      if (!valid && current != null && isValidSessionCookies(current.cookies)) {
+        logger.warn("SessionManager", "Ignoring partial session without cf_clearance");
+        return;
+      }
       // Preserve the original capture time when cookies are unchanged: every
       // response echoing the same Set-Cookie values would otherwise reset the
       // age and perpetually defer the proactive refresh
       let fetchedAt = Date.now();
-      const current = await this.getSession();
       if (current != null && current.cookies === session.cookies && current.fetchedAt != null) {
         fetchedAt = current.fetchedAt;
       }
       const withMeta: ISession = { ...session, fetchedAt };
       await storage.set(SESSION_KEY, withMeta);
-      if (session.cookies && session.cookies.length > 0) {
+      if (valid) {
         logger.info("SessionManager", `Session updated with ${session.cookies.length} cookies`);
         this.resolveGate();
       }
