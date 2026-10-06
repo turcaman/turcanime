@@ -12,7 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useLocalSearchParams, router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const NEXT_EPISODE_COUNTDOWN_SECONDS = 10;
@@ -58,7 +58,7 @@ function PlayerContent() {
     }
   }, [networkOk, player]);
 
-  const { resolveAndPlay, loading, error, currentEpNumber, setCurrentEpNumber } = useEpisodeNavigation(player, title, image);
+  const { resolveAndPlay, loading, currentEpNumber, setCurrentEpNumber } = useEpisodeNavigation(player, title, image);
 
   useEffect(() => { setCurrentEpNumber(number); }, [number, setCurrentEpNumber]);
 
@@ -232,11 +232,6 @@ function PlayerContent() {
         onCancelNextEpisode={cancelNextEpisode}
         onConfirmNextEpisode={confirmNextEpisode}
       />
-      {error != null && (
-        <View className="absolute bottom-20 left-4 right-4 bg-neutral-900 rounded-lg border border-neutral-800 p-3">
-          <Text className="text-neutral-400 text-xs text-center">{error}</Text>
-        </View>
-      )}
     </View>
   );
 }
