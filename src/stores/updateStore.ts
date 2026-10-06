@@ -107,15 +107,21 @@ async function runCheck(
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = (await res.json()) as {
       tag_name?: string;
-      assets?: { name: string; browser_download_url: string }[];
+      assets?: { name: string; browser_download_url: string; size?: number }[];
     };
     const latest = (data.tag_name ?? "").replace(/^v/, "").trim();
     if (!latest) throw new Error("No tag");
+    const isPrerelease = latest.includes("-");
 
-    const apkAsset = data.assets?.find((a) => a.name.toLowerCase().endsWith(".apk"));
+    const apkAsset = data.assets?.find(
+      (a) =>
+        a.name.toLowerCase().startsWith("turcanime-") &&
+        a.name.toLowerCase().endsWith(".apk") &&
+        (a.size == null || a.size > 5 * 1024 * 1024),
+    );
 
     set({
-      updateAvailable: isNewer(latest, current) ? latest : null,
+      updateAvailable: !isPrerelease && isNewer(latest, current) ? latest : null,
       apkUrl: apkAsset?.browser_download_url ?? null,
       currentVersion: current,
       checkingForUpdates: false,

@@ -98,7 +98,7 @@ export default function SettingsScreen() {
   }, []);
 
   const handleManualCheck = useCallback(() => {
-    void checkForUpdates();
+    void checkForUpdates(true);
   }, [checkForUpdates]);
 
   const handleDownloadUpdate = useCallback(() => {
