@@ -1,6 +1,7 @@
 import { SOURCE_CONFIG } from "../config/source";
 import type { ISession } from "../types";
 import { logger } from "../utils/logger";
+import { SourceError } from "../utils/errors";
 import { storage } from "../utils/storage";
 import { unwrapCookies } from "./cookies";
 import { webViewBridge } from "./webview";
@@ -129,11 +130,11 @@ class SessionManager {
       ]);
       if (raceResult === "timeout") {
         logger.warn("SessionManager", "No valid cookies within 40s");
-        throw new Error("Session timeout - no valid cookies received");
+        throw new SourceError("Session timeout - no valid cookies received", "AUTH_ERROR");
       }
       const session = await this.getSession();
       if (!isValidSessionCookies(session?.cookies)) {
-        throw new Error("Session timeout - no valid cookies received");
+        throw new SourceError("Session timeout - no valid cookies received", "AUTH_ERROR");
       }
       logger.debug("SessionManager", "Valid cookies ready");
     } catch (error) {
@@ -161,7 +162,7 @@ class SessionManager {
     await this.waitForCookies();
     const session = await this.getSession();
     if (!isValidSessionCookies(session?.cookies)) {
-      throw new Error("Session refresh failed - no valid cookies received");
+      throw new SourceError("Session refresh failed - no valid cookies received", "AUTH_ERROR");
     }
     logger.info("infrastructure", "Session refreshed successfully");
   }
