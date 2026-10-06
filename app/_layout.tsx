@@ -52,7 +52,11 @@ function RootInner() {
     const prev = prevConnectionType.current;
     prevConnectionType.current = connectionType;
     if (prev !== null && prev !== connectionType && prev !== "unknown" && connectionType !== "unknown") {
-      const timer = setTimeout(() => triggerSessionRefresh(), 2000);
+      const timer = setTimeout(() => {
+        // Flap WiFi/5G must not wash on every switch: a fresh session stays
+        if (Date.now() - lastRefreshTime.current < SESSION_REFRESH_COOLDOWN) return;
+        triggerSessionRefresh();
+      }, 2000);
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -63,7 +67,9 @@ function RootInner() {
     prevReachable.current = isInternetReachable;
     if (prev === false && isInternetReachable === true) {
       const timer = setTimeout(() => {
-        triggerSessionRefresh();
+        if (Date.now() - lastRefreshTime.current >= SESSION_REFRESH_COOLDOWN) {
+          triggerSessionRefresh();
+        }
         const updateState = useUpdateStore.getState();
         if (updateState.updateCheckEnabled !== false) {
           void updateState.checkForUpdates();
