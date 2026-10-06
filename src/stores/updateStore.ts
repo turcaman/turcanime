@@ -196,7 +196,17 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
         return;
       }
       set({ phase: "installing" });
-      await installApk(file);
+      try {
+        await installApk(file);
+      } catch (installErr) {
+        // Permission may never have been granted: force the permission
+        // screen again next time instead of failing silently forever
+        set({ installPermissionGranted: false });
+        void storage.set(INSTALL_PERMISSION_KEY, false);
+        throw installErr;
+      }
+      set({ installPermissionGranted: true });
+      void storage.set(INSTALL_PERMISSION_KEY, true);
       set({ phase: "ready" });
     } catch (err) {
       if (err instanceof Error && err.message === "cancelled") {
@@ -233,7 +243,8 @@ export async function grantInstallPermissionAndDownload(): Promise<void> {
     // without the permission granted
     useUpdateStore.setState({ resumeAfterPermission: true });
     await openInstallPermissionSettings();
-    await storage.set(INSTALL_PERMISSION_KEY, true);
+    // Memory-only: persisted only after installApk succeeds, so denying
+    // in settings retries the permission screen next time
     useUpdateStore.setState({ installPermissionGranted: true });
     await store.beginDownload();
   } catch (err) {
