@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { source, type RawSearchItem } from "../services/source";
 import { cleanTitle } from "../services/parsers";
 import { withCache } from "../utils/cache";
+import { withAuthRetry } from "../utils/retry";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { TMDB_IMAGE_BASE } from "../config/source";
 import type { Anime, AppError, AutocompleteAnime } from "../types";
@@ -99,10 +100,19 @@ export const useSearchStore = create<SearchState>((set) => ({
       }
     }
 
-    const result = await withCache<RawSearchItem[]>(
-      cacheKey,
-      (sig) => source.searchRaw(query, { signal: sig }),
-      { ttl: CACHE_TTL.SEARCH, signal, force },
+    const result = await withAuthRetry(
+      (attempt: number) =>
+        withCache<RawSearchItem[]>(cacheKey, (sig) => source.searchRaw(query, { signal: sig }), {
+          ttl: CACHE_TTL.SEARCH,
+          signal,
+          force: attempt > 0 ? true : force,
+        }),
+      {
+        signal,
+        maxRetries: 2,
+        continueAfterRefreshFailure: true,
+        tag: "searchStore",
+      },
     );
 
     if (signal.aborted) return;
