@@ -37,14 +37,21 @@ export const useDetailsStore = create<DetailsState>((set) => ({
 
     try {
       const result = await withAuthRetry(fetchFresh, { signal, maxRetries: 2, tag: "detailsStore" });
-      if (signal.aborted) return;
+      if (detailsController?.signal !== signal) return;
+      if (signal.aborted) {
+        set({ isDetailsLoading: false });
+        return;
+      }
       if (result.error) {
         set({ error: { type: "UNKNOWN", message: result.error.message }, isDetailsLoading: false });
       } else {
         set({ activeAnime: result.data ?? null, isDetailsLoading: false, error: null });
       }
     } catch (e: unknown) {
-      if (e instanceof Error && e.name === "AbortError") return;
+      if (e instanceof Error && e.name === "AbortError") {
+        if (detailsController?.signal === signal) set({ isDetailsLoading: false });
+        return;
+      }
       set({
         error: { type: "UNKNOWN", message: e instanceof Error ? e.message : String(e) },
         isDetailsLoading: false,

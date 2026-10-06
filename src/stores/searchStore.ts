@@ -121,6 +121,12 @@ export const useSearchStore = create<SearchState>((set) => ({
       memorySet(cacheKey, result.data);
     }
 
+    if (searchController?.signal !== signal) return;
+    if (signal.aborted) {
+      set({ isSearchLoading: false });
+      return;
+    }
+
     if (result.error) {
       set({ error: { type: "UNKNOWN", message: result.error.message }, isSearchLoading: false });
     } else {

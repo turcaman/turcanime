@@ -40,7 +40,7 @@ export const useHomeStore = create<HomeState>((set) => ({
         { ttl: CACHE_TTL.HOME, signal, force: attempt > 0 ? true : force },
       );
 
-    if (signal.aborted) return;
+    if (homeController?.signal !== signal) return;
 
     const result = await withAuthRetry(load, {
       signal,
@@ -50,7 +50,11 @@ export const useHomeStore = create<HomeState>((set) => ({
       tag: "homeStore",
     });
 
-    if (signal.aborted) return;
+    if (homeController?.signal !== signal) return;
+    if (signal.aborted) {
+      set({ isHomeLoading: false, isRefreshing: false });
+      return;
+    }
 
     if (result.data && result.data.recent.length > 0) {
       set({ homeData: result.data, isHomeLoading: false, isRefreshing: false, error: null });
