@@ -13,7 +13,6 @@ interface HomeState {
   isRefreshing: boolean;
   error: AppError | null;
   fetchHome: (force?: boolean) => Promise<void>;
-  prepareRefresh: () => void;
 }
 
 export const useHomeStore = create<HomeState>((set) => ({
@@ -21,10 +20,6 @@ export const useHomeStore = create<HomeState>((set) => ({
   isHomeLoading: false,
   isRefreshing: false,
   error: null,
-
-  prepareRefresh: () => {
-    set({ homeData: { recent: [] }, isHomeLoading: true, isRefreshing: true, error: null });
-  },
 
   fetchHome: async (force = false) => {
     if (homeController) homeController.abort();
