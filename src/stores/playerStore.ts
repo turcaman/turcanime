@@ -96,8 +96,8 @@ export const usePlayerStore = create<PlayerState>((set) => ({
     }
 
     try {
-      const result = await withAuthRetry(async () => {
-        const fresh = await resolveStreamCached(server);
+      const result = await withAuthRetry(async (retryIndex: number) => {
+        const fresh = await resolveStreamCached(server, { force: retryIndex > 0 });
         if (fresh == null) throw new Error("No se pudo resolver el stream");
         return fresh;
       }, { tag: "playerStore" });

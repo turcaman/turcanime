@@ -37,9 +37,10 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       setLoading(true);
       setError(null);
 
-      const attempt = async (_retried?: boolean): Promise<void> => {
-        // Reuse the cached server list from playerStore.fetchServers instead of re-fetching /ver/...
-        await usePlayerStore.getState().fetchServers(targetSlug, targetEp.number);
+      const attempt = async (retryIndex = 0): Promise<void> => {
+        // Retry fetches fresh servers: the bridge token may have expired and
+        // the 10min SERVERS cache would otherwise replay the same dead URL
+        await usePlayerStore.getState().fetchServers(targetSlug, targetEp.number, retryIndex > 0);
         const storeError = usePlayerStore.getState().error;
         if (storeError != null) {
           if (/sesi|session|authenticat/i.test(storeError)) {
@@ -54,7 +55,7 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
             : servers[0];
         if (server == null) throw new Error("No hay servidor disponible");
 
-        const resolved = await resolveStreamCached(server);
+        const resolved = await resolveStreamCached(server, { force: retryIndex > 0 });
         if (resolved == null) throw new Error("No se pudo resolver el stream");
 
         const headers = resolved.headers;

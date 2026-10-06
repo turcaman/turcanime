@@ -77,9 +77,14 @@ export function setCachedStream(server: { url: string; id: string }, result: Str
  * and useEpisodeNavigation used to reimplement this read→resolve→write sequence.
  * Returns null when the bridge yields no stream.
  */
-export async function resolveStreamCached(server: { url: string; id: string }): Promise<StreamUrlResult | null> {
-  const cached = await getCachedStream(server);
-  if (cached != null) return cached;
+export async function resolveStreamCached(
+  server: { url: string; id: string },
+  options: { force?: boolean } = {},
+): Promise<StreamUrlResult | null> {
+  if (!options.force) {
+    const cached = await getCachedStream(server);
+    if (cached != null) return cached;
+  }
   const fresh = await source.resolveStreamUrl(server.url);
   if (fresh != null) void setCachedStream(server, fresh);
   return fresh;
