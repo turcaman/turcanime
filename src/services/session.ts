@@ -7,8 +7,7 @@ import { webViewBridge } from "./webview";
 
 export const SESSION_KEY = "scraper_session";
 // Slow devices can take well over 15s to clear a Cloudflare challenge.
-// Also kept above the 30s bootstrap poll cap in bootstrap.ts so a challenge
-// clearing at ~31s doesn't fail an in-flight refresh
+// Matches the bootstrap poll window so both sides share one 40s timing.
 const SESSION_REFRESH_TIMEOUT = 40_000;
 // CF clearance cookies typically outlive this; refresh proactively before the
 // origin discovers expiry with a 403
