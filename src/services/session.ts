@@ -146,18 +146,15 @@ class SessionManager {
   }
 
   private async executeRefresh(): Promise<void> {
-    // Atomic swap: keep the current session in storage while the WebView fetches
-    // a new one. Clearing cookies up front killed every request that raced the
-    // refresh and left the app dead when the challenge timed out.
+    // Singleflight via acquireFreshSession: concurrent callers share this one
+    // execution. Gate is armed once, WebView navigates once, every waiter
+    // shares the same 40s wait. Valid session opens it, timeout throws.
     this.armGate();
     webViewBridge.navigateTo(SOURCE_CONFIG.sessionWashUrl);
-    await Promise.race([
-      this.waitForCookies(),
-      new Promise<void>((resolve) => setTimeout(resolve, SESSION_REFRESH_TIMEOUT)),
-    ]);
+    await this.waitForCookies();
     const session = await this.getSession();
-    if (!session?.cookies) {
-      throw new Error("Session refresh failed - no cookies received");
+    if (!isValidSessionCookies(session?.cookies)) {
+      throw new Error("Session refresh failed - no valid cookies received");
     }
     logger.info("infrastructure", "Session refreshed successfully");
   }
