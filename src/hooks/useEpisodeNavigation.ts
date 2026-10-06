@@ -5,6 +5,7 @@ import { usePlayerStore } from "../stores/playerStore";
 import { useHistoryStore } from "../stores/historyStore";
 import { resolveStreamCached } from "../utils/cache";
 import { withAuthRetry } from "../utils/retry";
+import { SourceError } from "../utils/errors";
 import { findHistoryEntry, makeHistoryEntry, addToHistorySafe } from "../utils/history";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
@@ -39,8 +40,12 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       const attempt = async (_retried?: boolean): Promise<void> => {
         // Reuse the cached server list from playerStore.fetchServers instead of re-fetching /ver/...
         await usePlayerStore.getState().fetchServers(targetSlug, targetEp.number);
-        if (usePlayerStore.getState().error != null) {
-          throw new Error(usePlayerStore.getState().error ?? "No hay servidor disponible");
+        const storeError = usePlayerStore.getState().error;
+        if (storeError != null) {
+          if (/sesi|session|authenticat/i.test(storeError)) {
+            throw new SourceError(storeError, "AUTH_ERROR");
+          }
+          throw new Error(storeError);
         }
         const servers = usePlayerStore.getState().servers;
         const server: VideoServer | undefined =
