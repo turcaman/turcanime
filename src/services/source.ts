@@ -16,9 +16,10 @@ import type {
 
 
 async function fetchWithSession(path: string, options: RequestInit = {}): Promise<Response> {
+  // Proactive refresh first so an aged session renews before any request
+  // fires; then wait for the shared valid gate. No fire-and-forget.
+  await ensureFreshSession();
   await sessionManager.waitForCookies();
-  // Proactive refresh for aged sessions so expiry surfaces here, not as a 403
-  void ensureFreshSession();
 
   const session = await sessionManager.getSession();
   const rawCookies = unwrapCookies(session?.cookies ?? "");

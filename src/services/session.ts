@@ -168,19 +168,26 @@ export async function refreshSession(): Promise<void> {
 }
 
 /**
- * Refresh proactively when the stored cookies are older than SESSION_MAX_AGE,
- * so an expired clearance never surfaces as a user-facing 403.
- * Boot flow (no cookies yet) and legacy sessions (no fetchedAt) are left alone.
+ * Refresh proactively when stored cookies are missing clearance or older
+ * than SESSION_MAX_AGE, so expiry never surfaces as a user-facing 403.
+ * Boot flow (no cookies yet) relies on the initial WebView load instead.
  */
 export async function ensureFreshSession(): Promise<void> {
   try {
     const session = await sessionManager.getSession();
-    if (!session?.cookies || !session.fetchedAt) return;
+    if (!session?.cookies) return;
+    if (!isValidSessionCookies(session.cookies)) {
+      logger.info("infrastructure", "Session missing clearance, refreshing");
+      await refreshSession();
+      return;
+    }
+    if (!session.fetchedAt) return;
     const age = Date.now() - session.fetchedAt;
     if (age < SESSION_MAX_AGE) return;
     logger.info("infrastructure", `Session is ${Math.round(age / 60000)}min old, refreshing proactively`);
     await refreshSession();
   } catch (error) {
     logger.warn("infrastructure", "Proactive session refresh failed", error);
+    throw error;
   }
 }
