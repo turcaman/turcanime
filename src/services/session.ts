@@ -9,47 +9,57 @@ export const SESSION_KEY = "scraper_session";
 // Slow devices can take well over 15s to clear a Cloudflare challenge.
 // Matches the bootstrap poll window so both sides share one 40s timing.
 const SESSION_REFRESH_TIMEOUT = 40_000;
-// CF clearance cookies typically outlive this; refresh proactively before the
-// origin discovers expiry with a 403
-const SESSION_MAX_AGE = 50 * 60 * 1000;
 
 export function isValidSessionCookies(raw: string | undefined | null): boolean {
   if (!raw) return false;
-  const unwrapped = unwrapCookies(raw);
-  for (const pair of unwrapped.split(";")) {
-    const trimmed = pair.trim();
-    if (!trimmed) continue;
-    const eqIdx = trimmed.indexOf("=");
-    if (eqIdx === -1) continue;
-    const name = trimmed.slice(0, eqIdx).trim();
-    const value = trimmed.slice(eqIdx + 1).trim();
-    if (name === "cf_clearance" && value.length > 0) return true;
-  }
-  return false;
+  const unwrapped = unwrapCookies(raw).trim();
+  if (unwrapped.length === 0) return false;
+  return unwrapped.includes("=");
 }
 
 class SessionManager {
   private sessionReadyPromise: Promise<void> | null = null;
   private sessionReadyResolver: (() => void) | null = null;
   private refreshPromise: Promise<void> | null = null;
+  private settleTimer: ReturnType<typeof setTimeout> | null = null;
 
   // The gate blocks request traffic until non-empty cookies exist: arming
   // creates a fresh closed gate, and only a session with cookies opens it
   private armGate(): void {
+    if (this.settleTimer) {
+      clearTimeout(this.settleTimer);
+      this.settleTimer = null;
+    }
     this.sessionReadyPromise = new Promise((resolve) => {
       this.sessionReadyResolver = resolve;
     });
   }
 
   private resolveGate(): void {
+    if (this.settleTimer) {
+      clearTimeout(this.settleTimer);
+      this.settleTimer = null;
+    }
     if (this.sessionReadyResolver) {
       this.sessionReadyResolver();
       this.sessionReadyResolver = null;
     }
   }
 
+  // WebView often reports twice in one wash (partial then full cookies).
+  // Opening on the first report fires requests with an incomplete jar and
+  // guarantees a 403. Settle: open only after 1.5s without new updates.
+  private resolveGateSettled(): void {
+    if (!this.sessionReadyResolver) return;
+    if (this.settleTimer) clearTimeout(this.settleTimer);
+    this.settleTimer = setTimeout(() => {
+      this.settleTimer = null;
+      this.resolveGate();
+    }, 1500);
+  }
+
   async initialize(): Promise<void> {
-    let hasValidCookies = false;
+    let hasCookies = false;
 
     try {
       const existingSession = await this.getSession();
@@ -57,15 +67,14 @@ class SessionManager {
         logger.info("SessionManager", "No existing session, creating initial session");
         await this.setSession({ userAgent: "", cookies: "" });
       } else if (isValidSessionCookies(existingSession.cookies)) {
-        const age = existingSession.fetchedAt != null ? Date.now() - existingSession.fetchedAt : null;
-        hasValidCookies = age == null || age < SESSION_MAX_AGE;
+        hasCookies = true;
       }
     } catch (error) {
       logger.error("SessionManager", "Failed to load session", error);
     }
 
     this.armGate();
-    if (hasValidCookies) this.resolveGate();
+    if (hasCookies) this.resolveGate();
   }
 
   async getSession(): Promise<ISession | null> {
@@ -81,8 +90,9 @@ class SessionManager {
     try {
       const valid = isValidSessionCookies(session.cookies);
       const current = await this.getSession();
-      if (!valid && current != null && isValidSessionCookies(current.cookies)) {
-        logger.warn("SessionManager", "Ignoring partial session without cf_clearance");
+      if (!valid) {
+        if (current != null && isValidSessionCookies(current.cookies)) return;
+        await storage.set(SESSION_KEY, { ...session, fetchedAt: Date.now() });
         return;
       }
       // Preserve the original capture time when cookies are unchanged: every
@@ -94,10 +104,8 @@ class SessionManager {
       }
       const withMeta: ISession = { ...session, fetchedAt };
       await storage.set(SESSION_KEY, withMeta);
-      if (valid) {
-        logger.info("SessionManager", `Session updated with ${session.cookies.length} cookies`);
-        this.resolveGate();
-      }
+      logger.info("SessionManager", `Session updated with ${session.cookies.length} cookies`);
+      this.resolveGateSettled();
     } catch (error) {
       logger.error("SessionManager", "Failed to set session", error);
       throw error;
@@ -167,26 +175,18 @@ export async function refreshSession(): Promise<void> {
 }
 
 /**
- * Refresh proactively when stored cookies are missing clearance or older
- * than SESSION_MAX_AGE, so expiry never surfaces as a user-facing 403.
- * Boot flow (no cookies yet) relies on the initial WebView load instead.
+ * Refresh when stored cookies are missing. Aged sessions renew via the
+ * foreground refresh in _layout and via 403 retry, so fetch never blocks
+ * on age here. Boot with no cookies relies on the initial WebView load.
  */
 export async function ensureFreshSession(): Promise<void> {
   try {
     const session = await sessionManager.getSession();
+    if (session != null && isValidSessionCookies(session.cookies)) return;
     if (!session?.cookies) return;
-    if (!isValidSessionCookies(session.cookies)) {
-      logger.info("infrastructure", "Session missing clearance, refreshing");
-      await refreshSession();
-      return;
-    }
-    if (!session.fetchedAt) return;
-    const age = Date.now() - session.fetchedAt;
-    if (age < SESSION_MAX_AGE) return;
-    logger.info("infrastructure", `Session is ${Math.round(age / 60000)}min old, refreshing proactively`);
+    logger.info("infrastructure", "Session missing cookies, refreshing");
     await refreshSession();
   } catch (error) {
     logger.warn("infrastructure", "Proactive session refresh failed", error);
-    throw error;
   }
 }
