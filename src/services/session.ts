@@ -111,29 +111,24 @@ class SessionManager {
         logger.debug("SessionManager", "No session promise, initializing");
         await this.initialize();
       }
-      if (this.sessionReadyPromise) {
-        logger.debug("SessionManager", "Waiting for cookies from WebView");
-
-        const maxAttempts = 30;
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          const raceResult = await Promise.race([
-            this.sessionReadyPromise.then(() => "resolved" as const),
-            new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), 2000)),
-          ]);
-
-          if (raceResult === "resolved") {
-            const session = await this.getSession();
-            if (session?.cookies && session.cookies.length > 0) {
-              logger.debug("SessionManager", `Cookies ready after ~${(attempt + 1) * 2}s`);
-              return;
-            }
-          }
-
-          logger.debug("SessionManager", `Waiting for cookies... attempt ${attempt + 1}/${maxAttempts}`);
-        }
-
-        logger.warn("SessionManager", "Cookies not received within 60s, proceeding anyway");
+      const gate = this.sessionReadyPromise;
+      if (!gate) return;
+      logger.debug("SessionManager", "Waiting for cookies from WebView");
+      const raceResult = await Promise.race([
+        gate.then(() => "resolved" as const),
+        new Promise<"timeout">((resolve) =>
+          setTimeout(() => resolve("timeout"), SESSION_REFRESH_TIMEOUT),
+        ),
+      ]);
+      if (raceResult === "timeout") {
+        logger.warn("SessionManager", "No valid cookies within 40s");
+        throw new Error("Session timeout - no valid cookies received");
       }
+      const session = await this.getSession();
+      if (!isValidSessionCookies(session?.cookies)) {
+        throw new Error("Session timeout - no valid cookies received");
+      }
+      logger.debug("SessionManager", "Valid cookies ready");
     } catch (error) {
       logger.error("SessionManager", "Failed to wait for cookies", error);
       throw error;
