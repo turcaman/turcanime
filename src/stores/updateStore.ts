@@ -1,4 +1,5 @@
 import Constants from "expo-constants";
+import NetInfo from "@react-native-community/netinfo";
 import { create } from "zustand";
 import { TIMEOUTS } from "../config/cache";
 import { storage } from "../utils/storage";
@@ -15,6 +16,7 @@ export const UPDATE_CHECK_KEY = "update_check_enabled";
 const INSTALL_PERMISSION_KEY = "install_permission_granted";
 const GITHUB_RELEASES_URL =
   "https://api.github.com/repos/turcaman/turcanime/releases/latest";
+const CHECK_COOLDOWN_MS = 60 * 60 * 1000;
 
 function parseVersion(v: string): number[] {
   return v.split(".").map((n) => parseInt(n, 10) || 0);
@@ -56,7 +58,7 @@ interface UpdateState {
   resumeAfterPermission: boolean;
   initialize: (enabled: boolean) => void;
   setUpdateCheckEnabled: (enabled: boolean) => Promise<void>;
-  checkForUpdates: () => Promise<boolean>;
+  checkForUpdates: (force?: boolean) => Promise<boolean>;
   startUpdate: () => void;
   closeUpdate: () => void;
   confirmUpdate: () => Promise<void>;
@@ -65,6 +67,68 @@ interface UpdateState {
 }
 
 let downloadAbort: AbortController | null = null;
+let checkPromise: Promise<boolean> | null = null;
+let lastSuccessAt = 0;
+
+type StoreSet = (partial: Partial<UpdateState>) => void;
+type StoreGet = () => UpdateState;
+
+async function runCheck(
+  get: StoreGet,
+  set: StoreSet,
+  force: boolean,
+): Promise<boolean> {
+  const current = Constants.expoConfig?.version;
+  if (!current) {
+    set({ lastCheckError: "Error al obtener versión" });
+    return false;
+  }
+  if (!force && get().updateCheckEnabled === false) return true;
+  if (!force && Date.now() - lastSuccessAt < CHECK_COOLDOWN_MS) return true;
+  try {
+    const net = await NetInfo.fetch();
+    if (net.isConnected === false || net.isInternetReachable === false) {
+      if (!force) return true;
+      set({ checkingForUpdates: false, lastCheckError: "Sin conexión" });
+      return false;
+    }
+  } catch {
+  }
+  set({ checkingForUpdates: true, lastCheckError: null });
+  try {
+    const res = await Promise.race([
+      fetch(`${GITHUB_RELEASES_URL}?_=${Date.now()}`, {
+        headers: { "User-Agent": "Turcanime-Android" },
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Update check timeout")), TIMEOUTS.UPDATE_CHECK),
+      ),
+    ]);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = (await res.json()) as {
+      tag_name?: string;
+      assets?: { name: string; browser_download_url: string }[];
+    };
+    const latest = (data.tag_name ?? "").replace(/^v/, "").trim();
+    if (!latest) throw new Error("No tag");
+
+    const apkAsset = data.assets?.find((a) => a.name.toLowerCase().endsWith(".apk"));
+
+    set({
+      updateAvailable: isNewer(latest, current) ? latest : null,
+      apkUrl: apkAsset?.browser_download_url ?? null,
+      currentVersion: current,
+      checkingForUpdates: false,
+      lastCheckError: null,
+    });
+    lastSuccessAt = Date.now();
+    return true;
+  } catch (err) {
+    set({ checkingForUpdates: false, lastCheckError: "Error al buscar actualizaciones" });
+    logger.error("updateStore", "Failed to check for updates", err);
+    return false;
+  }
+}
 
 export const useUpdateStore = create<UpdateState>((set, get) => ({
   updateCheckEnabled: true,
@@ -100,51 +164,15 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     }
   },
 
-  checkForUpdates: async () => {
-    const current = Constants.expoConfig?.version;
-    if (!current) {
-      set({ lastCheckError: "Error al obtener versión" });
-      return false;
-    }
-    set({ checkingForUpdates: true, lastCheckError: null });
+  checkForUpdates: async (force = false) => {
+    if (checkPromise) return checkPromise;
+    checkPromise = runCheck(get, set, force);
     try {
-      const res = await Promise.race([
-        fetch(
-          `${GITHUB_RELEASES_URL}?_=${Date.now()}`,
-          { headers: { "User-Agent": "Turcanime-Android" } },
-        ),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Update check timeout")), TIMEOUTS.UPDATE_CHECK),
-        ),
-      ]);
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = (await res.json()) as {
-        tag_name?: string;
-        assets?: { name: string; browser_download_url: string }[];
-      };
-      const latest = (data.tag_name ?? "").replace(/^v/, "").trim();
-      if (!latest) throw new Error("No tag");
-
-      const apkAsset = data.assets?.find((a) => a.name.toLowerCase().endsWith(".apk"));
-
-      set({
-        updateAvailable: isNewer(latest, current) ? latest : null,
-        apkUrl: apkAsset?.browser_download_url ?? null,
-        currentVersion: current,
-        checkingForUpdates: false,
-        lastCheckError: null,
-      });
-      return true;
-    } catch (err) {
-      set({
-        checkingForUpdates: false,
-        lastCheckError: "Error al buscar actualizaciones",
-      });
-      logger.error("updateStore", "Failed to check for updates", err);
-      return false;
+      return await checkPromise;
+    } finally {
+      checkPromise = null;
     }
   },
-
   startUpdate: () => {
     const { updateAvailable, apkUrl } = get();
     if (updateAvailable == null) return;
