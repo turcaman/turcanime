@@ -58,7 +58,7 @@ function RootInner() {
           return;
         }
         logger.info("lifecycle", `Connection ${prev}→${connectionType}, triggering wash`);
-        triggerSessionRefresh();
+        triggerSessionRefresh("connection-flap");
       }, 2000);
       return () => clearTimeout(timer);
     }
@@ -72,7 +72,7 @@ function RootInner() {
       const timer = setTimeout(() => {
         if (Date.now() - lastRefreshTime.current >= SESSION_REFRESH_COOLDOWN) {
           logger.info("lifecycle", "Regained connection, triggering wash");
-          triggerSessionRefresh();
+          triggerSessionRefresh("reconnect");
         } else {
           logger.debug("lifecycle", "Regained connection, wash skipped by cooldown");
         }
@@ -95,7 +95,7 @@ function RootInner() {
         return;
       }
       logger.info("lifecycle", `Foreground after ${(elapsed / 1000).toFixed(0)}s, triggering wash`);
-      triggerSessionRefresh();
+      triggerSessionRefresh("foreground");
     });
     return () => sub.remove();
   }, [triggerSessionRefresh]);
@@ -104,8 +104,9 @@ function RootInner() {
     if (sessionRefreshTrigger === 0) return;
 
     const doRefresh = async () => {
+      const source = useUIStore.getState().sessionRefreshSource ?? "unknown";
       try {
-        logger.info("lifecycle", "Proactive wash started");
+        logger.info("lifecycle", `Proactive wash started (${source})`);
         // Serialize: refresh session first, then let cache invalidation drive
         // a single fetchHome. No UI wipe, no concurrent safety fetch.
         await refreshSession();
@@ -125,6 +126,7 @@ function RootInner() {
         logger.warn("session", "Session refresh failed, in-flight fetch retry decides");
         setSessionRefreshFailed(true);
       } finally {
+        useUIStore.setState({ sessionRefreshSource: null });
         setSessionRefreshing(false);
       }
     };

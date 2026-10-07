@@ -90,7 +90,7 @@ export default function SettingsScreen() {
             // Re-check: a refresh may have started while the Alert was open
             if (useUIStore.getState().isRefreshingSession) return;
             userInitiatedRefresh.current = true;
-            useUIStore.getState().triggerSessionRefresh();
+            useUIStore.getState().triggerSessionRefresh("manual");
           },
         },
       ],
