@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { source } from "../services/source";
 import { withCache } from "../utils/cache";
 import { withAuthRetry } from "../utils/retry";
+import { SourceError } from "../utils/errors";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import type { AnimeDetail, AppError } from "../types";
 
@@ -43,7 +44,14 @@ export const useDetailsStore = create<DetailsState>((set) => ({
         return;
       }
       if (result.error) {
-        set({ error: { type: "UNKNOWN", message: result.error.message }, isDetailsLoading: false });
+        const err = result.error;
+        set({
+          error:
+            err instanceof SourceError
+              ? { type: err.type, message: err.message }
+              : { type: "UNKNOWN", message: err.message },
+          isDetailsLoading: false,
+        });
       } else {
         set({ activeAnime: result.data ?? null, isDetailsLoading: false, error: null });
       }
@@ -53,7 +61,10 @@ export const useDetailsStore = create<DetailsState>((set) => ({
         return;
       }
       set({
-        error: { type: "UNKNOWN", message: e instanceof Error ? e.message : String(e) },
+        error:
+          e instanceof SourceError
+            ? { type: e.type, message: e.message }
+            : { type: "UNKNOWN", message: e instanceof Error ? e.message : String(e) },
         isDetailsLoading: false,
       });
     }
