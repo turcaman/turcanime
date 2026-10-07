@@ -3,6 +3,7 @@ import { source, type RawSearchItem } from "../services/source";
 import { cleanTitle } from "../services/parsers";
 import { withCache } from "../utils/cache";
 import { withAuthRetry } from "../utils/retry";
+import { SourceError } from "../utils/errors";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { TMDB_IMAGE_BASE } from "../config/source";
 import type { Anime, AppError, AutocompleteAnime } from "../types";
@@ -100,37 +101,59 @@ export const useSearchStore = create<SearchState>((set) => ({
       }
     }
 
-    const result = await withAuthRetry(
-      (attempt: number) =>
-        withCache<RawSearchItem[]>(cacheKey, (sig) => source.searchRaw(query, { signal: sig }), {
-          ttl: CACHE_TTL.SEARCH,
+    try {
+      const result = await withAuthRetry(
+        (attempt: number) =>
+          withCache<RawSearchItem[]>(cacheKey, (sig) => source.searchRaw(query, { signal: sig }), {
+            ttl: CACHE_TTL.SEARCH,
+            signal,
+            force: attempt > 0 ? true : force,
+          }),
+        {
           signal,
-          force: attempt > 0 ? true : force,
-        }),
-      {
-        signal,
-        maxRetries: 2,
-        continueAfterRefreshFailure: true,
-        tag: "searchStore",
-      },
-    );
+          maxRetries: 2,
+          continueAfterRefreshFailure: true,
+          tag: "searchStore",
+        },
+      );
 
-    if (signal.aborted) return;
+      if (signal.aborted) return;
 
-    if (result.data != null && result.data.length > 0) {
-      memorySet(cacheKey, result.data);
-    }
+      if (result.data != null && result.data.length > 0) {
+        memorySet(cacheKey, result.data);
+      }
 
-    if (searchController?.signal !== signal) return;
-    if (signal.aborted) {
-      set({ isSearchLoading: false });
-      return;
-    }
+      if (searchController?.signal !== signal) return;
+      if (signal.aborted) {
+        set({ isSearchLoading: false });
+        return;
+      }
 
-    if (result.error) {
-      set({ error: { type: "UNKNOWN", message: result.error.message }, isSearchLoading: false });
-    } else {
-      set({ searchAnimes: (result.data ?? []).map(toAnime), isSearchLoading: false, error: null });
+      if (result.error) {
+        const err = result.error;
+        set({
+          error:
+            err instanceof SourceError
+              ? { type: err.type, message: err.message }
+              : { type: "UNKNOWN", message: err.message },
+          isSearchLoading: false,
+        });
+      } else {
+        set({ searchAnimes: (result.data ?? []).map(toAnime), isSearchLoading: false, error: null });
+      }
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === "AbortError") {
+        if (searchController?.signal === signal) set({ isSearchLoading: false });
+        return;
+      }
+      if (searchController?.signal !== signal) return;
+      set({
+        error:
+          e instanceof SourceError
+            ? { type: e.type, message: e.message }
+            : { type: "UNKNOWN", message: e instanceof Error ? e.message : String(e) },
+        isSearchLoading: false,
+      });
     }
   },
 
@@ -141,14 +164,18 @@ export const useSearchStore = create<SearchState>((set) => ({
 
     const cacheKey = `${CACHE_PREFIXES.SEARCH}_${normalizeSearchKey(query)}`;
 
-    const result = await withCache<RawSearchItem[]>(
-      cacheKey,
-      (sig) => source.searchRaw(query, { signal: sig }),
-      { ttl: CACHE_TTL.SEARCH, signal },
-    );
+    try {
+      const result = await withCache<RawSearchItem[]>(
+        cacheKey,
+        (sig) => source.searchRaw(query, { signal: sig }),
+        { ttl: CACHE_TTL.SEARCH, signal },
+      );
 
-    if (signal.aborted) return;
-    set({ suggestions: (result.data ?? []).map(toSuggestion) });
+      if (signal.aborted) return;
+      set({ suggestions: (result.data ?? []).map(toSuggestion) });
+    } catch {
+      return;
+    }
   },
 
   clearSuggestions: () => {
