@@ -10,6 +10,7 @@ export const SESSION_KEY = "scraper_session";
 // Slow devices can take well over 15s to clear a Cloudflare challenge.
 // Matches the bootstrap poll window so both sides share one 40s timing.
 const SESSION_REFRESH_TIMEOUT = 40_000;
+const SESSION_MAX_AGE = 60 * 60 * 1000;
 
 export function isValidSessionCookies(raw: string | undefined | null): boolean {
   if (!raw) return false;
@@ -176,14 +177,19 @@ export async function refreshSession(): Promise<void> {
 }
 
 /**
- * Refresh when stored cookies are missing. Aged sessions renew via the
- * foreground refresh in _layout and via 403 retry, so fetch never blocks
- * on age here. Boot with no cookies relies on the initial WebView load.
+ * Refresh when stored cookies are missing or older than SESSION_MAX_AGE.
+ * Boot with no cookies relies on the initial WebView load.
  */
 export async function ensureFreshSession(): Promise<void> {
   try {
     const session = await sessionManager.getSession();
-    if (session != null && isValidSessionCookies(session.cookies)) return;
+    if (session != null && isValidSessionCookies(session.cookies)) {
+      if (session.fetchedAt == null || Date.now() - session.fetchedAt > SESSION_MAX_AGE) {
+        logger.info("infrastructure", "Session aged, refreshing");
+        await refreshSession();
+      }
+      return;
+    }
     if (!session?.cookies) return;
     logger.info("infrastructure", "Session missing cookies, refreshing");
     await refreshSession();
