@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { source } from "../services/source";
 import { withCache } from "../utils/cache";
 import { withAuthRetry } from "../utils/retry";
+import { SourceError } from "../utils/errors";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import type { AppError, HomeData } from "../types";
 
@@ -42,26 +43,49 @@ export const useHomeStore = create<HomeState>((set) => ({
 
     if (homeController?.signal !== signal) return;
 
-    const result = await withAuthRetry(load, {
-      signal,
-      maxRetries: 2,
-      // The fresh challenge may still land after a failed refresh
-      continueAfterRefreshFailure: true,
-      tag: "homeStore",
-    });
+    try {
+      const result = await withAuthRetry(load, {
+        signal,
+        maxRetries: 2,
+        // The fresh challenge may still land after a failed refresh
+        continueAfterRefreshFailure: true,
+        tag: "homeStore",
+      });
 
-    if (homeController?.signal !== signal) return;
-    if (signal.aborted) {
-      set({ isHomeLoading: false, isRefreshing: false });
-      return;
-    }
+      if (homeController?.signal !== signal) return;
+      if (signal.aborted) {
+        set({ isHomeLoading: false, isRefreshing: false });
+        return;
+      }
 
-    if (result.data && result.data.recent.length > 0) {
-      set({ homeData: result.data, isHomeLoading: false, isRefreshing: false, error: null });
-    } else if (result.error) {
-      set({ isHomeLoading: false, isRefreshing: false, error: { type: "UNKNOWN", message: result.error.message } });
-    } else {
-      set({ homeData: { recent: [] }, isHomeLoading: false, isRefreshing: false });
+      if (result.data && result.data.recent.length > 0) {
+        set({ homeData: result.data, isHomeLoading: false, isRefreshing: false, error: null });
+      } else if (result.error) {
+        const err = result.error;
+        set({
+          isHomeLoading: false,
+          isRefreshing: false,
+          error:
+            err instanceof SourceError
+              ? { type: err.type, message: err.message }
+              : { type: "UNKNOWN", message: err.message },
+        });
+      } else {
+        set({ homeData: { recent: [] }, isHomeLoading: false, isRefreshing: false });
+      }
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === "AbortError") {
+        if (homeController?.signal === signal) set({ isHomeLoading: false, isRefreshing: false });
+        return;
+      }
+      set({
+        isHomeLoading: false,
+        isRefreshing: false,
+        error:
+          e instanceof SourceError
+            ? { type: e.type, message: e.message }
+            : { type: "UNKNOWN", message: e instanceof Error ? e.message : String(e) },
+      });
     }
   },
 }));
