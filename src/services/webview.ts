@@ -11,7 +11,7 @@ class WebViewBridge {
 
   navigateTo(uri: string): void {
     if (this.navigateFn) {
-      logger.info("WebViewBridge", `Navigating to ${uri.slice(0, 80)}...`);
+      logger.info("session", `Navigating to ${uri.slice(0, 80)}...`);
       this.navigateFn(uri);
     }
   }

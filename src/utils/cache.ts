@@ -43,7 +43,7 @@ export async function withCache<T>(
       if (size <= LIMITS.CACHE_MAX_ENTRY_SIZE) {
         await storage.set(cacheKey, entry);
       } else {
-        logger.warn("Cache", `Entry "${cacheKey}" too large (${(size / 1024).toFixed(1)}KB), skipping`);
+        logger.warn("cache", `Entry "${cacheKey}" too large (${(size / 1024).toFixed(1)}KB), skipping`);
       }
     } catch {
     }

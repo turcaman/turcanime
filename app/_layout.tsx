@@ -109,7 +109,7 @@ function RootInner() {
         // invalidateCache makes the home screen refetch after the cache wipe
         useSettingsStore.getState().invalidateCache();
       } catch {
-        logger.warn("refresh", "Session refresh failed, in-flight fetch retry decides");
+        logger.warn("session", "Session refresh failed, in-flight fetch retry decides");
         setSessionRefreshFailed(true);
       } finally {
         setSessionRefreshing(false);

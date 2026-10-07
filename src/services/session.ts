@@ -76,13 +76,13 @@ class SessionManager {
     try {
       const existingSession = await this.getSession();
       if (!existingSession) {
-        logger.info("SessionManager", "No existing session, creating initial session");
+        logger.info("session", "No existing session, creating initial session");
         await this.setSession({ userAgent: "", cookies: "" });
       } else if (isValidSessionCookies(existingSession.cookies)) {
         hasCookies = true;
       }
     } catch (error) {
-      logger.error("SessionManager", "Failed to load session", error);
+      logger.error("session", "Failed to load session", error);
     }
 
     this.armGate();
@@ -93,7 +93,7 @@ class SessionManager {
     try {
       return storage.get<ISession>(SESSION_KEY);
     } catch (error) {
-      logger.error("SessionManager", "Failed to get session", error);
+      logger.error("session", "Failed to get session", error);
       return null;
     }
   }
@@ -116,10 +116,10 @@ class SessionManager {
       }
       const withMeta: ISession = { ...session, fetchedAt };
       await storage.set(SESSION_KEY, withMeta);
-      logger.info("SessionManager", `Session updated with ${session.cookies.length} cookies`);
+      logger.info("session", `Session updated with ${session.cookies.length} cookies`);
       this.resolveGateSettled();
     } catch (error) {
-      logger.error("SessionManager", "Failed to set session", error);
+      logger.error("session", "Failed to set session", error);
       throw error;
     }
   }
@@ -139,12 +139,12 @@ class SessionManager {
         throw new SourceError("No connection", "NETWORK_ERROR");
       }
       if (!this.sessionReadyPromise) {
-        logger.debug("SessionManager", "No session promise, initializing");
+        logger.debug("session", "No session promise, initializing");
         await this.initialize();
       }
       const gate = this.sessionReadyPromise;
       if (!gate) return;
-      logger.debug("SessionManager", "Waiting for cookies from WebView");
+      logger.debug("session", "Waiting for cookies from WebView");
       const raceResult = await Promise.race([
         gate.then(() => "resolved" as const),
         new Promise<"timeout">((resolve) =>
@@ -152,16 +152,16 @@ class SessionManager {
         ),
       ]);
       if (raceResult === "timeout") {
-        logger.warn("SessionManager", "No valid cookies within 40s");
+        logger.warn("session", "No valid cookies within 40s");
         throw new SourceError("Session timeout - no valid cookies received", "AUTH_ERROR");
       }
       const session = await this.getSession();
       if (!isValidSessionCookies(session?.cookies)) {
         throw new SourceError("Session timeout - no valid cookies received", "AUTH_ERROR");
       }
-      logger.debug("SessionManager", "Valid cookies ready");
+      logger.debug("session", "Valid cookies ready");
     } catch (error) {
-      logger.error("SessionManager", "Failed to wait for cookies", error);
+      logger.error("session", "Failed to wait for cookies", error);
       throw error;
     }
   }
@@ -187,14 +187,14 @@ class SessionManager {
     if (!isValidSessionCookies(session?.cookies)) {
       throw new SourceError("Session refresh failed - no valid cookies received", "AUTH_ERROR");
     }
-    logger.info("infrastructure", "Session refreshed successfully");
+    logger.info("session", "Session refreshed successfully");
   }
 }
 
 export const sessionManager = new SessionManager();
 
 export async function refreshSession(): Promise<void> {
-  logger.info("infrastructure", "refreshSession called");
+  logger.info("session", "refreshSession called");
   await sessionManager.acquireFreshSession();
 }
 
@@ -208,16 +208,16 @@ export async function ensureFreshSession(): Promise<void> {
     const session = await sessionManager.getSession();
     if (session != null && isValidSessionCookies(session.cookies)) {
       if (session.fetchedAt == null || Date.now() - session.fetchedAt > SESSION_MAX_AGE) {
-        logger.info("infrastructure", "Session aged, refreshing");
+        logger.info("session", "Session aged, refreshing");
         await refreshSession();
         await sessionManager.touchSession();
       }
       return;
     }
     if (!session?.cookies) return;
-    logger.info("infrastructure", "Session missing cookies, refreshing");
+    logger.info("session", "Session missing cookies, refreshing");
     await refreshSession();
   } catch (error) {
-    logger.warn("infrastructure", "Proactive session refresh failed", error);
+    logger.warn("session", "Proactive session refresh failed", error);
   }
 }

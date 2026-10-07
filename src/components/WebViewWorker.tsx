@@ -25,7 +25,7 @@ export const WebViewWorker = () => {
     if (result == null) return;
 
     if (result.type === "LOG") {
-      logger.info("WebViewWorker", `[WebView Log] ${result.data}`);
+      logger.info("session", `[WebView Log] ${result.data}`);
       return;
     }
 
