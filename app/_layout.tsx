@@ -46,7 +46,6 @@ function RootInner() {
   const prevConnectionType = useRef<ConnectionType>(null);
   const prevReachable = useRef<boolean | null>(null);
   const lastRefreshTime = useRef(0);
-  const hasBeenActive = useRef(false);
 
   useEffect(() => {
     const prev = prevConnectionType.current;
@@ -83,10 +82,6 @@ function RootInner() {
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
       if (state !== "active") return;
-      if (!hasBeenActive.current) {
-        hasBeenActive.current = true;
-        return;
-      }
       const elapsed = Date.now() - lastRefreshTime.current;
       if (elapsed < SESSION_REFRESH_COOLDOWN) return;
       triggerSessionRefresh();
@@ -128,6 +123,9 @@ function RootInner() {
     const init = async () => {
       logger.setStorage(storage);
       await sessionManager.initialize();
+      // why: the mount fires an initial active event; seeding the cooldown
+      // keeps it from triggering a redundant wash right after boot.
+      lastRefreshTime.current = Date.now();
       const [history, searches, order, updateCheckEnabled] = await Promise.all([
         storage.get<HistoryItem[]>(HISTORY_KEY),
         storage.get<string[]>(SEARCHES_KEY),
