@@ -27,11 +27,17 @@ export async function withCache<T>(
       if (cached && typeof cached.expiration === "number" && Date.now() < cached.expiration) {
         const isStale = cached.expiration - Date.now() < (ttl ?? 0) * 0.3;
         if (!isStale) {
+          logger.debug("cache", `Hit "${cacheKey}"`);
           return { data: cached.payload, error: null };
         }
+        logger.debug("cache", `Stale "${cacheKey}", refetching`);
+      } else {
+        logger.debug("cache", `Miss "${cacheKey}", fetching`);
       }
     } catch {
     }
+  } else {
+    logger.debug("cache", `Force refresh for "${cacheKey}", skipping cache`);
   }
 
   try {
@@ -56,7 +62,10 @@ export async function withCache<T>(
     }
     // withAuthRetry detects auth failures only from thrown errors, so rethrow
     // them to trigger the session refresh; other errors stay as result.error.
-    if (isAuthError(e)) throw e;
+    if (isAuthError(e)) {
+      logger.debug("cache", `Auth error for "${cacheKey}", rethrowing to ladder`);
+      throw e;
+    }
     return { data: null, error: e instanceof Error ? e : new Error(String(e)) };
   }
 }

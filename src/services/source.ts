@@ -88,7 +88,7 @@ async function fetchWithSession(path: string, options: RequestInit = {}): Promis
         logger.info("fetch", `HTTP ${res.status} for ${url}`);
 
         if (res.status === 403 || res.status === 401) {
-          logger.info("fetch", "Auth error detected");
+          logger.info("fetch", `Auth error ${res.status} detected, entering ladder`);
           throw new SourceError("Authentication failed - session invalid", "AUTH_ERROR");
         }
 
@@ -104,12 +104,14 @@ async function fetchWithSession(path: string, options: RequestInit = {}): Promis
         // the session refresh ladder instead of reporting a network error.
         try {
           if (isChallengeHtml(await res.clone().text())) {
+            logger.info("fetch", `Challenge body on HTTP ${res.status}, entering ladder`);
             throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
           }
         } catch (e: unknown) {
           if (e instanceof SourceError) throw e;
         }
       }
+      logger.debug("fetch", `OK ${res.status} for ${url}`);
       return res;
     } catch (error) {
       if (error instanceof SourceError) {
@@ -117,12 +119,12 @@ async function fetchWithSession(path: string, options: RequestInit = {}): Promis
       }
       if (error instanceof Error && error.name === "AbortError") {
         if (timedOut && !options.signal?.aborted) {
-          logger.warn("fetch", `Timeout (${TIMEOUTS.REQUEST_TIMEOUT / 1000}s) for ${url}`);
+          logger.warn("fetch", `Timeout (${TIMEOUTS.REQUEST_TIMEOUT / 1000}s, attempt ${attempt + 1}/${TIMEOUTS.MAX_ATTEMPTS}) for ${url}`);
           throw new SourceError("Request timed out", "TIMEOUT");
         }
         throw error; // external abort: navigation away, not a failure
       }
-      logger.warn("fetch", `Network error for ${url}`, error);
+      logger.warn("fetch", `Network error (attempt ${attempt + 1}/${TIMEOUTS.MAX_ATTEMPTS}) for ${url}`, error);
       if (hasMoreAttempts) {
         logger.info("fetch", `Retrying (${attempt + 1}/${TIMEOUTS.MAX_ATTEMPTS}) for network error: ${url}`);
         await new Promise((resolve) => setTimeout(resolve, backoffDelay(attempt)));

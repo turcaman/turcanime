@@ -43,12 +43,15 @@ export async function withAuthRetry<T>(
   let lastError: unknown;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     if (signal?.aborted || isAborted?.()) {
+      logger.debug(tag, "Aborted before attempt, stopping ladder");
       const abort = new Error("aborted");
       abort.name = "AbortError";
       throw abort;
     }
     try {
-      return await operation(attempt);
+      const result = await operation(attempt);
+      if (attempt > 0) logger.info(tag, `Retry ${attempt} succeeded`);
+      return result;
     } catch (error) {
       lastError = error;
       if (!isAuthError(error) || attempt >= maxRetries) throw error;
@@ -59,6 +62,7 @@ export async function withAuthRetry<T>(
         if (continueAfterRefreshFailure) {
           logger.warn(tag, "Session refresh threw, continuing retry anyway", refreshError);
         } else {
+          logger.warn(tag, "Session refresh failed, stopping ladder", refreshError);
           throw new SessionRefreshError();
         }
       }
