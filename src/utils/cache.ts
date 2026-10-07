@@ -2,6 +2,7 @@ import type { CacheEntry, StreamUrlResult } from "../types";
 import { CACHE_PREFIXES, CACHE_TTL, LIMITS } from "../config/cache";
 import { storage } from "./storage";
 import { logger } from "./logger";
+import { isAuthError } from "./errors";
 import { source } from "../services/source";
 
 /**
@@ -53,6 +54,9 @@ export async function withCache<T>(
     if (err.name === "AbortError") {
       return { data: null, error: null };
     }
+    // why: withAuthRetry only sees thrown errors, so auth must propagate
+    // for the refresh ladder; everything else stays as result.error.
+    if (isAuthError(e)) throw e;
     return { data: null, error: e instanceof Error ? e : new Error(String(e)) };
   }
 }
