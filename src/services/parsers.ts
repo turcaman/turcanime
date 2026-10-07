@@ -76,7 +76,7 @@ export class HtmlParser {
 
     const rawJsonMatch = extractJson(html, '"episodes":', "[", "]");
     if (rawJsonMatch) {
-      logger.info("HtmlParser", `Extracted episodes via raw HTML for ${slug}`);
+      logger.debug("HtmlParser", `Extracted episodes via raw HTML for ${slug}`);
       return parse(rawJsonMatch);
     }
 
@@ -85,12 +85,12 @@ export class HtmlParser {
       const text = match[1]!.replace(/\\"/g, '"');
       const scriptJsonMatch = extractJson(text, '"episodes":', "[", "]");
       if (scriptJsonMatch) {
-        logger.info("HtmlParser", `Extracted episodes via script JSON for ${slug}`);
+        logger.debug("HtmlParser", `Extracted episodes via script JSON for ${slug}`);
         return parse(scriptJsonMatch);
       }
     }
 
-    logger.info("HtmlParser", `Falling back to HTML parsing for ${slug}`);
+    logger.debug("HtmlParser", `Falling back to HTML parsing for ${slug}`);
     return this.parseEpisodesFromHtml(html, slug);
   }
 
@@ -111,7 +111,7 @@ export class HtmlParser {
     }
 
     if (episodes.length === 0) {
-      logger.info("HtmlParser", `No episodes extracted for ${slug} from HTML`);
+      logger.debug("HtmlParser", `No episodes extracted for ${slug} from HTML`);
     }
     return episodes;
   }
@@ -248,7 +248,7 @@ export class HtmlParser {
       const slice = text.slice(s + 1, e + 1);
       const a = JSON.parse(slice);
       if (!Array.isArray(a) || typeof a[1] !== "string") {
-        logger.info("RscParser", "Unexpected RSC array format");
+        logger.debug("RscParser", "Unexpected RSC array format");
         return "";
       }
       return a[1];

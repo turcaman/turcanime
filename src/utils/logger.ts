@@ -28,6 +28,9 @@ const MAX_LOG_ENTRIES = LOG_LIMITS.MAX_ENTRIES;
 const DEFAULT_LOG_LEVEL = (typeof __DEV__ !== "undefined" && __DEV__) ? LogLevel.DEBUG : LogLevel.WARN;
 
 class Logger {
+  // Level guide: debug = high-frequency flow (per request, cache hit/miss);
+  // info = flow decisions (wash, ladder retries, settles); warn = degraded but
+  // recovering; error = terminal or user-visible failure.
   private logLevel: LogLevel = DEFAULT_LOG_LEVEL;
   private logs: LogEntry[] = [];
   private persistenceEnabled = !(typeof __DEV__ !== "undefined" && __DEV__);

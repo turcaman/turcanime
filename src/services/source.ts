@@ -272,9 +272,9 @@ async function getEpisodeServers(slug: string, number: string, options?: { signa
 }
 
 async function resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<StreamUrlResult | null> {
-  logger.info("fetch", `Bridge URL: ${videoUrl.slice(0, 80)}`);
+  logger.debug("fetch", `Bridge URL: ${videoUrl.slice(0, 80)}`);
 
-  logger.info("fetch", "Fetching bridge page via fetchWithSession");
+  logger.debug("fetch", "Fetching bridge page via fetchWithSession");
   const res = await fetchWithSession(videoUrl, options ?? {});
   if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
   const html = await res.text();
@@ -282,17 +282,17 @@ async function resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSign
   if (!m) throw new SourceError("No iframe in bridge page", "UNKNOWN");
   const iframeUrl = m[1]!;
 
-  logger.info("fetch", `Iframe URL: ${iframeUrl.slice(0, 100)}`);
+  logger.debug("fetch", `Iframe URL: ${iframeUrl.slice(0, 100)}`);
 
   if (iframeUrl.includes("/e/")) {
-    logger.info("fetch", "/e/ detected, calling extractBest...");
+    logger.debug("fetch", "/e/ detected, calling extractBest...");
     const session = await sessionManager.getSession();
     const result = await extractBest(iframeUrl, {
       signal: options?.signal,
       userAgent: session?.userAgent,
     });
     if (result) {
-      logger.info("fetch", `extractBest OK: ${result.url.slice(0, 80)}`);
+      logger.debug("fetch", `extractBest OK: ${result.url.slice(0, 80)}`);
       return result;
     }
   }

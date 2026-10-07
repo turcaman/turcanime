@@ -158,7 +158,7 @@ function RootInner() {
       }
     };
     init().catch((error) => {
-      console.error("[RootLayout] Initialization failed:", error);
+      logger.error("lifecycle", "Initialization failed", error);
       if (!cancelled) setReady(true);
     });
     return () => {
