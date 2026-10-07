@@ -128,6 +128,7 @@ class SessionManager {
     const current = await this.getSession();
     if (current != null) {
       await storage.set(SESSION_KEY, { ...current, fetchedAt: Date.now() });
+      logger.debug("session", "Freshness stamped after wash");
     }
   }
 
@@ -136,6 +137,7 @@ class SessionManager {
       // Without network the WebView wash can never report; fail fast instead
       // of holding the skeleton through the 40s gate plus ladder retries.
       if (await isOffline()) {
+        logger.debug("session", "Offline, failing gate fast");
         throw new SourceError("No connection", "NETWORK_ERROR");
       }
       if (!this.sessionReadyPromise) {
@@ -144,6 +146,7 @@ class SessionManager {
       }
       const gate = this.sessionReadyPromise;
       if (!gate) return;
+      const gateStart = Date.now();
       logger.debug("session", "Waiting for cookies from WebView");
       const raceResult = await Promise.race([
         gate.then(() => "resolved" as const),
@@ -152,14 +155,17 @@ class SessionManager {
         ),
       ]);
       if (raceResult === "timeout") {
-        logger.warn("session", "No valid cookies within 40s");
+        logger.warn("session", "Gate timeout after 40s, no valid cookies");
         throw new SourceError("Session timeout - no valid cookies received", "AUTH_ERROR");
       }
       const session = await this.getSession();
       if (!isValidSessionCookies(session?.cookies)) {
         throw new SourceError("Session timeout - no valid cookies received", "AUTH_ERROR");
       }
-      logger.debug("session", "Valid cookies ready");
+      logger.debug(
+        "session",
+        `Gate opened after ${((Date.now() - gateStart) / 1000).toFixed(1)}s (${session?.cookies.length ?? 0} chars)`,
+      );
     } catch (error) {
       logger.error("session", "Failed to wait for cookies", error);
       throw error;
@@ -180,21 +186,23 @@ class SessionManager {
     // Singleflight via acquireFreshSession: concurrent callers share this one
     // execution. Gate is armed once, WebView navigates once, every waiter
     // shares the same 40s wait. Valid session opens it, timeout throws.
+    const startedAt = Date.now();
     this.armGate();
     webViewBridge.navigateTo(SOURCE_CONFIG.sessionWashUrl);
     await this.waitForCookies();
     const session = await this.getSession();
     if (!isValidSessionCookies(session?.cookies)) {
+      logger.warn("session", "Wash settled but cookies still invalid");
       throw new SourceError("Session refresh failed - no valid cookies received", "AUTH_ERROR");
     }
-    logger.info("session", "Session refreshed successfully");
+    logger.info("session", `Session refreshed successfully in ${((Date.now() - startedAt) / 1000).toFixed(1)}s`);
   }
 }
 
 export const sessionManager = new SessionManager();
 
 export async function refreshSession(): Promise<void> {
-  logger.info("session", "refreshSession called");
+  logger.debug("session", "refreshSession called");
   await sessionManager.acquireFreshSession();
 }
 
@@ -207,15 +215,22 @@ export async function ensureFreshSession(): Promise<void> {
     if (await isOffline()) return;
     const session = await sessionManager.getSession();
     if (session != null && isValidSessionCookies(session.cookies)) {
-      if (session.fetchedAt == null || Date.now() - session.fetchedAt > SESSION_MAX_AGE) {
-        logger.info("session", "Session aged, refreshing");
+      const ageMs = session.fetchedAt == null ? null : Date.now() - session.fetchedAt;
+      if (ageMs == null || ageMs > SESSION_MAX_AGE) {
+        const age = ageMs == null ? "unknown age" : `${Math.round(ageMs / 60000)}m`;
+        logger.info("session", `Session aged (${age}), refreshing`);
         await refreshSession();
         await sessionManager.touchSession();
+      } else {
+        logger.debug("session", `Session fresh (${Math.round(ageMs / 60000)}m old), skipping wash`);
       }
       return;
     }
-    if (!session?.cookies) return;
-    logger.info("session", "Session missing cookies, refreshing");
+    if (!session?.cookies) {
+      logger.debug("session", "No stored session, boot WebView load decides");
+      return;
+    }
+    logger.info("session", `Session cookies invalid (len=${session.cookies.length}), refreshing`);
     await refreshSession();
   } catch (error) {
     logger.warn("session", "Proactive session refresh failed", error);
