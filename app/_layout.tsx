@@ -123,8 +123,8 @@ function RootInner() {
     const init = async () => {
       logger.setStorage(storage);
       await sessionManager.initialize();
-      // why: the mount fires an initial active event; seeding the cooldown
-      // keeps it from triggering a redundant wash right after boot.
+      // The mount fires an initial active event; seed the cooldown so it
+      // doesn't trigger a redundant wash right after boot.
       lastRefreshTime.current = Date.now();
       const [history, searches, order, updateCheckEnabled] = await Promise.all([
         storage.get<HistoryItem[]>(HISTORY_KEY),

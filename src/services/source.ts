@@ -100,8 +100,8 @@ async function fetchWithSession(path: string, options: RequestInit = {}): Promis
           continue;
         }
 
-        // why: Cloudflare challenges arrive as non-ok HTML; they must enter
-        // the session ladder instead of surfacing as network errors.
+        // Cloudflare challenges arrive as non-ok HTML pages; route them into
+        // the session refresh ladder instead of reporting a network error.
         try {
           if (isChallengeHtml(await res.clone().text())) {
             throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");

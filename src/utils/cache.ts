@@ -54,8 +54,8 @@ export async function withCache<T>(
     if (err.name === "AbortError") {
       return { data: null, error: null };
     }
-    // why: withAuthRetry only sees thrown errors, so auth must propagate
-    // for the refresh ladder; everything else stays as result.error.
+    // withAuthRetry detects auth failures only from thrown errors, so rethrow
+    // them to trigger the session refresh; other errors stay as result.error.
     if (isAuthError(e)) throw e;
     return { data: null, error: e instanceof Error ? e : new Error(String(e)) };
   }

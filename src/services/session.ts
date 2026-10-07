@@ -126,7 +126,7 @@ class SessionManager {
 
   async waitForCookies(): Promise<void> {
     try {
-      // why: without network the wash can never report; fail fast instead
+      // Without network the WebView wash can never report; fail fast instead
       // of holding the skeleton through the 40s gate plus ladder retries.
       if (await isOffline()) {
         throw new SourceError("No connection", "NETWORK_ERROR");
