@@ -52,8 +52,13 @@ export const useDetailsStore = create<DetailsState>((set) => ({
               : { type: "UNKNOWN", message: err.message },
           isDetailsLoading: false,
         });
+      } else if (result.data) {
+        set({ activeAnime: result.data, isDetailsLoading: false, error: null });
       } else {
-        set({ activeAnime: result.data ?? null, isDetailsLoading: false, error: null });
+        set({
+          error: { type: "UNKNOWN", message: "Contenido no encontrado" },
+          isDetailsLoading: false,
+        });
       }
     } catch (e: unknown) {
       if (e instanceof Error && e.name === "AbortError") {
