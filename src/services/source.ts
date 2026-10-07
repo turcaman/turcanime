@@ -77,7 +77,10 @@ async function fetchWithSession(path: string, options: RequestInit = {}): Promis
           const s = await sessionManager.getSession();
           if (s) {
             const merged = mergeCookies(s.cookies, setCookies);
-            await sessionManager.setSession({ ...s, cookies: merged });
+            if (merged !== s.cookies) {
+              logger.debug("fetch", `Cookie merge ${s.cookies.length}→${merged.length} chars`);
+              await sessionManager.setSession({ ...s, cookies: merged });
+            }
           }
         } catch {
           // Don't let cookie capture fail the request
