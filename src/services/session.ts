@@ -124,6 +124,13 @@ class SessionManager {
     }
   }
 
+  async touchSession(): Promise<void> {
+    const current = await this.getSession();
+    if (current != null) {
+      await storage.set(SESSION_KEY, { ...current, fetchedAt: Date.now() });
+    }
+  }
+
   async waitForCookies(): Promise<void> {
     try {
       // Without network the WebView wash can never report; fail fast instead
@@ -203,6 +210,7 @@ export async function ensureFreshSession(): Promise<void> {
       if (session.fetchedAt == null || Date.now() - session.fetchedAt > SESSION_MAX_AGE) {
         logger.info("infrastructure", "Session aged, refreshing");
         await refreshSession();
+        await sessionManager.touchSession();
       }
       return;
     }
