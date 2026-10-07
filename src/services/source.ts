@@ -127,12 +127,25 @@ async function fetchWithSession(path: string, options: RequestInit = {}): Promis
 
 const htmlParser = new HtmlParser();
 
+function isChallengeHtml(html: string): boolean {
+  return (
+    html.includes("Just a moment") ||
+    html.includes("Attention Required") ||
+    html.includes("challenge-form") ||
+    html.includes("challenge-error-text") ||
+    html.includes("cf-challenge-running") ||
+    html.includes("challenge-platform")
+  );
+}
+
 async function getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData> {
   const homeEndpoint = SOURCE_CONFIG.homeEndpoint;
   const res = await fetchWithSession(homeEndpoint, options ?? {});
+  if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "AUTH_ERROR");
   const html = await res.text();
   const recent = htmlParser.parseCards(html);
   if (recent.length === 0) {
+    if (isChallengeHtml(html)) throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
     throw new SourceError("No cards extracted — site structure may have changed", "UNKNOWN");
   }
   return { recent };
