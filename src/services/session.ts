@@ -5,6 +5,7 @@ import { SourceError } from "../utils/errors";
 import { storage } from "../utils/storage";
 import { unwrapCookies } from "./cookies";
 import { webViewBridge } from "./webview";
+import NetInfo from "@react-native-community/netinfo";
 
 export const SESSION_KEY = "scraper_session";
 // Slow devices can take well over 15s to clear a Cloudflare challenge.
@@ -17,6 +18,15 @@ export function isValidSessionCookies(raw: string | undefined | null): boolean {
   const unwrapped = unwrapCookies(raw).trim();
   if (unwrapped.length === 0) return false;
   return unwrapped.includes("=");
+}
+
+async function isOffline(): Promise<boolean> {
+  try {
+    const net = await NetInfo.fetch();
+    return net.isConnected === false || net.isInternetReachable === false;
+  } catch {
+    return false;
+  }
 }
 
 class SessionManager {
@@ -116,6 +126,11 @@ class SessionManager {
 
   async waitForCookies(): Promise<void> {
     try {
+      // why: without network the wash can never report; fail fast instead
+      // of holding the skeleton through the 40s gate plus ladder retries.
+      if (await isOffline()) {
+        throw new SourceError("No connection", "NETWORK_ERROR");
+      }
       if (!this.sessionReadyPromise) {
         logger.debug("SessionManager", "No session promise, initializing");
         await this.initialize();
@@ -182,6 +197,7 @@ export async function refreshSession(): Promise<void> {
  */
 export async function ensureFreshSession(): Promise<void> {
   try {
+    if (await isOffline()) return;
     const session = await sessionManager.getSession();
     if (session != null && isValidSessionCookies(session.cookies)) {
       if (session.fetchedAt == null || Date.now() - session.fetchedAt > SESSION_MAX_AGE) {
