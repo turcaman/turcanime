@@ -8,6 +8,7 @@ import { DetailSkeleton } from "@/components/skeletons/DetailSkeleton";
 import { useAnimeDetailScreen } from "@/hooks/useAnimeDetailScreen";
 import { navigateBack } from "@/utils/navigation";
 import { useHistoryStore } from "@/stores/historyStore";
+import { useDetailsStore } from "@/stores/detailsStore";
 import { findHistoryEntry } from "@/utils/history";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { calcProgress } from "@/utils/math";
@@ -32,12 +33,13 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
   } = useAnimeDetailScreen(slug as string);
 
   const showContent = anime != null && anime.url === slug;
+  const hasAttempted = useDetailsStore((s) => s.hasAttempted);
 
   const { keepSkeleton, skeletonStyle, contentStyle } = useCrossfade(showContent);
 
-  if (!anime && error) {
+  if (!anime && (error || (hasAttempted && !isAnimeLoading))) {
     return (
-      <ScreenWrapper error={!!error} hasContent={false} onRetry={refresh}>
+      <ScreenWrapper error={true} hasContent={false} onRetry={refresh}>
         <View className="flex-1 bg-black" />
       </ScreenWrapper>
     );
