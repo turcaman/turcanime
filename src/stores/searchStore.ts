@@ -4,6 +4,7 @@ import { cleanTitle } from "../services/parsers";
 import { withCache } from "../utils/cache";
 import { withAuthRetry } from "../utils/retry";
 import { SourceError } from "../utils/errors";
+import { logger } from "../utils/logger";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { TMDB_IMAGE_BASE } from "../config/source";
 import type { Anime, AppError, AutocompleteAnime } from "../types";
@@ -96,6 +97,7 @@ export const useSearchStore = create<SearchState>((set) => ({
     if (!force) {
       const memory = memoryGet(cacheKey);
       if (memory != null) {
+        logger.debug("search", `Memory hit for "${query}" (${memory.length} items)`);
         set({ searchAnimes: memory.map(toAnime), isSearchLoading: false, error: null });
         return;
       }
@@ -113,7 +115,7 @@ export const useSearchStore = create<SearchState>((set) => ({
           signal,
           maxRetries: 2,
           continueAfterRefreshFailure: true,
-          tag: "searchStore",
+          tag: "search",
         },
       );
 
@@ -123,14 +125,20 @@ export const useSearchStore = create<SearchState>((set) => ({
         memorySet(cacheKey, result.data);
       }
 
-      if (searchController?.signal !== signal) return;
+      if (searchController?.signal !== signal) {
+        logger.debug("search", `Superseded after ladder for "${query}", discarding result`);
+        return;
+      }
       if (signal.aborted) {
+        logger.debug("search", `Aborted after ladder for "${query}", settling silently`);
         set({ isSearchLoading: false });
         return;
       }
 
       if (result.error) {
         const err = result.error;
+        const type = err instanceof SourceError ? err.type : "UNKNOWN";
+        logger.warn("search", `Settled with error for "${query}": ${type}`, err);
         set({
           error:
             err instanceof SourceError
@@ -139,14 +147,21 @@ export const useSearchStore = create<SearchState>((set) => ({
           isSearchLoading: false,
         });
       } else {
+        logger.debug("search", `Loaded ${(result.data ?? []).length} items for "${query}"`);
         set({ searchAnimes: (result.data ?? []).map(toAnime), isSearchLoading: false, error: null });
       }
     } catch (e: unknown) {
       if (e instanceof Error && e.name === "AbortError") {
+        logger.debug("search", `Ladder aborted for "${query}", settling silently`);
         if (searchController?.signal === signal) set({ isSearchLoading: false });
         return;
       }
-      if (searchController?.signal !== signal) return;
+      if (searchController?.signal !== signal) {
+        logger.debug("search", `Superseded ladder threw for "${query}", discarding`);
+        return;
+      }
+      const type = e instanceof SourceError ? e.type : "UNKNOWN";
+      logger.warn("search", `Ladder threw for "${query}": ${type}`, e);
       set({
         error:
           e instanceof SourceError

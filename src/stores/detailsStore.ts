@@ -3,6 +3,7 @@ import { source } from "../services/source";
 import { withCache } from "../utils/cache";
 import { withAuthRetry } from "../utils/retry";
 import { SourceError } from "../utils/errors";
+import { logger } from "../utils/logger";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import type { AnimeDetail, AppError } from "../types";
 
@@ -42,14 +43,20 @@ export const useDetailsStore = create<DetailsState>((set) => ({
       });
 
     try {
-      const result = await withAuthRetry(fetchFresh, { signal, maxRetries: 2, tag: "detailsStore" });
-      if (!isCurrent()) return;
+      const result = await withAuthRetry(fetchFresh, { signal, maxRetries: 2, tag: "details" });
+      if (!isCurrent()) {
+        logger.debug("details", `Generation ${generation} superseded for "${slug}", discarding result`);
+        return;
+      }
       if (signal.aborted) {
+        logger.debug("details", `Generation ${generation} aborted for "${slug}", settling silently`);
         set({ isDetailsLoading: false, hasAttempted: true });
         return;
       }
       if (result.error) {
         const err = result.error;
+        const type = err instanceof SourceError ? err.type : "UNKNOWN";
+        logger.warn("details", `Settled with error for "${slug}": ${type}`, err);
         set({
           error:
             err instanceof SourceError
@@ -59,8 +66,10 @@ export const useDetailsStore = create<DetailsState>((set) => ({
           hasAttempted: true,
         });
       } else if (result.data) {
+        logger.debug("details", `Loaded "${slug}" (${result.data.episodes.length} episodes)`);
         set({ activeAnime: result.data, isDetailsLoading: false, error: null, hasAttempted: true });
       } else {
+        logger.warn("details", `Settled with no data for "${slug}": Contenido no encontrado`);
         set({
           error: { type: "UNKNOWN", message: "Contenido no encontrado" },
           isDetailsLoading: false,
@@ -69,10 +78,16 @@ export const useDetailsStore = create<DetailsState>((set) => ({
       }
     } catch (e: unknown) {
       if (e instanceof Error && e.name === "AbortError") {
+        logger.debug("details", `Ladder aborted for "${slug}", settling silently`);
         if (isCurrent()) set({ isDetailsLoading: false, hasAttempted: true });
         return;
       }
-      if (!isCurrent()) return;
+      if (!isCurrent()) {
+        logger.debug("details", `Generation ${generation} superseded for "${slug}", discarding throw`);
+        return;
+      }
+      const type = e instanceof SourceError ? e.type : "UNKNOWN";
+      logger.warn("details", `Ladder threw for "${slug}": ${type}`, e);
       set({
         error:
           e instanceof SourceError

@@ -53,7 +53,11 @@ function RootInner() {
     if (prev !== null && prev !== connectionType && prev !== "unknown" && connectionType !== "unknown") {
       const timer = setTimeout(() => {
         // Flap WiFi/5G must not wash on every switch: a fresh session stays
-        if (Date.now() - lastRefreshTime.current < SESSION_REFRESH_COOLDOWN) return;
+        if (Date.now() - lastRefreshTime.current < SESSION_REFRESH_COOLDOWN) {
+          logger.debug("lifecycle", `Connection ${prev}→${connectionType}, wash skipped by cooldown`);
+          return;
+        }
+        logger.info("lifecycle", `Connection ${prev}→${connectionType}, triggering wash`);
         triggerSessionRefresh();
       }, 2000);
       return () => clearTimeout(timer);
@@ -67,7 +71,10 @@ function RootInner() {
     if (prev === false && isInternetReachable === true) {
       const timer = setTimeout(() => {
         if (Date.now() - lastRefreshTime.current >= SESSION_REFRESH_COOLDOWN) {
+          logger.info("lifecycle", "Regained connection, triggering wash");
           triggerSessionRefresh();
+        } else {
+          logger.debug("lifecycle", "Regained connection, wash skipped by cooldown");
         }
         const updateState = useUpdateStore.getState();
         if (updateState.updateCheckEnabled !== false) {
@@ -83,7 +90,11 @@ function RootInner() {
     const sub = AppState.addEventListener("change", (state) => {
       if (state !== "active") return;
       const elapsed = Date.now() - lastRefreshTime.current;
-      if (elapsed < SESSION_REFRESH_COOLDOWN) return;
+      if (elapsed < SESSION_REFRESH_COOLDOWN) {
+        logger.debug("lifecycle", `Foreground after ${(elapsed / 1000).toFixed(0)}s, wash skipped by cooldown`);
+        return;
+      }
+      logger.info("lifecycle", `Foreground after ${(elapsed / 1000).toFixed(0)}s, triggering wash`);
       triggerSessionRefresh();
     });
     return () => sub.remove();
@@ -94,6 +105,7 @@ function RootInner() {
 
     const doRefresh = async () => {
       try {
+        logger.info("lifecycle", "Proactive wash started");
         // Serialize: refresh session first, then let cache invalidation drive
         // a single fetchHome. No UI wipe, no concurrent safety fetch.
         await refreshSession();
@@ -106,6 +118,7 @@ function RootInner() {
           SESSION_SENSITIVE_CACHE_PREFIXES.some((prefix) => k.startsWith(prefix)),
         );
         await Promise.all(cacheKeys.map((k) => storage.remove(k)));
+        logger.info("lifecycle", `Proactive wash done, wiped ${cacheKeys.length} session caches`);
         // invalidateCache makes the home screen refetch after the cache wipe
         useSettingsStore.getState().invalidateCache();
       } catch {
@@ -137,6 +150,7 @@ function RootInner() {
       useSettingsStore.getState().initialize(order ?? "asc");
       useUpdateStore.getState().initialize(updateCheckEnabled !== false);
       useUserInitializationStore.setState({ isInitialized: true });
+      logger.info("lifecycle", "App boot complete");
       if (!cancelled) setReady(true);
 
       if (updateCheckEnabled !== false) {

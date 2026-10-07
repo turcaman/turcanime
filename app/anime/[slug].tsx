@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DetailSkeleton } from "@/components/skeletons/DetailSkeleton";
 import { useAnimeDetailScreen } from "@/hooks/useAnimeDetailScreen";
 import { navigateBack } from "@/utils/navigation";
+import { logger } from "@/utils/logger";
 import { useHistoryStore } from "@/stores/historyStore";
 import { useDetailsStore } from "@/stores/detailsStore";
 import { findHistoryEntry } from "@/utils/history";
@@ -38,6 +39,10 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
   const { keepSkeleton, skeletonStyle, contentStyle } = useCrossfade(showContent);
 
   if (!anime && (error || (hasAttempted && !isAnimeLoading))) {
+    logger.warn(
+      "details",
+      `Terminal guard for "${slug}": hasAttempted=${hasAttempted} loading=${isAnimeLoading} error=${error?.type ?? "none"}`,
+    );
     return (
       <ScreenWrapper error={true} hasContent={false} onRetry={refresh}>
         <View className="flex-1 bg-black" />
