@@ -142,12 +142,11 @@ const htmlParser = new HtmlParser();
 
 function isChallengeHtml(html: string): boolean {
   return (
-    html.includes("Just a moment") ||
-    html.includes("Attention Required") ||
-    html.includes("challenge-form") ||
-    html.includes("challenge-error-text") ||
-    html.includes("cf-challenge-running") ||
-    html.includes("challenge-platform")
+    html.includes("<title>Just a moment") ||
+    html.includes("<title>Attention Required") ||
+    html.includes('id="challenge-form"') ||
+    html.includes('id="challenge-error-text"') ||
+    html.includes('id="cf-challenge-running"')
   );
 }
 
@@ -193,8 +192,11 @@ async function getDetails(slug: string, options?: { signal?: AbortSignal }): Pro
   if (res.status === 404) return null;
   if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
   const html = await res.text();
-  if (isChallengeHtml(html)) throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
-  return parseAnimeDetail(html, slug);
+  const detail = parseAnimeDetail(html, slug);
+  if (isChallengeHtml(html) && detail.episodes.length === 0 && !detail.image && !detail.synopsis) {
+    throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
+  }
+  return detail;
 }
 
 function parseAnimeDetail(html: string, slug: string): AnimeDetail {
