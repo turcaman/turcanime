@@ -96,6 +96,16 @@ async function fetchWithSession(path: string, options: RequestInit = {}): Promis
           await new Promise((resolve) => setTimeout(resolve, backoffDelay(attempt)));
           continue;
         }
+
+        // why: Cloudflare challenges arrive as non-ok HTML; they must enter
+        // the session ladder instead of surfacing as network errors.
+        try {
+          if (isChallengeHtml(await res.clone().text())) {
+            throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
+          }
+        } catch (e: unknown) {
+          if (e instanceof SourceError) throw e;
+        }
       }
       return res;
     } catch (error) {
@@ -141,7 +151,7 @@ function isChallengeHtml(html: string): boolean {
 async function getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData> {
   const homeEndpoint = SOURCE_CONFIG.homeEndpoint;
   const res = await fetchWithSession(homeEndpoint, options ?? {});
-  if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "AUTH_ERROR");
+  if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
   const html = await res.text();
   const recent = htmlParser.parseCards(html);
   if (recent.length === 0) {
