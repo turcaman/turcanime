@@ -172,7 +172,14 @@ export interface RawSearchItem {
 async function searchRaw(query: string, options?: { signal?: AbortSignal }): Promise<RawSearchItem[]> {
   const res = await fetchWithSession(`/api/anime/search?q=${encodeURIComponent(query)}`, options ?? {});
   if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
-  const json = await res.json();
+  const text = await res.text();
+  let json: { data?: unknown };
+  try {
+    json = JSON.parse(text) as { data?: unknown };
+  } catch {
+    if (isChallengeHtml(text)) throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
+    throw new SourceError(`Unexpected response format for query: ${query}`, "UNKNOWN");
+  }
   const items = json.data ?? [];
   if (!Array.isArray(items)) throw new SourceError(`Unexpected response format for query: ${query}`, "UNKNOWN");
   return items as RawSearchItem[];
