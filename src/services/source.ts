@@ -190,6 +190,7 @@ async function getDetails(slug: string, options?: { signal?: AbortSignal }): Pro
   if (res.status === 404) return null;
   if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
   const html = await res.text();
+  if (isChallengeHtml(html)) throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
   return parseAnimeDetail(html, slug);
 }
 
