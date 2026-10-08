@@ -45,7 +45,8 @@ function RootInner() {
   const setSessionRefreshFailed = useUIStore((s) => s.setSessionRefreshFailed);
   const prevConnectionType = useRef<ConnectionType>(null);
   const prevReachable = useRef<boolean | null>(null);
-  const lastRefreshTime = useRef(0);
+  const lastRefreshTime = useRef(Date.now());
+  const skipFirstActiveEvent = useRef(true);
 
   useEffect(() => {
     const prev = prevConnectionType.current;
@@ -89,6 +90,11 @@ function RootInner() {
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
       if (state !== "active") return;
+      if (skipFirstActiveEvent.current) {
+        skipFirstActiveEvent.current = false;
+        logger.debug("lifecycle", "Initial active event, wash skipped");
+        return;
+      }
       const elapsed = Date.now() - lastRefreshTime.current;
       if (elapsed < SESSION_REFRESH_COOLDOWN) {
         logger.debug("lifecycle", `Foreground after ${(elapsed / 1000).toFixed(0)}s, wash skipped by cooldown`);
@@ -110,6 +116,8 @@ function RootInner() {
         // Serialize: refresh session first, then let cache invalidation drive
         // a single fetchHome. No UI wipe, no concurrent safety fetch.
         await refreshSession();
+        // A wash with unchanged cookies preserves fetchedAt; stamp it so the next boot skips the wash
+        await sessionManager.touchSession();
         // Cooldown counts only successful refreshes so failures can be retried soon
         lastRefreshTime.current = Date.now();
         setSessionRefreshFailed(false);
