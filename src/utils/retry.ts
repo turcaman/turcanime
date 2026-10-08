@@ -1,7 +1,7 @@
 import { logger } from "./logger";
 import { isAuthError } from "./errors";
 import { backoffDelay } from "./math";
-import { refreshSession } from "../services/session";
+import { refreshSession, sessionManager } from "../services/session";
 
 interface WithAuthRetryOptions {
   /** Optional caller signal for cooperative abort between attempts */
@@ -58,6 +58,8 @@ export async function withAuthRetry<T>(
       logger.info(tag, `Auth error, refreshing session and retrying (${attempt + 1}/${maxRetries})...`);
       try {
         await refreshSession();
+        // A wash with unchanged cookies preserves fetchedAt; stamp it so the next fetch skips the wash
+        await sessionManager.touchSession();
       } catch (refreshError) {
         if (continueAfterRefreshFailure) {
           logger.warn(tag, "Session refresh threw, continuing retry anyway", refreshError);
