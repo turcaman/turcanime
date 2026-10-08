@@ -1,28 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useDetailsStore } from "../stores/detailsStore";
+import { deriveView, errorFor, isLoadingFor, type ResourceView } from "../utils/resource";
 
 export function useAnimeData(slug: string) {
-  const anime = useDetailsStore((s) => s.activeAnime);
-  const isLoading = useDetailsStore((s) => s.isDetailsLoading);
+  const resource = useDetailsStore((s) => s.resource);
   const fetchDetails = useDetailsStore((s) => s.fetchDetails);
-  const error = useDetailsStore((s) => s.error);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  // One auto-load per slug per screen mount; failures retry only on demand
+  const attemptedSlugRef = useRef<string | null>(null);
+
+  const anime = resource.data != null && resource.dataKey === slug ? resource.data : null;
+  const view: ResourceView = deriveView(resource, slug);
 
   useEffect(() => {
-    if (!anime || anime.url !== slug || anime.episodes.length === 0) {
-      void fetchDetails(slug);
-    }
-  }, [slug, fetchDetails, anime]);
-
-  useEffect(() => {
-    if (anime) setHasLoaded(true);
-  }, [anime]);
+    if (attemptedSlugRef.current === slug) return;
+    attemptedSlugRef.current = slug;
+    const current = useDetailsStore.getState().resource;
+    if (isLoadingFor(current, slug)) return;
+    if (current.data != null && current.dataKey === slug && current.data.episodes.length > 0) return;
+    void fetchDetails(slug);
+  }, [slug, fetchDetails]);
 
   return {
     anime,
-    isLoading,
-    error,
-    hasLoaded,
+    view,
+    isLoading: isLoadingFor(resource, slug),
+    error: errorFor(resource, slug),
+    hasLoaded: anime != null,
     refresh: () => void fetchDetails(slug, true),
   };
 }

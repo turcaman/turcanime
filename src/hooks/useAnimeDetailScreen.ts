@@ -10,7 +10,7 @@ import { findHistoryEntry, makeHistoryEntry, addToHistorySafe } from "../utils/h
 import { navigateToPlayer } from "../utils/navigation";
 
 export function useAnimeDetailScreen(slug: string) {
-  const { anime, isLoading: isAnimeLoading, error, hasLoaded, refresh } = useAnimeData(slug);
+  const { anime, view, isLoading: isAnimeLoading, error, hasLoaded, refresh } = useAnimeData(slug);
   const resolveStream = usePlayerStore((s) => s.resolveStream);
   const servers = usePlayerStore((s) => s.servers);
   const fetchServers = usePlayerStore((s) => s.fetchServers);
@@ -61,6 +61,7 @@ export function useAnimeDetailScreen(slug: string) {
 
   return {
     anime,
+    view,
     isAnimeLoading,
     error,
     hasLoaded,

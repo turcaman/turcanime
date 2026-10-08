@@ -1,15 +1,13 @@
-import { ScreenWrapper } from "@/components/ScreenWrapper";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { AnimeDetailsHeader } from "@/components/AnimeDetailsHeader";
 import { AnimeEpisodeModal } from "@/components/AnimeEpisodeModal";
 import { EpisodeRangeSelector } from "@/components/EpisodeRangeSelector";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { DetailSkeleton } from "@/components/skeletons/DetailSkeleton";
 import { useAnimeDetailScreen } from "@/hooks/useAnimeDetailScreen";
 import { navigateBack } from "@/utils/navigation";
-import { logger } from "@/utils/logger";
 import { useHistoryStore } from "@/stores/historyStore";
-import { useDetailsStore } from "@/stores/detailsStore";
 import { findHistoryEntry } from "@/utils/history";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { calcProgress } from "@/utils/math";
@@ -27,35 +25,24 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
   const { slug } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const {
-    anime, isAnimeLoading, error, servers, serverLoading, setEpisodeOrder,
+    anime, view, isAnimeLoading, error, servers, serverLoading, setEpisodeOrder,
     isExpanded, setIsExpanded, selectedEpisode, setSelectedEpisode,
     hasLoaded, activeRangeIdx, setActiveRangeIdx, isRestoring,
     ranges, visibleEpisodes, isAscending, handleEpisodePress, handleServerSelect, refresh,
   } = useAnimeDetailScreen(slug as string);
 
-  const showContent = anime != null && anime.url === slug;
-  const hasAttempted = useDetailsStore((s) => s.hasAttempted);
-
+  const showContent = view === "content";
   const { keepSkeleton, skeletonStyle, contentStyle } = useCrossfade(showContent);
 
-  if (!anime && (error || (hasAttempted && !isAnimeLoading))) {
-    logger.warn(
-      "details",
-      `Terminal guard for "${slug}": hasAttempted=${hasAttempted} loading=${isAnimeLoading} error=${error?.type ?? "none"}`,
-    );
-    return (
-      <ScreenWrapper error={true} hasContent={false} onRetry={refresh}>
-        <View className="flex-1 bg-black" />
-      </ScreenWrapper>
-    );
+  if (view === "error") {
+    return <ErrorState error={error} onRetry={refresh} />;
   }
 
   return (
     <View className="flex-1 bg-black">
       {showContent && (
         <Animated.View style={[{ flex: 1 }, contentStyle]}>
-          <ScreenWrapper error={!!error} hasContent={!!anime} onRetry={refresh}>
-            <View className="flex-1 bg-black">
+          <View className="flex-1 bg-black">
               <ScrollView
                 contentContainerStyle={{ paddingBottom: TAB_BAR_OFFSET }}
                 showsVerticalScrollIndicator={false}
@@ -105,7 +92,6 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                 onServerSelect={handleServerSelect}
               />
             </View>
-          </ScreenWrapper>
         </Animated.View>
       )}
       {(keepSkeleton || !showContent) && (
