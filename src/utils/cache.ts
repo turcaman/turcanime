@@ -17,9 +17,10 @@ export async function withCache<T>(
     ttl?: number;
     signal?: AbortSignal;
     force?: boolean;
+    isValid?: (data: T) => boolean;
   } = {},
 ): Promise<{ data: T | null; error: Error | null }> {
-  const { ttl, signal, force } = options;
+  const { ttl, signal, force, isValid } = options;
 
   if (!force) {
     try {
@@ -27,10 +28,14 @@ export async function withCache<T>(
       if (cached && typeof cached.expiration === "number" && Date.now() < cached.expiration) {
         const isStale = cached.expiration - Date.now() < (ttl ?? 0) * 0.3;
         if (!isStale) {
-          logger.debug("cache", `Hit "${cacheKey}"`);
-          return { data: cached.payload, error: null };
+          if (isValid == null || isValid(cached.payload)) {
+            logger.debug("cache", `Hit "${cacheKey}"`);
+            return { data: cached.payload, error: null };
+          }
+          logger.debug("cache", `Invalid hit "${cacheKey}", refetching`);
+        } else {
+          logger.debug("cache", `Stale "${cacheKey}", refetching`);
         }
-        logger.debug("cache", `Stale "${cacheKey}", refetching`);
       } else {
         logger.debug("cache", `Miss "${cacheKey}", fetching`);
       }
@@ -44,12 +49,18 @@ export async function withCache<T>(
     const data = await fetchFn(signal ?? new AbortController().signal);
 
     try {
-      const entry: CacheEntry<T> = { payload: data, expiration: Date.now() + (ttl ?? 6 * 60 * 60 * 1000) };
-      const size = JSON.stringify(data).length;
-      if (size <= LIMITS.CACHE_MAX_ENTRY_SIZE) {
-        await storage.set(cacheKey, entry);
+      if (data == null) {
+        logger.debug("cache", `Null result for "${cacheKey}", skipping write`);
+      } else if (isValid != null && !isValid(data)) {
+        logger.debug("cache", `Invalid result for "${cacheKey}", skipping write`);
       } else {
-        logger.warn("cache", `Entry "${cacheKey}" too large (${(size / 1024).toFixed(1)}KB), skipping`);
+        const entry: CacheEntry<T> = { payload: data, expiration: Date.now() + (ttl ?? 6 * 60 * 60 * 1000) };
+        const size = JSON.stringify(data).length;
+        if (size <= LIMITS.CACHE_MAX_ENTRY_SIZE) {
+          await storage.set(cacheKey, entry);
+        } else {
+          logger.warn("cache", `Entry "${cacheKey}" too large (${(size / 1024).toFixed(1)}KB), skipping`);
+        }
       }
     } catch {
     }
