@@ -14,7 +14,7 @@ import Animated from "react-native-reanimated";
 import { useCrossfade } from "@/hooks/useCrossfade";
 
 const HomeContent = React.memo(function HomeContent() {
-  const { sections, isLoading, error, fetchHome, hasContent } = useHomeScreen();
+  const { sections, isLoading, error, view, fetchHome, hasContent } = useHomeScreen();
   const { handleScroll, reset } = useTabBarManager({ threshold: 8 });
   const insets = useSafeAreaInsets();
 
@@ -25,8 +25,8 @@ const HomeContent = React.memo(function HomeContent() {
     reset();
   }, [fetchHome, reset]);
 
-  if (!hasContent && error) {
-    return <ErrorState onRetry={() => void fetchHome(true)} />;
+  if (view === "error") {
+    return <ErrorState error={error} onRetry={() => void fetchHome(true)} />;
   }
 
   return (

@@ -2,7 +2,7 @@ import type { CacheEntry, StreamUrlResult } from "../types";
 import { CACHE_PREFIXES, CACHE_TTL, LIMITS } from "../config/cache";
 import { storage } from "./storage";
 import { logger } from "./logger";
-import { isAuthError, isCancelled, CancelledError } from "./errors";
+import { isAuthError, isCancelled, CancelledError, SourceError } from "./errors";
 import { source } from "../services/source";
 
 /**
@@ -54,11 +54,16 @@ export async function loadCached<T>(
     throw e;
   }
 
+  // Fresh data failing validation is a real failure (empty parse, degraded
+  // payload): throw instead of handing every caller a payload it must judge
+  if (data != null && isValid != null && !isValid(data)) {
+    logger.warn("cache", `Invalid fresh result for "${cacheKey}", failing`);
+    throw new SourceError(`Invalid payload for ${cacheKey}`, "UNKNOWN");
+  }
+
   try {
     if (data == null) {
       logger.debug("cache", `Null result for "${cacheKey}", skipping write`);
-    } else if (isValid != null && !isValid(data)) {
-      logger.debug("cache", `Invalid result for "${cacheKey}", skipping write`);
     } else {
       const entry: CacheEntry<T> = { payload: data, expiration: Date.now() + (ttl ?? 6 * 60 * 60 * 1000) };
       const size = JSON.stringify(data).length;
