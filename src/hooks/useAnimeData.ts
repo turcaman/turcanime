@@ -9,7 +9,7 @@ export function useAnimeData(slug: string) {
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    if (!anime || anime.url !== slug) {
+    if (!anime || anime.url !== slug || anime.episodes.length === 0) {
       void fetchDetails(slug);
     }
   }, [slug, fetchDetails, anime]);

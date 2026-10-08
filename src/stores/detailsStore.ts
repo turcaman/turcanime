@@ -40,6 +40,7 @@ export const useDetailsStore = create<DetailsState>((set) => ({
         ttl: CACHE_TTL.DETAILS,
         signal,
         force: attempt > 0 ? true : force,
+        isValid: (d) => d != null && d.episodes.length > 0,
       });
 
     try {
@@ -65,7 +66,7 @@ export const useDetailsStore = create<DetailsState>((set) => ({
           isDetailsLoading: false,
           hasAttempted: true,
         });
-      } else if (result.data) {
+      } else if (result.data && result.data.episodes.length > 0) {
         logger.debug("details", `Loaded "${slug}" (${result.data.episodes.length} episodes)`);
         set({ activeAnime: result.data, isDetailsLoading: false, error: null, hasAttempted: true });
       } else {
