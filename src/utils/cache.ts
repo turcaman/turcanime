@@ -2,13 +2,83 @@ import type { CacheEntry, StreamUrlResult } from "../types";
 import { CACHE_PREFIXES, CACHE_TTL, LIMITS } from "../config/cache";
 import { storage } from "./storage";
 import { logger } from "./logger";
-import { isAuthError } from "./errors";
+import { isAuthError, isCancelled, CancelledError } from "./errors";
 import { source } from "../services/source";
 
 /**
- * Fetch data with caching.
- * Returns cached value if available and not expired (with 30% stale threshold).
- * If force is true, skips cache and fetches fresh data.
+ * Read-through cache with one contract: return the payload, or throw.
+ * Cancellations always throw CancelledError so callers can never mistake an
+ * aborted request for empty data. Cache read/write failures are internal and
+ * never propagate — they only skip the cache layer.
+ */
+export async function loadCached<T>(
+  cacheKey: string,
+  fetchFn: (signal: AbortSignal) => Promise<T>,
+  options: {
+    ttl?: number;
+    signal?: AbortSignal;
+    force?: boolean;
+    isValid?: (data: T) => boolean;
+  } = {},
+): Promise<T> {
+  const { ttl, signal, force, isValid } = options;
+
+  if (!force) {
+    try {
+      const cached = await storage.get<CacheEntry<T>>(cacheKey);
+      if (cached && typeof cached.expiration === "number" && Date.now() < cached.expiration) {
+        const isStale = cached.expiration - Date.now() < (ttl ?? 0) * 0.3;
+        if (!isStale && (isValid == null || isValid(cached.payload))) {
+          logger.debug("cache", `Hit "${cacheKey}"`);
+          return cached.payload;
+        }
+        logger.debug("cache", isStale ? `Stale "${cacheKey}", refetching` : `Invalid hit "${cacheKey}", refetching`);
+      } else {
+        logger.debug("cache", `Miss "${cacheKey}", fetching`);
+      }
+    } catch {
+      // Cache read failure only means no cached value available
+    }
+  } else {
+    logger.debug("cache", `Force refresh for "${cacheKey}", skipping cache`);
+  }
+
+  let data: T;
+  try {
+    data = await fetchFn(signal ?? new AbortController().signal);
+  } catch (e) {
+    if (isCancelled(e)) throw new CancelledError();
+    if (isAuthError(e)) {
+      logger.debug("cache", `Auth error for "${cacheKey}", rethrowing to ladder`);
+    }
+    throw e;
+  }
+
+  try {
+    if (data == null) {
+      logger.debug("cache", `Null result for "${cacheKey}", skipping write`);
+    } else if (isValid != null && !isValid(data)) {
+      logger.debug("cache", `Invalid result for "${cacheKey}", skipping write`);
+    } else {
+      const entry: CacheEntry<T> = { payload: data, expiration: Date.now() + (ttl ?? 6 * 60 * 60 * 1000) };
+      const size = JSON.stringify(data).length;
+      if (size <= LIMITS.CACHE_MAX_ENTRY_SIZE) {
+        await storage.set(cacheKey, entry);
+      } else {
+        logger.warn("cache", `Entry "${cacheKey}" too large (${(size / 1024).toFixed(1)}KB), skipping`);
+      }
+    }
+  } catch {
+    // Cache write failure never invalidates the fetched data
+  }
+
+  return data;
+}
+
+/**
+ * @deprecated Legacy tuple contract kept only for stores not yet migrated to
+ * loadCached + ResourceRunner. Auth errors throw; cancellations return
+ * { data: null, error: null }; everything else returns in `error`.
  */
 export async function withCache<T>(
   cacheKey: string,
@@ -20,63 +90,12 @@ export async function withCache<T>(
     isValid?: (data: T) => boolean;
   } = {},
 ): Promise<{ data: T | null; error: Error | null }> {
-  const { ttl, signal, force, isValid } = options;
-
-  if (!force) {
-    try {
-      const cached = await storage.get<CacheEntry<T>>(cacheKey);
-      if (cached && typeof cached.expiration === "number" && Date.now() < cached.expiration) {
-        const isStale = cached.expiration - Date.now() < (ttl ?? 0) * 0.3;
-        if (!isStale) {
-          if (isValid == null || isValid(cached.payload)) {
-            logger.debug("cache", `Hit "${cacheKey}"`);
-            return { data: cached.payload, error: null };
-          }
-          logger.debug("cache", `Invalid hit "${cacheKey}", refetching`);
-        } else {
-          logger.debug("cache", `Stale "${cacheKey}", refetching`);
-        }
-      } else {
-        logger.debug("cache", `Miss "${cacheKey}", fetching`);
-      }
-    } catch {
-    }
-  } else {
-    logger.debug("cache", `Force refresh for "${cacheKey}", skipping cache`);
-  }
-
   try {
-    const data = await fetchFn(signal ?? new AbortController().signal);
-
-    try {
-      if (data == null) {
-        logger.debug("cache", `Null result for "${cacheKey}", skipping write`);
-      } else if (isValid != null && !isValid(data)) {
-        logger.debug("cache", `Invalid result for "${cacheKey}", skipping write`);
-      } else {
-        const entry: CacheEntry<T> = { payload: data, expiration: Date.now() + (ttl ?? 6 * 60 * 60 * 1000) };
-        const size = JSON.stringify(data).length;
-        if (size <= LIMITS.CACHE_MAX_ENTRY_SIZE) {
-          await storage.set(cacheKey, entry);
-        } else {
-          logger.warn("cache", `Entry "${cacheKey}" too large (${(size / 1024).toFixed(1)}KB), skipping`);
-        }
-      }
-    } catch {
-    }
-
+    const data = await loadCached(cacheKey, fetchFn, options);
     return { data, error: null };
-  } catch (e: unknown) {
-    const err = e as { name?: string };
-    if (err.name === "AbortError") {
-      return { data: null, error: null };
-    }
-    // withAuthRetry detects auth failures only from thrown errors, so rethrow
-    // them to trigger the session refresh; other errors stay as result.error.
-    if (isAuthError(e)) {
-      logger.debug("cache", `Auth error for "${cacheKey}", rethrowing to ladder`);
-      throw e;
-    }
+  } catch (e) {
+    if (isCancelled(e)) return { data: null, error: null };
+    if (isAuthError(e)) throw e;
     return { data: null, error: e instanceof Error ? e : new Error(String(e)) };
   }
 }
