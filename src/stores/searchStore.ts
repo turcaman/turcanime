@@ -1,16 +1,13 @@
 import { create } from "zustand";
 import { source, type RawSearchItem } from "../services/source";
 import { cleanTitle } from "../services/parsers";
-import { withCache } from "../utils/cache";
+import { loadCached } from "../utils/cache";
 import { withAuthRetry } from "../utils/retry";
-import { SourceError } from "../utils/errors";
+import { ResourceRunner, resourceInitialState, type ResourceState } from "../utils/resource";
 import { logger } from "../utils/logger";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { TMDB_IMAGE_BASE } from "../config/source";
-import type { Anime, AppError, AutocompleteAnime } from "../types";
-
-let searchController: AbortController | null = null;
-let suggestionsController: AbortController | null = null;
+import type { Anime, AutocompleteAnime } from "../types";
 
 // Search results and suggestions share one cache entry per query (same endpoint)
 function normalizeSearchKey(query: string): string {
@@ -57,11 +54,9 @@ function toSuggestion(item: RawSearchItem): AutocompleteAnime {
 }
 
 interface SearchState {
-  searchAnimes: Anime[];
-  suggestions: AutocompleteAnime[];
+  results: ResourceState<Anime[]>;
+  suggestions: ResourceState<AutocompleteAnime[]>;
   lastSearchTerm: string;
-  isSearchLoading: boolean;
-  error: AppError | null;
   fetchSearch: (query: string, force?: boolean) => Promise<void>;
   fetchSuggestions: (query: string) => Promise<void>;
   clearSuggestions: () => void;
@@ -70,145 +65,86 @@ interface SearchState {
   setSearchTerm: (term: string) => void;
 }
 
-export const useSearchStore = create<SearchState>((set) => ({
-  searchAnimes: [],
-  suggestions: [],
-  lastSearchTerm: "",
-  isSearchLoading: false,
-  error: null,
+export const useSearchStore = create<SearchState>((set, get) => {
+  const resultsRunner = new ResourceRunner<Anime[]>({
+    tag: "search",
+    get: () => get().results,
+    set: (results) => set({ results }),
+  });
+  const suggestionsRunner = new ResourceRunner<AutocompleteAnime[]>({
+    tag: "suggestions",
+    get: () => get().suggestions,
+    set: (suggestions) => set({ suggestions }),
+  });
 
-  fetchSearch: async (query: string, force = false) => {
-    if (!query.trim()) {
-      set({ searchAnimes: [], suggestions: [], error: null });
-      return;
-    }
-    // A search supersedes suggestions; both hit the same heavy endpoint and
-    // running concurrently over one session makes each other time out
-    suggestionsController?.abort();
-    suggestionsController = null;
-    if (searchController) searchController.abort();
-    searchController = new AbortController();
-    const signal = searchController.signal;
+  return {
+    results: resourceInitialState<Anime[]>(),
+    suggestions: resourceInitialState<AutocompleteAnime[]>(),
+    lastSearchTerm: "",
 
-    set({ suggestions: [], isSearchLoading: true, error: null });
-
-    const cacheKey = `${CACHE_PREFIXES.SEARCH}_${normalizeSearchKey(query)}`;
-
-    if (!force) {
-      const memory = memoryGet(cacheKey);
-      if (memory != null) {
-        logger.debug("search", `Memory hit for "${query}" (${memory.length} items)`);
-        set({ searchAnimes: memory.map(toAnime), isSearchLoading: false, error: null });
+    fetchSearch: async (query: string, force = false) => {
+      const trimmed = query.trim();
+      if (!trimmed) {
+        resultsRunner.reset();
+        suggestionsRunner.reset();
         return;
       }
-    }
+      // A search supersedes suggestions; both hit the same heavy endpoint and
+      // running concurrently over one session makes each other time out
+      suggestionsRunner.reset();
 
-    try {
-      const result = await withAuthRetry(
-        (attempt: number) =>
-          withCache<RawSearchItem[]>(cacheKey, (sig) => source.searchRaw(query, { signal: sig }), {
-            ttl: CACHE_TTL.SEARCH,
+      const cacheKey = `${CACHE_PREFIXES.SEARCH}_${normalizeSearchKey(trimmed)}`;
+      await resultsRunner.load(trimmed, async (signal) => {
+        if (!force) {
+          const memory = memoryGet(cacheKey);
+          if (memory != null) {
+            logger.debug("search", `Memory hit for "${trimmed}" (${memory.length} items)`);
+            return memory.map(toAnime);
+          }
+        }
+        const raw = await withAuthRetry(
+          (attempt) =>
+            loadCached(cacheKey, (sig) => source.searchRaw(trimmed, { signal: sig }), {
+              ttl: CACHE_TTL.SEARCH,
+              signal,
+              force: attempt > 0 ? true : force,
+            }),
+          {
             signal,
-            force: attempt > 0 ? true : force,
-          }),
-        {
-          signal,
-          maxRetries: 2,
-          continueAfterRefreshFailure: true,
-          tag: "search",
-        },
-      );
-
-      if (signal.aborted) return;
-
-      if (result.data != null && result.data.length > 0) {
-        memorySet(cacheKey, result.data);
-      }
-
-      if (searchController?.signal !== signal) {
-        logger.debug("search", `Superseded after ladder for "${query}", discarding result`);
-        return;
-      }
-      if (signal.aborted) {
-        logger.debug("search", `Aborted after ladder for "${query}", settling silently`);
-        set({ isSearchLoading: false });
-        return;
-      }
-
-      if (result.error) {
-        const err = result.error;
-        const type = err instanceof SourceError ? err.type : "UNKNOWN";
-        logger.warn("search", `Settled with error for "${query}": ${type}`, err);
-        set({
-          error:
-            err instanceof SourceError
-              ? { type: err.type, message: err.message }
-              : { type: "UNKNOWN", message: err.message },
-          isSearchLoading: false,
-        });
-      } else {
-        logger.debug("search", `Loaded ${(result.data ?? []).length} items for "${query}"`);
-        set({ searchAnimes: (result.data ?? []).map(toAnime), isSearchLoading: false, error: null });
-      }
-    } catch (e: unknown) {
-      if (e instanceof Error && e.name === "AbortError") {
-        logger.debug("search", `Ladder aborted for "${query}", settling silently`);
-        if (searchController?.signal === signal) set({ isSearchLoading: false });
-        return;
-      }
-      if (searchController?.signal !== signal) {
-        logger.debug("search", `Superseded ladder threw for "${query}", discarding`);
-        return;
-      }
-      const type = e instanceof SourceError ? e.type : "UNKNOWN";
-      logger.warn("search", `Ladder threw for "${query}": ${type}`, e);
-      set({
-        error:
-          e instanceof SourceError
-            ? { type: e.type, message: e.message }
-            : { type: "UNKNOWN", message: e instanceof Error ? e.message : String(e) },
-        isSearchLoading: false,
+            maxRetries: 2,
+            continueAfterRefreshFailure: true,
+            tag: "search",
+          },
+        );
+        if (raw.length > 0) memorySet(cacheKey, raw);
+        return raw.map(toAnime);
       });
-    }
-  },
+    },
 
-  fetchSuggestions: async (query: string) => {
-    if (suggestionsController) suggestionsController.abort();
-    suggestionsController = new AbortController();
-    const signal = suggestionsController.signal;
+    fetchSuggestions: async (query: string) => {
+      const cacheKey = `${CACHE_PREFIXES.SEARCH}_${normalizeSearchKey(query)}`;
+      await suggestionsRunner.load(query, async (signal) => {
+        const raw = await loadCached(cacheKey, (sig) => source.searchRaw(query, { signal: sig }), {
+          ttl: CACHE_TTL.SEARCH,
+          signal,
+        });
+        return raw.map(toSuggestion);
+      });
+    },
 
-    const cacheKey = `${CACHE_PREFIXES.SEARCH}_${normalizeSearchKey(query)}`;
+    clearSuggestions: () => {
+      suggestionsRunner.reset();
+    },
 
-    try {
-      const result = await withCache<RawSearchItem[]>(
-        cacheKey,
-        (sig) => source.searchRaw(query, { signal: sig }),
-        { ttl: CACHE_TTL.SEARCH, signal },
-      );
+    cancelSearch: () => {
+      resultsRunner.cancel();
+    },
 
-      if (signal.aborted) return;
-      set({ suggestions: (result.data ?? []).map(toSuggestion) });
-    } catch {
-      return;
-    }
-  },
+    resetSearch: () => {
+      resultsRunner.reset();
+      suggestionsRunner.reset();
+    },
 
-  clearSuggestions: () => {
-    suggestionsController?.abort();
-    suggestionsController = null;
-    set({ suggestions: [] });
-  },
-
-  cancelSearch: () => {
-    if (searchController) searchController.abort();
-    set({ isSearchLoading: false });
-  },
-
-  resetSearch: () => {
-    if (searchController) searchController.abort();
-    suggestionsController?.abort();
-    set({ searchAnimes: [], suggestions: [], error: null, isSearchLoading: false });
-  },
-
-  setSearchTerm: (term: string) => set({ lastSearchTerm: term }),
-}));
+    setSearchTerm: (term: string) => set({ lastSearchTerm: term }),
+  };
+});

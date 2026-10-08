@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchStore } from "../stores/searchStore";
+import { errorFor } from "../utils/resource";
 import { useSearchHistoryStore } from "../stores/searchHistoryStore";
 import { navigateToAnime } from "../utils/navigation";
 import { useDebounce } from "./useDebounce";
@@ -12,10 +13,8 @@ export const MIN_SEARCH_LENGTH = 3;
 export function useSearchScreen() {
   const fetchSearch = useSearchStore((s) => s.fetchSearch);
   const fetchSuggestions = useSearchStore((s) => s.fetchSuggestions);
-  const searchAnimes = useSearchStore((s) => s.searchAnimes);
-  const suggestions = useSearchStore((s) => s.suggestions);
-  const isLoading = useSearchStore((s) => s.isSearchLoading);
-  const error = useSearchStore((s) => s.error);
+  const results = useSearchStore((s) => s.results);
+  const suggestionsResource = useSearchStore((s) => s.suggestions);
   const lastSearchTerm = useSearchStore((s) => s.lastSearchTerm);
   const setStoreSearchTerm = useSearchStore((s) => s.setSearchTerm);
   const resetStoreSearch = useSearchStore((s) => s.resetSearch);
@@ -35,6 +34,11 @@ export function useSearchScreen() {
   const stateRef = useRef(state);
   stateRef.current = state;
   const debouncedTerm = useDebounce(state.term, 300);
+
+  const searchAnimes = useMemo(() => results.data ?? [], [results.data]);
+  const suggestions = useMemo(() => suggestionsResource.data ?? [], [suggestionsResource.data]);
+  const isLoading = results.status === "loading";
+  const error = errorFor(results, results.key ?? "");
 
   useEffect(() => {
     const length = debouncedTerm.trim().length;
