@@ -126,9 +126,14 @@ class SessionManager {
 
   async touchSession(): Promise<void> {
     const current = await this.getSession();
-    if (current != null) {
+    if (current == null) return;
+    try {
+      const latest = await this.getSession();
+      if (latest != null && latest.cookies !== current.cookies) return;
       await storage.set(SESSION_KEY, { ...current, fetchedAt: Date.now() });
       logger.debug("session", "Freshness stamped after wash");
+    } catch (error) {
+      logger.warn("session", "Freshness stamp failed", error);
     }
   }
 
