@@ -22,6 +22,8 @@ interface WithAuthRetryOptions {
 
 /** Thrown when the session refresh itself fails and the ladder stops */
 export class SessionRefreshError extends Error {
+  // Lets toAppError classify it as AUTH_ERROR without importing this module
+  readonly type = "AUTH_ERROR" as const;
   constructor() {
     super("Error al renovar sesión");
     this.name = "SessionRefreshError";
