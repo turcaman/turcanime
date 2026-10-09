@@ -25,7 +25,7 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
   const { slug } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const {
-    anime, view, isAnimeLoading, error, servers, serverLoading, setEpisodeOrder,
+    anime, view, isAnimeLoading, error, servers, serverLoading, serverError, retryServers, setEpisodeOrder,
     isExpanded, setIsExpanded, selectedEpisode, setSelectedEpisode,
     hasLoaded, activeRangeIdx, setActiveRangeIdx, isRestoring,
     ranges, visibleEpisodes, isAscending, handleEpisodePress, handleServerSelect, refresh,
@@ -89,6 +89,8 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                 episode={selectedEpisode}
                 servers={servers}
                 isLoading={serverLoading}
+                error={serverError}
+                onRetry={retryServers}
                 onServerSelect={handleServerSelect}
               />
             </View>

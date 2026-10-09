@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
-import type { Episode } from "../types";
 
 export function usePersistedRange(slug: string | undefined) {
   const [activeRangeIdx, setActiveRangeIdx] = useState(0);
@@ -49,43 +48,3 @@ export function usePersistedRange(slug: string | undefined) {
   return [activeRangeIdx, setAndPersist, isRestoring] as const;
 }
 
-export function useServerFetcher(
-  slug: string | undefined,
-  fetchServers: (slug: string, number: string, force?: boolean, signal?: AbortSignal) => Promise<void>,
-) {
-  const [serverLoading, setServerLoading] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const requestIdRef = useRef(0);
-
-  useEffect(() => {
-    return () => {
-      abortControllerRef.current?.abort();
-    };
-  }, []);
-
-  const fetchAndSet = useCallback(
-    async (ep: Episode) => {
-      if (slug == null) return;
-      const currentRequestId = ++requestIdRef.current;
-
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      abortControllerRef.current = new AbortController();
-
-      setServerLoading(true);
-      try {
-        await fetchServers(slug, ep.number, undefined, abortControllerRef.current.signal);
-      } catch (e: unknown) {
-        if (e instanceof Error && e.name === "AbortError") return;
-      } finally {
-        if (currentRequestId === requestIdRef.current) {
-          setServerLoading(false);
-        }
-      }
-    },
-    [slug, fetchServers],
-  );
-
-  return { serverLoading, fetchAndSet };
-}

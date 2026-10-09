@@ -1,18 +1,19 @@
 import { useCallback, useMemo, useState } from "react";
-import type { Episode, VideoServer } from "../types";
+import type { AppError, Episode, VideoServer } from "../types";
 import { usePlayerStore } from "../stores/playerStore";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useHistoryStore } from "../stores/historyStore";
 import { useAnimeData } from "./useAnimeData";
-import { usePersistedRange, useServerFetcher } from "./useAnimeDetail";
+import { usePersistedRange } from "./useAnimeDetail";
 import { computeEpisodePagination } from "./episodeHelpers";
+import { errorFor, isLoadingFor } from "../utils/resource";
 import { findHistoryEntry, makeHistoryEntry, addToHistorySafe } from "../utils/history";
 import { navigateToPlayer } from "../utils/navigation";
 
 export function useAnimeDetailScreen(slug: string) {
   const { anime, view, isLoading: isAnimeLoading, error, hasLoaded, refresh } = useAnimeData(slug);
   const resolveStream = usePlayerStore((s) => s.resolveStream);
-  const servers = usePlayerStore((s) => s.servers);
+  const serversResource = usePlayerStore((s) => s.servers);
   const fetchServers = usePlayerStore((s) => s.fetchServers);
   const episodeOrder = useSettingsStore((s) => s.episodeOrder);
   const setEpisodeOrder = useSettingsStore((s) => s.setEpisodeOrder);
@@ -25,15 +26,26 @@ export function useAnimeDetailScreen(slug: string) {
     () => computeEpisodePagination(anime?.episodes, episodeOrder, activeRangeIdx),
     [anime?.episodes, episodeOrder, activeRangeIdx],
   );
-  const { serverLoading, fetchAndSet } = useServerFetcher(slug, fetchServers);
+
+  // Servers belong to one episode: key them the same way so the modal can
+  // never show another episode's list or a stale error
+  const serversKey = selectedEpisode != null ? `${slug}_${selectedEpisode.number}` : null;
+  const servers: VideoServer[] =
+    serversKey != null && serversResource.dataKey === serversKey ? serversResource.data ?? [] : [];
+  const serverLoading = serversKey != null && isLoadingFor(serversResource, serversKey);
+  const serverError: AppError | null = serversKey != null ? errorFor(serversResource, serversKey) : null;
 
   const handleEpisodePress = useCallback(
     (ep: Episode) => {
       setSelectedEpisode(ep);
-      void fetchAndSet(ep);
+      void fetchServers(slug, ep.number);
     },
-    [fetchAndSet, setSelectedEpisode],
+    [slug, fetchServers],
   );
+
+  const retryServers = useCallback(() => {
+    if (selectedEpisode != null) void fetchServers(slug, selectedEpisode.number, true);
+  }, [slug, selectedEpisode, fetchServers]);
 
   const handleServerSelect = useCallback(
     (server: VideoServer) => {
@@ -68,6 +80,8 @@ export function useAnimeDetailScreen(slug: string) {
     refresh,
     servers,
     serverLoading,
+    serverError,
+    retryServers,
     resolveStream,
     episodeOrder,
     setEpisodeOrder,

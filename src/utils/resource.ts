@@ -49,8 +49,8 @@ export function errorFor<T>(state: ResourceState<T>, key: string): AppError | nu
   return state.status === "error" && state.key === key ? state.error : null;
 }
 
-export type LoadOutcome =
-  | { status: "success" }
+export type LoadOutcome<T> =
+  | { status: "success"; data: T }
   | { status: "cancelled" }
   | { status: "error"; error: AppError; cause: unknown };
 
@@ -72,7 +72,7 @@ export class ResourceRunner<T> {
 
   constructor(private readonly options: RunnerOptions<T>) {}
 
-  async load(key: string, fetcher: (signal: AbortSignal) => Promise<T>): Promise<LoadOutcome> {
+  async load(key: string, fetcher: (signal: AbortSignal) => Promise<T>): Promise<LoadOutcome<T>> {
     this.controller?.abort();
     const controller = new AbortController();
     this.controller = controller;
@@ -90,7 +90,7 @@ export class ResourceRunner<T> {
       }
       this.options.set({ status: "success", key, dataKey: key, data, error: null, requestId });
       logger.debug(this.options.tag, `Loaded "${key}" (#${requestId})`);
-      return { status: "success" };
+      return { status: "success", data };
     } catch (cause) {
       if (requestId !== this.seq) {
         logger.debug(this.options.tag, `Superseded "${key}" (#${requestId}), discarding throw`);
@@ -119,6 +119,16 @@ export class ResourceRunner<T> {
     if (current.status === "loading") {
       this.options.set({ ...current, status: current.data != null ? "success" : "idle", error: null });
     }
+  }
+
+  /**
+   * Settles as error from an orchestrator-level failure. Ignored while any
+   * request is in flight: that request owns the state and will settle it.
+   */
+  fail(key: string, error: AppError): void {
+    const current = this.options.get();
+    if (current.status === "loading") return;
+    this.options.set({ ...current, status: "error", key, error, requestId: this.seq });
   }
 
   /** Drops all state, including data and any error */

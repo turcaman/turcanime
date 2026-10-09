@@ -1,25 +1,20 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { VideoPlayer } from "expo-video";
-import type { Episode, VideoServer } from "../types";
 import { usePlayerStore } from "../stores/playerStore";
 import { useHistoryStore } from "../stores/historyStore";
-import { resolveStreamCached } from "../utils/cache";
-import { withAuthRetry } from "../utils/retry";
-import { SourceError } from "../utils/errors";
 import { findHistoryEntry, makeHistoryEntry, addToHistorySafe } from "../utils/history";
 
 export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, animeImage: string) {
-  const setStream = usePlayerStore((s) => s.setStream);
-  const setLastLanguage = usePlayerStore((s) => s.setLastLanguage);
   const lastLanguage = usePlayerStore((s) => s.lastLanguage);
   const addToHistory = useHistoryStore((s) => s.addToHistory);
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [currentEpNumber, setCurrentEpNumber] = useState<string>("");
+  const attemptRef = useRef(0);
 
   const resolveAndPlay = useCallback(
-    async (targetSlug: string, targetEp: Episode) => {
+    async (targetSlug: string, targetEp: { number: string }) => {
+      const attemptId = ++attemptRef.current;
       const prevEpNumber = currentEpNumber;
 
       const ct = player.currentTime;
@@ -35,36 +30,32 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
       }
 
       setLoading(true);
-      setError(null);
-
-      const attempt = async (retryIndex = 0): Promise<void> => {
-        // Retry fetches fresh servers: the bridge token may have expired and
-        // the 10min SERVERS cache would otherwise replay the same dead URL
-        await usePlayerStore.getState().fetchServers(targetSlug, targetEp.number, retryIndex > 0);
-        const storeError = usePlayerStore.getState().error;
-        if (storeError != null) {
-          if (/sesi|session|authenticat/i.test(storeError)) {
-            throw new SourceError(storeError, "AUTH_ERROR");
-          }
-          throw new Error(storeError);
+      const store = usePlayerStore.getState();
+      try {
+        // Each store operation owns its own auth ladder; this only sequences
+        // them and surfaces orchestrator failures into the stream resource
+        const serversOutcome = await store.fetchServers(targetSlug, targetEp.number);
+        if (serversOutcome.status === "cancelled") return;
+        if (serversOutcome.status === "error") {
+          store.failStream(serversOutcome.error);
+          return;
         }
-        const servers = usePlayerStore.getState().servers;
-        const server: VideoServer | undefined =
+
+        const servers = serversOutcome.data;
+        const server =
           lastLanguage != null
             ? servers.find((s) => s.language === lastLanguage) ?? servers[0]
             : servers[0];
-        if (server == null) throw new Error("No hay servidor disponible");
+        if (server == null) {
+          store.failStream({ type: "UNKNOWN", message: "No hay servidor disponible" });
+          return;
+        }
 
-        const resolved = await resolveStreamCached(server, { force: retryIndex > 0 });
-        if (resolved == null) throw new Error("No se pudo resolver el stream");
-
-        const headers = resolved.headers;
+        const streamOutcome = await store.resolveStream(server);
+        if (streamOutcome.status !== "success") return;
 
         const existing = findHistoryEntry(useHistoryStore.getState().lastViewed, targetSlug, targetEp.number);
-
         setCurrentEpNumber(targetEp.number);
-        setStream(resolved.url, headers ?? null);
-        setLastLanguage(server.language);
         addToHistorySafe(addToHistory, makeHistoryEntry({
           title: animeTitle,
           url: targetSlug,
@@ -73,18 +64,13 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
           progress: existing?.progress,
           duration: existing?.duration,
         }));
-      };
-
-      try {
-        await withAuthRetry(() => attempt(), { tag: "episodeNavigation" });
-      } catch (e: unknown) {
-        // SessionRefreshError carries the user-facing refresh-failure message
-        setError(e instanceof Error ? e.message : "Error desconocido");
+      } finally {
+        // A superseded attempt must not clear the newer attempt's spinner
+        if (attemptRef.current === attemptId) setLoading(false);
       }
-      setLoading(false);
     },
-    [setStream, setLastLanguage, lastLanguage, player, addToHistory, animeTitle, animeImage, currentEpNumber],
+    [lastLanguage, player, addToHistory, animeTitle, animeImage, currentEpNumber],
   );
 
-  return { resolveAndPlay, loading, error, currentEpNumber, setCurrentEpNumber, setError };
+  return { resolveAndPlay, loading, currentEpNumber, setCurrentEpNumber };
 }

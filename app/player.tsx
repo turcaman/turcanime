@@ -1,4 +1,5 @@
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { PlayerControls } from "@/components/PlayerControls";
 import { orderEpisodes } from "@/hooks/episodeHelpers";
 import { useAnimeData } from "@/hooks/useAnimeData";
@@ -25,9 +26,10 @@ function PlayerContent() {
   const image = params.image ?? "";
   const insets = useSafeAreaInsets();
 
-  const streamUrl = usePlayerStore((s) => s.streamUrl);
-  const streamHeaders = usePlayerStore((s) => s.streamHeaders);
+  const stream = usePlayerStore((s) => s.stream);
   const clearStream = usePlayerStore((s) => s.reset);
+  const streamUrl = stream.data?.url ?? null;
+  const streamHeaders = stream.data?.headers ?? null;
   const addToHistory = useHistoryStore((s) => s.addToHistory);
   const { anime } = useAnimeData(slug);
   const { isInternetReachable: networkOk } = useNetworkStatus();
@@ -208,6 +210,20 @@ function PlayerContent() {
   useEffect(() => {
     clearNextEpisodeTimer();
   }, [currentEpNumber, clearNextEpisodeTimer]);
+
+  // A failed stream resolution is a real failure: show it honestly with a
+  // retry that re-runs the full servers + stream path
+  if (stream.status === "error") {
+    const retryNumber = currentEpNumber || number;
+    return (
+      <ErrorState
+        error={stream.error}
+        onRetry={() => {
+          if (retryNumber) void resolveAndPlay(slug, { number: retryNumber });
+        }}
+      />
+    );
+  }
 
   return (
     <View className="flex-1 bg-black">

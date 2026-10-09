@@ -1,131 +1,87 @@
 import { create } from "zustand";
 import { source } from "../services/source";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
-import { storage } from "../utils/storage";
-import { getCachedStream, resolveStreamCached } from "../utils/cache";
+import { loadCached, resolveStreamCached } from "../utils/cache";
 import { logger } from "../utils/logger";
-import { SessionRefreshError, withAuthRetry } from "../utils/retry";
-import type { VideoServer } from "../types";
+import { SourceError } from "../utils/errors";
+import { withAuthRetry } from "../utils/retry";
+import {
+  ResourceRunner,
+  resourceInitialState,
+  type LoadOutcome,
+  type ResourceState,
+} from "../utils/resource";
+import type { AppError, StreamUrlResult, VideoServer } from "../types";
+
+export const STREAM_KEY = "stream";
 
 interface PlayerState {
-  servers: VideoServer[];
-  streamUrl: string | null;
-  streamHeaders: Record<string, string> | null;
+  servers: ResourceState<VideoServer[]>;
+  stream: ResourceState<StreamUrlResult>;
   lastLanguage: string | null;
-  isLoading: boolean;
-  error: string | null;
-  fetchServers: (slug: string, number: string, force?: boolean, signal?: AbortSignal) => Promise<void>;
-  resolveStream: (server: VideoServer) => Promise<void>;
-  setStream: (url: string, headers: Record<string, string> | null) => void;
-  setLastLanguage: (language: string) => void;
+  fetchServers: (slug: string, number: string, force?: boolean) => Promise<LoadOutcome<VideoServer[]>>;
+  resolveStream: (server: VideoServer) => Promise<LoadOutcome<StreamUrlResult>>;
+  /** Settles the stream from an orchestrator-level failure (e.g. servers fetch) */
+  failStream: (error: AppError) => void;
   reset: () => void;
 }
 
-const SERVERS_ERROR = "Error al cargar servidores";
-const STREAM_ERROR = "Error al resolver stream";
+export const usePlayerStore = create<PlayerState>((set, get) => {
+  const serversRunner = new ResourceRunner<VideoServer[]>({
+    tag: "servers",
+    get: () => get().servers,
+    set: (servers) => set({ servers }),
+  });
+  const streamRunner = new ResourceRunner<StreamUrlResult>({
+    tag: "stream",
+    get: () => get().stream,
+    set: (stream) => set({ stream }),
+  });
 
-function errorMessage(e: unknown, fallback: string): string {
-  return e instanceof Error ? e.message : fallback;
-}
+  return {
+    servers: resourceInitialState<VideoServer[]>(),
+    stream: resourceInitialState<StreamUrlResult>(),
+    lastLanguage: null,
 
-export const usePlayerStore = create<PlayerState>((set) => ({
-  servers: [],
-  streamUrl: null,
-  streamHeaders: null,
-  lastLanguage: null,
-  isLoading: false,
-  error: null,
+    fetchServers: async (slug: string, number: string, force = false) => {
+      const key = `${slug}_${number}`;
+      const cacheKey = `${CACHE_PREFIXES.SERVERS}_${key}`;
+      return serversRunner.load(key, (signal) =>
+        withAuthRetry(
+          (attempt) =>
+            loadCached(cacheKey, (sig) => source.getEpisodeServers(slug, number, { signal: sig }), {
+              ttl: CACHE_TTL.SERVERS,
+              signal,
+              force: attempt > 0 ? true : force,
+            }),
+          { signal, maxRetries: 2, tag: "servers" },
+        ),
+      );
+    },
 
-  fetchServers: async (slug: string, number: string, force = false, signal?: AbortSignal) => {
-    set({ isLoading: true, servers: [], error: null });
+    resolveStream: async (server: VideoServer) => {
+      set({ lastLanguage: server.language });
+      return streamRunner.load(STREAM_KEY, (signal) =>
+        withAuthRetry(
+          async (attempt) => {
+            const fresh = await resolveStreamCached(server, { force: attempt > 0 });
+            if (fresh == null) throw new SourceError("No se pudo resolver el stream", "UNKNOWN");
+            return fresh;
+          },
+          { signal, maxRetries: 2, tag: "stream" },
+        ),
+      );
+    },
 
-    if (signal != null && signal.aborted) {
-      set({ isLoading: false });
-      return;
-    }
+    failStream: (error: AppError) => {
+      logger.warn("stream", `Stream failed upstream: ${error.type}: ${error.message}`);
+      streamRunner.fail(STREAM_KEY, error);
+    },
 
-    const cacheKey = `${CACHE_PREFIXES.SERVERS}_${slug}_${number}`;
-    if (!force) {
-      try {
-        const cached = await storage.get<{ payload: VideoServer[]; expiration: number }>(cacheKey);
-        if (cached && Date.now() < cached.expiration) {
-          set({ servers: cached.payload, isLoading: false });
-          return;
-        }
-      } catch {
-      }
-    }
-
-    const fetchAndStore = async (): Promise<VideoServer[]> => {
-      const data = await source.getEpisodeServers(slug, number, { signal });
-      void storage.set(cacheKey, { payload: data, expiration: Date.now() + CACHE_TTL.SERVERS });
-      return data;
-    };
-
-    try {
-      const data = await withAuthRetry(fetchAndStore, { signal, tag: "playerStore" });
-      set({ servers: data, isLoading: false });
-    } catch (e: unknown) {
-      if (e instanceof Error && e.name === "AbortError") {
-        set({ isLoading: false });
-        return;
-      }
-      logger.error("playerStore", "fetchServers failed", e);
-      set({
-        servers: [],
-        isLoading: false,
-        error:
-          e instanceof SessionRefreshError
-            ? "Error de sesión al cargar servidores"
-            : errorMessage(e, SERVERS_ERROR),
-      });
-    }
-  },
-
-  resolveStream: async (server: VideoServer) => {
-    set({ isLoading: true, streamUrl: null, streamHeaders: null, lastLanguage: server.language, error: null });
-
-    const applyStream = (url: string, headers?: Record<string, string>) => {
-      set({ streamUrl: url, streamHeaders: headers ?? null, isLoading: false });
-    };
-
-    const cached = await getCachedStream(server);
-    if (cached != null) {
-      applyStream(cached.url, cached.headers);
-      return;
-    }
-
-    try {
-      const result = await withAuthRetry(async (retryIndex: number) => {
-        const fresh = await resolveStreamCached(server, { force: retryIndex > 0 });
-        if (fresh == null) throw new Error("No se pudo resolver el stream");
-        return fresh;
-      }, { tag: "playerStore" });
-      applyStream(result.url, result.headers);
-    } catch (e: unknown) {
-      if (e instanceof Error && e.name === "AbortError") {
-        set({ isLoading: false });
-        return;
-      }
-      set({
-        isLoading: false,
-        error:
-          e instanceof SessionRefreshError
-            ? "Error de sesión al resolver stream"
-            : errorMessage(e, STREAM_ERROR),
-      });
-    }
-  },
-
-  setStream: (url, headers) => set({ streamUrl: url, streamHeaders: headers }),
-  setLastLanguage: (language) => set({ lastLanguage: language }),
-  reset: () =>
-    set({
-      servers: [],
-      streamUrl: null,
-      streamHeaders: null,
-      lastLanguage: null,
-      isLoading: false,
-      error: null,
-    }),
-}));
+    reset: () => {
+      serversRunner.reset();
+      streamRunner.reset();
+      set({ lastLanguage: null });
+    },
+  };
+});

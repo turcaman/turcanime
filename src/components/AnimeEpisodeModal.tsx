@@ -2,10 +2,11 @@ import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { Episode, VideoServer } from "@/types";
+import type { AppError, Episode, VideoServer } from "@/types";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ACCENT_COLOR } from "@/config/source";
 
 interface AnimeEpisodeModalProps {
   visible: boolean;
@@ -13,11 +14,14 @@ interface AnimeEpisodeModalProps {
   episode: Episode | null;
   servers: VideoServer[];
   isLoading: boolean;
+  /** Real fetch failure for this episode; never conflated with "no servers" */
+  error?: AppError | null;
+  onRetry?: () => void;
   onServerSelect: (server: VideoServer) => void;
 }
 
 export const AnimeEpisodeModal = ({
-  visible, onClose, episode, servers, isLoading, onServerSelect
+  visible, onClose, episode, servers, isLoading, error, onRetry, onServerSelect
 }: AnimeEpisodeModalProps) => {
   const insets = useSafeAreaInsets();
 
@@ -52,6 +56,22 @@ export const AnimeEpisodeModal = ({
                   <Skeleton width={120} height={16} borderRadius={4} />
                 </View>
               ))}
+            </View>
+          ) : error != null ? (
+            <View className="h-48 justify-center items-center gap-3">
+              <Feather name="alert-circle" size={32} color="#404040" />
+              <Text className="text-neutral-400 text-xs text-center px-6">
+                No se pudieron cargar los servidores
+              </Text>
+              {onRetry != null && (
+                <AnimatedPressable
+                  className="flex-row items-center px-5 py-2.5 rounded-xl bg-purple-500/15"
+                  onPress={onRetry}
+                >
+                  <Feather name="refresh-cw" size={14} color={ACCENT_COLOR} />
+                  <Text className="ml-2 text-xs font-semibold tracking-wide text-purple-500">Reintentar</Text>
+                </AnimatedPressable>
+              )}
             </View>
           ) : displayServers.length === 0 ? (
             <View className="h-48 justify-center items-center">
