@@ -12,6 +12,8 @@ export const SESSION_KEY = "scraper_session";
 // Matches the bootstrap poll window so both sides share one 40s timing.
 const SESSION_REFRESH_TIMEOUT = 40_000;
 const SESSION_MAX_AGE = 60 * 60 * 1000;
+const OFFLINE_CONFIRM_DELAY = 1_000;
+const OFFLINE_PROBE_TIMEOUT = 5_000;
 
 export function isValidSessionCookies(raw: string | undefined | null): boolean {
   if (!raw) return false;
@@ -20,7 +22,36 @@ export function isValidSessionCookies(raw: string | undefined | null): boolean {
   return unwrapped.includes("=");
 }
 
+/**
+ * NetInfo reports `isInternetReachable: false` transiently right after boot,
+ * so a single reading cannot back a load error. Offline only after the flag
+ * persists past a delay AND a real probe to the site fails.
+ */
 async function isOffline(): Promise<boolean> {
+  try {
+    if (!(await netinfoOffline())) return false;
+    await new Promise((resolve) => setTimeout(resolve, OFFLINE_CONFIRM_DELAY));
+    if (!(await netinfoOffline())) {
+      logger.debug("session", "Offline flag cleared on re-check, continuing");
+      return false;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), OFFLINE_PROBE_TIMEOUT);
+    try {
+      await fetch(`${SOURCE_CONFIG.baseUrl}/`, { method: "HEAD", signal: controller.signal });
+      logger.debug("session", "Offline flag set but probe reached the site, continuing");
+      return false;
+    } catch {
+      return true;
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    return false;
+  }
+}
+
+async function netinfoOffline(): Promise<boolean> {
   try {
     const net = await NetInfo.fetch();
     return net.isConnected === false || net.isInternetReachable === false;
@@ -139,10 +170,11 @@ class SessionManager {
 
   async waitForCookies(): Promise<void> {
     try {
-      // Without network the WebView wash can never report; fail fast instead
-      // of holding the skeleton through the 40s gate plus ladder retries.
+      // Without network the WebView wash can never report; fail fast only
+      // after isOffline() confirms it — a transient NetInfo reading would
+      // otherwise turn a warm boot into a load error.
       if (await isOffline()) {
-        logger.debug("session", "Offline, failing gate fast");
+        logger.debug("session", "Offline confirmed, failing gate fast");
         throw new SourceError("No connection", "NETWORK_ERROR");
       }
       if (!this.sessionReadyPromise) {
