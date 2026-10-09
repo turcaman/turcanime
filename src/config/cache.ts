@@ -6,7 +6,7 @@ export const CACHE_PREFIXES = {
   SERVERS: "servers",
 } as const;
 
-// Effective TTLs are ~70% of these values: withCache treats the last 30% of
+// Effective TTLs are ~70% of these values: loadCached treats the last 30% of
 // the window as stale and refetches (HOME expires at 4.2h, DETAILS at 8.4h).
 // Set the number here to the full window you want, not the effective one.
 export const CACHE_TTL = {

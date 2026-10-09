@@ -80,37 +80,12 @@ export async function loadCached<T>(
   return data;
 }
 
-/**
- * @deprecated Legacy tuple contract kept only for stores not yet migrated to
- * loadCached + ResourceRunner. Auth errors throw; cancellations return
- * { data: null, error: null }; everything else returns in `error`.
- */
-export async function withCache<T>(
-  cacheKey: string,
-  fetchFn: (signal: AbortSignal) => Promise<T>,
-  options: {
-    ttl?: number;
-    signal?: AbortSignal;
-    force?: boolean;
-    isValid?: (data: T) => boolean;
-  } = {},
-): Promise<{ data: T | null; error: Error | null }> {
-  try {
-    const data = await loadCached(cacheKey, fetchFn, options);
-    return { data, error: null };
-  } catch (e) {
-    if (isCancelled(e)) return { data: null, error: null };
-    if (isAuthError(e)) throw e;
-    return { data: null, error: e instanceof Error ? e : new Error(String(e)) };
-  }
-}
-
-// Shared resolved-stream cache used by both playerStore.resolveStream and useEpisodeNavigation
+// Shared resolved-stream cache used by resolveStreamCached
 function streamCacheKey(server: { url: string; id: string }): string {
   return `${CACHE_PREFIXES.STREAM}_${server.url}_${server.id}`;
 }
 
-export async function getCachedStream(server: { url: string; id: string }): Promise<StreamUrlResult | null> {
+async function getCachedStream(server: { url: string; id: string }): Promise<StreamUrlResult | null> {
   const cached = await storage.get<CacheEntry<StreamUrlResult>>(streamCacheKey(server));
   if (cached != null && Date.now() < cached.expiration) return cached.payload;
   return null;
@@ -121,9 +96,8 @@ export function setCachedStream(server: { url: string; id: string }, result: Str
 }
 
 /**
- * Cache-aside stream resolution with a single owner. Both playerStore.resolveStream
- * and useEpisodeNavigation used to reimplement this read→resolve→write sequence.
- * Returns null when the bridge yields no stream.
+ * Cache-aside stream resolution with a single owner. Returns null when the
+ * bridge yields no stream.
  */
 export async function resolveStreamCached(
   server: { url: string; id: string },
