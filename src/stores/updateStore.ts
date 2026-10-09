@@ -4,6 +4,12 @@ import { create } from "zustand";
 import { TIMEOUTS } from "../config/cache";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
+import { SourceError } from "../utils/errors";
+import {
+  ResourceRunner,
+  resourceInitialState,
+  type ResourceState,
+} from "../utils/resource";
 import {
   downloadApkWithProgress,
   installApk,
@@ -43,16 +49,18 @@ export type UpdatePhase =
   | "error"
   | "ready";
 
+interface UpdateCheckData {
+  updateAvailable: string | null;
+  apkUrl: string | null;
+}
+
 interface UpdateState {
   updateCheckEnabled: boolean;
-  updateAvailable: string | null;
-  checkingForUpdates: boolean;
-  lastCheckError: string | null;
+  check: ResourceState<UpdateCheckData>;
   currentVersion: string | null;
   phase: UpdatePhase;
   progress: DownloadProgress;
   errorMessage: string | null;
-  apkUrl: string | null;
   installPermissionGranted: boolean;
   /** True only while the user is away granting the install permission */
   resumeAfterPermission: boolean;
@@ -70,82 +78,88 @@ let downloadAbort: AbortController | null = null;
 let checkPromise: Promise<boolean> | null = null;
 let lastSuccessAt = 0;
 
-type StoreSet = (partial: Partial<UpdateState>) => void;
-type StoreGet = () => UpdateState;
+const CHECK_KEY = "check";
+export const UPDATE_CHECK_RESOURCE_KEY = CHECK_KEY;
 
-async function runCheck(
-  get: StoreGet,
-  set: StoreSet,
-  force: boolean,
-): Promise<boolean> {
-  const current = Constants.expoConfig?.version;
-  if (!current) {
-    set({ lastCheckError: "Error al obtener versión" });
-    return false;
-  }
-  if (!force && get().updateCheckEnabled === false) return true;
-  if (!force && Date.now() - lastSuccessAt < CHECK_COOLDOWN_MS) return true;
-  try {
-    const net = await NetInfo.fetch();
-    if (net.isConnected === false || net.isInternetReachable === false) {
-      if (!force) return true;
-      set({ checkingForUpdates: false, lastCheckError: "Sin conexión" });
+export const useUpdateStore = create<UpdateState>((set, get) => {
+  const checkRunner = new ResourceRunner<UpdateCheckData>({
+    tag: "updateCheck",
+    get: () => get().check,
+    set: (check) => set({ check }),
+  });
+
+  async function runCheck(force: boolean): Promise<boolean> {
+    const current = Constants.expoConfig?.version;
+    if (!current) {
+      checkRunner.fail(CHECK_KEY, new SourceError("Error al obtener versión", "UNKNOWN"));
       return false;
     }
-  } catch {
-  }
-  set({ checkingForUpdates: true, lastCheckError: null });
-  try {
-    const res = await Promise.race([
-      fetch(`${GITHUB_RELEASES_URL}?_=${Date.now()}`, {
-        headers: { "User-Agent": "Turcanime-Android" },
-      }),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Update check timeout")), TIMEOUTS.UPDATE_CHECK),
-      ),
-    ]);
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = (await res.json()) as {
-      tag_name?: string;
-      assets?: { name: string; browser_download_url: string; size?: number }[];
-    };
-    const latest = (data.tag_name ?? "").replace(/^v/, "").trim();
-    if (!latest) throw new Error("No tag");
-    const isPrerelease = latest.includes("-");
+    if (!force && get().updateCheckEnabled === false) return true;
+    if (!force && Date.now() - lastSuccessAt < CHECK_COOLDOWN_MS) return true;
 
-    const apkAsset = data.assets?.find(
-      (a) =>
-        a.name.toLowerCase().startsWith("turcanime-") &&
-        a.name.toLowerCase().endsWith(".apk") &&
-        (a.size == null || a.size > 5 * 1024 * 1024),
-    );
+    // Non-forced checks skip silently when offline; a forced one surfaces it
+    try {
+      const net = await NetInfo.fetch();
+      if (net.isConnected === false || net.isInternetReachable === false) {
+        if (!force) return true;
+        checkRunner.fail(CHECK_KEY, new SourceError("Sin conexión", "NETWORK_ERROR"));
+        return false;
+      }
+    } catch {
+    }
 
-    set({
-      updateAvailable: !isPrerelease && isNewer(latest, current) ? latest : null,
-      apkUrl: apkAsset?.browser_download_url ?? null,
-      currentVersion: current,
-      checkingForUpdates: false,
-      lastCheckError: null,
+    const outcome = await checkRunner.load(CHECK_KEY, async () => {
+      let res: Response;
+      try {
+        res = await Promise.race([
+          fetch(`${GITHUB_RELEASES_URL}?_=${Date.now()}`, {
+            headers: { "User-Agent": "Turcanime-Android" },
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () => reject(new SourceError("Se agotó el tiempo de búsqueda", "TIMEOUT")),
+              TIMEOUTS.UPDATE_CHECK,
+            ),
+          ),
+        ]);
+      } catch (err) {
+        throw err instanceof SourceError
+          ? err
+          : new SourceError("Error al buscar actualizaciones", "NETWORK_ERROR");
+      }
+      if (!res.ok) throw new SourceError("Error al buscar actualizaciones", "NETWORK_ERROR");
+      const data = (await res.json()) as {
+        tag_name?: string;
+        assets?: { name: string; browser_download_url: string; size?: number }[];
+      };
+      const latest = (data.tag_name ?? "").replace(/^v/, "").trim();
+      if (!latest) throw new SourceError("Error al buscar actualizaciones", "UNKNOWN");
+      const isPrerelease = latest.includes("-");
+      const apkAsset = data.assets?.find(
+        (a) =>
+          a.name.toLowerCase().startsWith("turcanime-") &&
+          a.name.toLowerCase().endsWith(".apk") &&
+          (a.size == null || a.size > 5 * 1024 * 1024),
+      );
+      return {
+        updateAvailable: !isPrerelease && isNewer(latest, current) ? latest : null,
+        apkUrl: apkAsset?.browser_download_url ?? null,
+      };
     });
+
+    if (outcome.status !== "success") return false;
+    set({ currentVersion: current });
     lastSuccessAt = Date.now();
     return true;
-  } catch (err) {
-    set({ checkingForUpdates: false, lastCheckError: "Error al buscar actualizaciones" });
-    logger.error("updateStore", "Failed to check for updates", err);
-    return false;
   }
-}
 
-export const useUpdateStore = create<UpdateState>((set, get) => ({
+  return {
   updateCheckEnabled: true,
-  updateAvailable: null,
-  checkingForUpdates: false,
-  lastCheckError: null,
+  check: resourceInitialState<UpdateCheckData>(),
   currentVersion: null,
   phase: "idle",
   progress: { receivedBytes: 0, totalBytes: null },
   errorMessage: null,
-  apkUrl: null,
   installPermissionGranted: false,
   resumeAfterPermission: false,
 
@@ -172,7 +186,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
 
   checkForUpdates: async (force = false) => {
     if (checkPromise) return checkPromise;
-    checkPromise = runCheck(get, set, force);
+    checkPromise = runCheck(force);
     try {
       return await checkPromise;
     } finally {
@@ -180,9 +194,9 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     }
   },
   startUpdate: () => {
-    const { updateAvailable, apkUrl } = get();
-    if (updateAvailable == null) return;
-    if (apkUrl == null) {
+    const data = get().check.data;
+    if (data?.updateAvailable == null) return;
+    if (data.apkUrl == null) {
       set({ phase: "error", errorMessage: "No hay archivo de instalación disponible para esta versión." });
       return;
     }
@@ -209,7 +223,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     // Re-entrant call (double tap, or AppState resume racing the settings flow)
     if (get().phase === "downloading") return;
 
-    const { apkUrl } = get();
+    const { apkUrl } = get().check.data ?? { apkUrl: null };
     if (apkUrl == null) return;
 
     downloadAbort = new AbortController();
@@ -267,7 +281,8 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     downloadAbort = null;
     set({ phase: "idle" });
   },
-}));
+  };
+});
 
 export async function grantInstallPermissionAndDownload(): Promise<void> {
   const store = useUpdateStore.getState();

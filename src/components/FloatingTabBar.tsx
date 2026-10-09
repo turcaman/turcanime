@@ -34,7 +34,7 @@ export function FloatingTabBar({
 }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
   const visible = useUIStore((state) => state.tabBarVisible);
-  const updateAvailable = useUpdateStore((state) => state.updateAvailable);
+  const updateAvailable = useUpdateStore((state) => state.check.data?.updateAvailable ?? null);
   const updateCheckEnabled = useUpdateStore((state) => state.updateCheckEnabled);
 
   const translateY = useSharedValue(0);

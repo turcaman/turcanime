@@ -16,7 +16,7 @@ function formatSize(bytes: number): string {
 
 export function UpdateModal() {
   const phase = useUpdateStore((s) => s.phase);
-  const updateAvailable = useUpdateStore((s) => s.updateAvailable);
+  const updateAvailable = useUpdateStore((s) => s.check.data?.updateAvailable ?? null);
   const progress = useUpdateStore((s) => s.progress);
   const errorMessage = useUpdateStore((s) => s.errorMessage);
   const closeUpdate = useUpdateStore((s) => s.closeUpdate);

@@ -2,7 +2,8 @@ import { ACCENT_COLOR, MUTED_ICON } from "@/config/source";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
 import { useUIStore } from "@/stores/uiStore";
-import { useUpdateStore } from "@/stores/updateStore";
+import { useUpdateStore, UPDATE_CHECK_RESOURCE_KEY } from "@/stores/updateStore";
+import { isLoadingFor } from "@/utils/resource";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -23,12 +24,16 @@ export default function SettingsScreen() {
 
   const updateCheckEnabled = useUpdateStore((s) => s.updateCheckEnabled);
   const setUpdateCheckEnabled = useUpdateStore((s) => s.setUpdateCheckEnabled);
-  const updateAvailable = useUpdateStore((s) => s.updateAvailable);
-  const checkingForUpdates = useUpdateStore((s) => s.checkingForUpdates);
-  const lastCheckError = useUpdateStore((s) => s.lastCheckError);
+  const updateAvailable = useUpdateStore((s) => s.check.data?.updateAvailable ?? null);
+  const checkingForUpdates = useUpdateStore((s) => isLoadingFor(s.check, UPDATE_CHECK_RESOURCE_KEY));
+  const lastCheckError = useUpdateStore((s) =>
+    s.check.status === "error" && s.check.key === UPDATE_CHECK_RESOURCE_KEY
+      ? s.check.error?.message ?? null
+      : null,
+  );
   const currentVersion = useUpdateStore((s) => s.currentVersion);
   const checkForUpdates = useUpdateStore((s) => s.checkForUpdates);
-  const apkUrl = useUpdateStore((s) => s.apkUrl);
+  const apkUrl = useUpdateStore((s) => s.check.data?.apkUrl ?? null);
   const startUpdate = useUpdateStore((s) => s.startUpdate);
 
   const appVersion = currentVersion ?? "—";
