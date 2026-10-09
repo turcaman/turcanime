@@ -39,7 +39,8 @@ export const useDetailsStore = create<DetailsState>((set, get) => {
                 ttl: CACHE_TTL.DETAILS,
                 signal,
                 force: attempt > 0 ? true : force,
-                isValid: (d) => d.episodes.length > 0,
+                // empty episode list is a valid answer, not a failed fetch
+                isValid: () => true,
               },
             ),
           { signal, maxRetries: 2, tag: "details" },

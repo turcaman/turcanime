@@ -58,8 +58,16 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                   insets={insets}
                   onBackPress={navigateBack}
                 />
+                {ranges.length > 0 && (
                 <EpisodeRangeSelector ranges={ranges} activeRangeIdx={activeRangeIdx} setActiveRangeIdx={setActiveRangeIdx} isRestoring={isRestoring} />
+                )}
                 <View className="px-5 mt-1 gap-3">
+                  {visibleEpisodes.length === 0 && (
+                    <View className="items-center pt-20">
+                      <Feather name="frown" size={48} color="#404040" />
+                      <Text className="mt-4 max-w-[300px] text-center text-sm text-neutral-500">Este anime aún no tiene episodios disponibles. Vuelve más tarde para comprobarlo.</Text>
+                    </View>
+                  )}
                   {visibleEpisodes.map((item) => {
                     const historyEntry = findHistoryEntry(useHistoryStore.getState().lastViewed, slug as string, item.number);
                     const hasProgress = historyEntry != null && (historyEntry.progress ?? 0) > 0 && (historyEntry.duration ?? 0) > 0;

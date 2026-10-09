@@ -16,7 +16,7 @@ export function useAnimeData(slug: string) {
     attemptedSlugRef.current = slug;
     const current = useDetailsStore.getState().resource;
     if (isLoadingFor(current, slug)) return;
-    if (current.data != null && current.dataKey === slug && current.data.episodes.length > 0) return;
+    if (current.data != null && current.dataKey === slug) return;
     void fetchDetails(slug);
   }, [slug, fetchDetails]);
 

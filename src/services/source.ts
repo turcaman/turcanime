@@ -198,11 +198,8 @@ async function getDetails(slug: string, options?: { signal?: AbortSignal }): Pro
   if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
   const html = await res.text();
   const detail = parseAnimeDetail(html, slug);
-  if (detail.episodes.length === 0) {
-    if (isChallengeHtml(html) || (!detail.title && !detail.image && !detail.synopsis)) {
-      throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
-    }
-    throw new SourceError(`No episodes extracted for ${slug}`, "UNKNOWN");
+  if (isChallengeHtml(html) || (!detail.title && !detail.image && !detail.synopsis)) {
+    throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
   }
   return detail;
 }
