@@ -217,6 +217,9 @@ async function getEpisodeServers(slug: string, number: string, options?: { signa
   const res = await fetchWithSession(`/ver/${slug}/${number}`, options ?? {});
   if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
   const html = await res.text();
+  // Challenges can arrive as HTTP 200; without this the parse below reports
+  // "No Delta servers" and the real cause hides behind an UNKNOWN error
+  if (isChallengeHtml(html)) throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
 
   const scripts = html.matchAll(/<script[^>]*>(.*?)<\/script>/gs);
   for (const match of scripts) {
