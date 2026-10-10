@@ -4,6 +4,7 @@ import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { storage } from "../utils/storage";
 import { unwrapCookies } from "./cookies";
+import { isChallengeHtml } from "./parsers";
 import { webViewBridge } from "./webview";
 import NetInfo from "@react-native-community/netinfo";
 
@@ -14,6 +15,7 @@ const SESSION_REFRESH_TIMEOUT = 40_000;
 const SESSION_MAX_AGE = 60 * 60 * 1000;
 const OFFLINE_CONFIRM_DELAY = 1_000;
 const OFFLINE_PROBE_TIMEOUT = 5_000;
+const SESSION_PROBE_TIMEOUT = 5_000;
 
 export function isValidSessionCookies(raw: string | undefined | null): boolean {
   if (!raw) return false;
@@ -57,6 +59,52 @@ async function netinfoOffline(): Promise<boolean> {
     return net.isConnected === false || net.isInternetReachable === false;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Washes can yield shape-valid cookies the site still rejects (e.g. a
+ * Cloudflare clearance bound to the WebView stack never reaches fetch).
+ * Fails only on definitive rejection: 401/403 or challenge HTML. Network
+ * errors, timeouts and 5xx stay successful so flakiness never fails a wash.
+ */
+async function probeSession(session: ISession | null): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SESSION_PROBE_TIMEOUT);
+  try {
+    const baseUrl = SOURCE_CONFIG.baseUrl;
+    const res = await fetch(`${baseUrl}/`, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": session?.userAgent ?? "",
+        Cookie: unwrapCookies(session?.cookies ?? ""),
+        Referer: `${baseUrl}/`,
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+      },
+    });
+    if (res.status === 401 || res.status === 403) {
+      logger.warn("session", `Probe rejected with HTTP ${res.status}`);
+      return false;
+    }
+    try {
+      if (isChallengeHtml(await res.text())) {
+        logger.warn("session", "Probe returned a challenge page");
+        return false;
+      }
+    } catch {
+      // Unreadable body is not proof of an unusable jar
+    }
+    return true;
+  } catch {
+    return true;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -231,6 +279,9 @@ class SessionManager {
     if (!isValidSessionCookies(session?.cookies)) {
       logger.warn("session", "Wash settled but cookies still invalid");
       throw new SourceError("Session refresh failed - no valid cookies received", "AUTH_ERROR");
+    }
+    if (!(await probeSession(session))) {
+      throw new SourceError("Session refresh failed - cookies rejected by site", "AUTH_ERROR");
     }
     logger.info("session", `Session refreshed successfully in ${((Date.now() - startedAt) / 1000).toFixed(1)}s`);
   }
