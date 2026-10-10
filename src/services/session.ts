@@ -3,7 +3,7 @@ import type { ISession } from "../types";
 import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { storage } from "../utils/storage";
-import { unwrapCookies } from "./cookies";
+import { unwrapCookies, mergeCookies } from "./cookies";
 import { isChallengeHtml } from "./parsers";
 import { webViewBridge } from "./webview";
 import NetInfo from "@react-native-community/netinfo";
@@ -113,6 +113,9 @@ class SessionManager {
   private sessionReadyResolver: (() => void) | null = null;
   private refreshPromise: Promise<void> | null = null;
   private settleTimer: ReturnType<typeof setTimeout> | null = null;
+  // Serializes cookie read-modify-write: concurrent fetches merging their own
+  // Set-Cookie batches from the same base would drop each other's additions
+  private cookieMergeChain: Promise<void> = Promise.resolve();
 
   // The gate blocks request traffic until non-empty cookies exist: arming
   // creates a fresh closed gate, and only a session with cookies opens it
@@ -201,6 +204,24 @@ class SessionManager {
       logger.error("session", "Failed to set session", error);
       throw error;
     }
+  }
+
+  async mergeSetCookies(setCookies: string[]): Promise<void> {
+    this.cookieMergeChain = this.cookieMergeChain.then(async () => {
+      try {
+        const session = await this.getSession();
+        if (!session) return;
+        const merged = mergeCookies(session.cookies, setCookies);
+        if (merged !== session.cookies) {
+          logger.debug("fetch", `Cookie merge ${session.cookies.length}→${merged.length} chars`);
+          await this.setSession({ ...session, cookies: merged });
+        }
+      } catch (error) {
+        // Cookie capture never fails the request
+        logger.warn("session", "Cookie merge failed", error);
+      }
+    });
+    return this.cookieMergeChain;
   }
 
   async touchSession(): Promise<void> {

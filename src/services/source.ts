@@ -3,7 +3,7 @@ import { SOURCE_CONFIG, LANGUAGE_MAP } from "../config/source";
 import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { backoffDelay } from "../utils/math";
-import { unwrapCookies, mergeCookies } from "./cookies";
+import { unwrapCookies } from "./cookies";
 import { sessionManager, ensureFreshSession } from "./session";
 import { HtmlParser, cleanTitle, extractJson, isChallengeHtml } from "./parsers";
 import { extractBest } from "./extractors";
@@ -73,18 +73,7 @@ async function fetchWithSession(path: string, options: RequestInit = {}): Promis
         }
       });
       if (setCookies.length > 0) {
-        try {
-          const s = await sessionManager.getSession();
-          if (s) {
-            const merged = mergeCookies(s.cookies, setCookies);
-            if (merged !== s.cookies) {
-              logger.debug("fetch", `Cookie merge ${s.cookies.length}→${merged.length} chars`);
-              await sessionManager.setSession({ ...s, cookies: merged });
-            }
-          }
-        } catch {
-          // Don't let cookie capture fail the request
-        }
+        await sessionManager.mergeSetCookies(setCookies);
       }
 
       if (!res.ok) {
