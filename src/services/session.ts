@@ -92,6 +92,10 @@ async function probeSession(session: ISession | null): Promise<boolean> {
       logger.warn("session", `Probe rejected with HTTP ${res.status}`);
       return false;
     }
+    // Challenge fingerprint only exists in HTML bodies; skip the full read
+    // otherwise — the home page can be hundreds of KB on a slow connection
+    const contentType = res.headers.get("content-type") ?? "";
+    if (!contentType.includes("html")) return true;
     try {
       if (isChallengeHtml(await res.text())) {
         logger.warn("session", "Probe returned a challenge page");
