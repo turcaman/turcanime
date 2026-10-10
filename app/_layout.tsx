@@ -197,8 +197,10 @@ function RootInner() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false, orientation: "portrait" }} />
         <Stack.Screen name="anime/[slug]" options={{ headerShown: false, orientation: "portrait" }} />
-        {/* player manages orientation itself via setupImmersiveMode */}
-        <Stack.Screen name="player" options={{ headerShown: false, animation: "fade_from_bottom", statusBarHidden: true, orientation: "default" }} />
+        {/* player owns the screen orientation via setupImmersiveMode; declaring
+            landscape here keeps RNScreens from re-applying UNSPECIFIED over the
+            JS lock on every focus */}
+        <Stack.Screen name="player" options={{ headerShown: false, animation: "fade_from_bottom", statusBarHidden: true, orientation: "landscape" }} />
       </Stack>
       <WebViewWorker />
       <UpdateModal />
