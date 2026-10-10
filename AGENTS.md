@@ -16,7 +16,7 @@ No test framework.
 
 ## Project
 
-Expo 55 + React Native 0.83. **Android-only** (no iOS/web). File-based routing via `expo-router`.
+Expo 57 + React Native 0.86. **Android-only** (no iOS/web). File-based routing via `expo-router`.
 
 - **State:** Zustand stores in `src/stores/`. Use individual selectors (`useStore(s => s.field)`) — never full store subscription.
 - **Imports:** `@/*` maps to `./src/*`
@@ -33,7 +33,7 @@ Expo 55 + React Native 0.83. **Android-only** (no iOS/web). File-based routing v
 | `src/services/source.ts` | HTTP fetcher with session |
 | `src/services/parsers.ts` | HTML / RSC parser |
 | `src/services/extractors.ts` | Byse AES-GCM decrypt |
-| `src/utils/cache.ts` | `withCache()` utility |
+| `src/utils/cache.ts` | Cache utilities |
 
 ## ESLint (type-aware)
 

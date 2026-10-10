@@ -1,10 +1,10 @@
 # Turcanime
 
-App Android para streaming de anime. Expo 55 + React Native 0.83.
+App Android para streaming de anime. Expo 57 + React Native 0.86.
 
 ## Stack
 
-Expo 55 · TypeScript 5.9 strict · expo-router · Zustand 5 · NativeWind v5 + Tailwind 4 · expo-video · react-native-reanimated 4 · AsyncStorage
+Expo 57 · TypeScript 6.0 strict · expo-router · Zustand 5 · NativeWind v5 + Tailwind 4 · expo-video · react-native-reanimated 4 · AsyncStorage
 
 ## Setup
 
