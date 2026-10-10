@@ -294,15 +294,27 @@ class SessionManager {
     // shares the same 40s wait. Valid session opens it, timeout throws.
     const startedAt = Date.now();
     this.armGate();
-    webViewBridge.navigateTo(SOURCE_CONFIG.sessionWashUrl);
-    await this.waitForCookies();
-    const session = await this.getSession();
-    if (!isValidSessionCookies(session?.cookies)) {
-      logger.warn("session", "Wash settled but cookies still invalid");
-      throw new SourceError("Session refresh failed - no valid cookies received", "AUTH_ERROR");
-    }
-    if (!(await probeSession(session))) {
-      throw new SourceError("Session refresh failed - cookies rejected by site", "AUTH_ERROR");
+    try {
+      webViewBridge.navigateTo(SOURCE_CONFIG.sessionWashUrl);
+      await this.waitForCookies();
+      const session = await this.getSession();
+      if (!isValidSessionCookies(session?.cookies)) {
+        logger.warn("session", "Wash settled but cookies still invalid");
+        throw new SourceError("Session refresh failed - no valid cookies received", "AUTH_ERROR");
+      }
+      if (!(await probeSession(session))) {
+        throw new SourceError("Session refresh failed - cookies rejected by site", "AUTH_ERROR");
+      }
+    } catch (error) {
+      // A failed wash must not leave every later request parked behind the
+      // closed gate for 40s; with shape-valid stored cookies, the next fetch
+      // decides instantly (403 → ladder) instead of idling into the same error
+      const stored = await this.getSession();
+      if (isValidSessionCookies(stored?.cookies)) {
+        logger.warn("session", "Wash failed, reopening gate for existing cookies");
+        this.resolveGate();
+      }
+      throw error;
     }
     logger.info("session", `Session refreshed successfully in ${((Date.now() - startedAt) / 1000).toFixed(1)}s`);
   }
