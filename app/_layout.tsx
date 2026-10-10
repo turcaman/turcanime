@@ -11,6 +11,7 @@ import { useHistoryStore, HISTORY_KEY } from "@/stores/historyStore";
 import { useSearchHistoryStore, SEARCHES_KEY } from "@/stores/searchHistoryStore";
 import { useNetworkStatus, type ConnectionType } from "@/hooks/useNetworkStatus";
 import { sessionManager, refreshSession } from "@/services/session";
+import { resetToPortrait } from "@/services/playerUI";
 import { storage } from "@/utils/storage";
 import { logger } from "@/utils/logger";
 import type { HistoryItem } from "@/types";
@@ -149,6 +150,7 @@ function RootInner() {
       // first await: a connection flap during init must see the cooldown.
       lastRefreshTime.current = Date.now();
       logger.setStorage(storage);
+      await resetToPortrait();
       await sessionManager.initialize();
       const [history, searches, order, updateCheckEnabled] = await Promise.all([
         storage.get<HistoryItem[]>(HISTORY_KEY),
