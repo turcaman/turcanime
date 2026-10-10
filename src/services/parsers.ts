@@ -336,3 +336,17 @@ export class HtmlParser {
     }
   }
 }
+
+/**
+ * A Cloudflare challenge page is a full HTML document with no app content;
+ * matching its fingerprint survives localized titles.
+ */
+export function isChallengeHtml(html: string): boolean {
+  return (
+    html.includes("<title>Just a moment") ||
+    html.includes("<title>Attention Required") ||
+    html.includes('id="challenge-form"') ||
+    html.includes('id="challenge-error-text"') ||
+    html.includes('id="cf-challenge-running"')
+  );
+}

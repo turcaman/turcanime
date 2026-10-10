@@ -5,7 +5,7 @@ import { SourceError } from "../utils/errors";
 import { backoffDelay } from "../utils/math";
 import { unwrapCookies, mergeCookies } from "./cookies";
 import { sessionManager, ensureFreshSession } from "./session";
-import { HtmlParser, cleanTitle, extractJson } from "./parsers";
+import { HtmlParser, cleanTitle, extractJson, isChallengeHtml } from "./parsers";
 import { extractBest } from "./extractors";
 import type {
   AnimeDetail,
@@ -144,16 +144,6 @@ async function fetchWithSession(path: string, options: RequestInit = {}): Promis
 }
 
 const htmlParser = new HtmlParser();
-
-function isChallengeHtml(html: string): boolean {
-  return (
-    html.includes("<title>Just a moment") ||
-    html.includes("<title>Attention Required") ||
-    html.includes('id="challenge-form"') ||
-    html.includes('id="challenge-error-text"') ||
-    html.includes('id="cf-challenge-running"')
-  );
-}
 
 async function getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData> {
   const homeEndpoint = SOURCE_CONFIG.homeEndpoint;
