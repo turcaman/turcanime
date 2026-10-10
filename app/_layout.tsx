@@ -195,9 +195,10 @@ function RootInner() {
           statusBarStyle: "light",
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="anime/[slug]" options={{ headerShown: false }} />
-        <Stack.Screen name="player" options={{ headerShown: false, animation: "fade_from_bottom", statusBarHidden: true }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, orientation: "portrait" }} />
+        <Stack.Screen name="anime/[slug]" options={{ headerShown: false, orientation: "portrait" }} />
+        {/* player manages orientation itself via setupImmersiveMode */}
+        <Stack.Screen name="player" options={{ headerShown: false, animation: "fade_from_bottom", statusBarHidden: true, orientation: "default" }} />
       </Stack>
       <WebViewWorker />
       <UpdateModal />
