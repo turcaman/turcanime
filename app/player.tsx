@@ -208,6 +208,21 @@ function PlayerContent() {
     return () => { sub.remove(); };
   }, [player]);
 
+  // A stream can resolve fine and still die at the video layer (expired CDN
+  // token, rejected playback): settle it as a real error instead of leaving
+  // a mounted player that never plays. Ignored while a request is in flight,
+  // so a resolution still loading owns its own settling.
+  useEffect(() => {
+    const sub = player.addListener("statusChange", ({ status, error }) => {
+      if (status !== "error") return;
+      usePlayerStore.getState().failStream({
+        type: "VIDEO_ERROR",
+        message: error?.message ?? "Video player error",
+      });
+    });
+    return () => { sub.remove(); };
+  }, [player]);
+
   useEffect(() => {
     const sub = player.addListener("playToEnd", () => {
       if (nextEpisode && hasPlayedRef.current) {
