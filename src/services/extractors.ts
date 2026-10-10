@@ -1,5 +1,6 @@
 import { gcm } from "@noble/ciphers/aes.js";
 import { bytesToUtf8 } from "@noble/ciphers/utils.js";
+import { SourceError, isCancelled } from "../utils/errors";
 
 interface PlaybackData {
   algorithm: string;
@@ -125,13 +126,18 @@ export async function extractBest(
 
   const apiUrl = `https://${host}/api/videos/${id}`;
   const raw = await fetch(apiUrl, { headers: fetchHeaders, signal: options?.signal });
-  if (!raw.ok) throw new Error(`Byse API HTTP ${raw.status}`);
+  if (!raw.ok) throw new SourceError(`Byse API HTTP ${raw.status}`, "VIDEO_ERROR");
 
-  const videoData: { playback?: PlaybackData } = await raw.json();
-  if (videoData.playback == null) throw new Error("No playback data from Byse API");
-
-  const decrypted = JSON.parse(decrypt(videoData.playback)) as DecryptedData;
-  if (decrypted.sources.length === 0) throw new Error("No sources in decrypted Byse data");
+  let decrypted: DecryptedData;
+  try {
+    const videoData: { playback?: PlaybackData } = await raw.json();
+    if (videoData.playback == null) throw new SourceError("No playback data from Byse API", "PARSER_ERROR");
+    decrypted = JSON.parse(decrypt(videoData.playback)) as DecryptedData;
+  } catch (e: unknown) {
+    if (e instanceof SourceError || isCancelled(e)) throw e;
+    throw new SourceError("Byse payload unreadable", "PARSER_ERROR");
+  }
+  if (decrypted.sources.length === 0) throw new SourceError("No sources in decrypted Byse data", "PARSER_ERROR");
 
   const ua = options?.userAgent ?? "";
 
@@ -144,7 +150,7 @@ export async function extractBest(
       headers: { "User-Agent": ua, Referer: `https://${host}/`, Accept: "*/*" },
       signal: options?.signal,
     }).then((r) => {
-      if (!r.ok) throw new Error(`Master playlist HTTP ${r.status}: ${su}`);
+      if (!r.ok) throw new SourceError(`Master playlist HTTP ${r.status}`, "VIDEO_ERROR");
       return r.text();
     });
 

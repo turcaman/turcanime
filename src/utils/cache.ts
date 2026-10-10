@@ -58,7 +58,7 @@ export async function loadCached<T>(
   // payload): throw instead of handing every caller a payload it must judge
   if (data != null && isValid != null && !isValid(data)) {
     logger.warn("cache", `Invalid fresh result for "${cacheKey}", failing`);
-    throw new SourceError(`Invalid payload for ${cacheKey}`, "UNKNOWN");
+    throw new SourceError(`Invalid payload for ${cacheKey}`, "PARSER_ERROR");
   }
 
   try {

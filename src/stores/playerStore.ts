@@ -65,7 +65,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
         withAuthRetry(
           async (attempt) => {
             const fresh = await resolveStreamCached(server, { force: attempt > 0 });
-            if (fresh == null) throw new SourceError("No se pudo resolver el stream", "UNKNOWN");
+            if (fresh == null) throw new SourceError("No se pudo resolver el stream", "VIDEO_ERROR");
             return fresh;
           },
           { signal, maxRetries: 2, tag: "stream" },

@@ -142,7 +142,7 @@ async function getHomeData(options?: { signal?: AbortSignal }): Promise<HomeData
   const recent = htmlParser.parseCards(html);
   if (recent.length === 0) {
     if (isChallengeHtml(html)) throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
-    throw new SourceError("No cards extracted — site structure may have changed", "UNKNOWN");
+    throw new SourceError("No cards extracted — site structure may have changed", "PARSER_ERROR");
   }
   return { recent };
 }
@@ -164,10 +164,10 @@ async function searchRaw(query: string, options?: { signal?: AbortSignal }): Pro
     json = JSON.parse(text) as { data?: unknown };
   } catch {
     if (isChallengeHtml(text)) throw new SourceError("Challenge page — session invalid", "AUTH_ERROR");
-    throw new SourceError(`Unexpected response format for query: ${query}`, "UNKNOWN");
+    throw new SourceError(`Unexpected response format for query: ${query}`, "PARSER_ERROR");
   }
   const items = json.data ?? [];
-  if (!Array.isArray(items)) throw new SourceError(`Unexpected response format for query: ${query}`, "UNKNOWN");
+  if (!Array.isArray(items)) throw new SourceError(`Unexpected response format for query: ${query}`, "PARSER_ERROR");
   return items as RawSearchItem[];
 }
 
@@ -253,7 +253,7 @@ async function getEpisodeServers(slug: string, number: string, options?: { signa
     }
   }
 
-  throw new SourceError(`No Delta servers extracted for ${slug} ep ${number}`, "UNKNOWN");
+  throw new SourceError(`No Delta servers extracted for ${slug} ep ${number}`, "PARSER_ERROR");
 }
 
 async function resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSignal }): Promise<StreamUrlResult | null> {
@@ -261,10 +261,10 @@ async function resolveStreamUrl(videoUrl: string, options?: { signal?: AbortSign
 
   logger.debug("fetch", "Fetching bridge page via fetchWithSession");
   const res = await fetchWithSession(videoUrl, options ?? {});
-  if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "NETWORK_ERROR");
+  if (!res.ok) throw new SourceError(`HTTP Error: ${res.status}`, "VIDEO_ERROR");
   const html = await res.text();
   const m = html.match(/<iframe[^>]*src="([^"]+)"[^>]*>/);
-  if (!m) throw new SourceError("No iframe in bridge page", "UNKNOWN");
+  if (!m) throw new SourceError("No iframe in bridge page", "PARSER_ERROR");
   const iframeUrl = m[1]!;
 
   logger.debug("fetch", `Iframe URL: ${iframeUrl.slice(0, 100)}`);
