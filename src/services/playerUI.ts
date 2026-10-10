@@ -3,7 +3,16 @@ import * as ScreenOrientation from "expo-screen-orientation";
 import { StatusBar } from "react-native";
 import { logger } from "../utils/logger";
 
+// True while the player owns the screen orientation; foreground repairs must
+// not stomp its landscape lock
+let playerActive = false;
+
+export function isPlayerActive(): boolean {
+  return playerActive;
+}
+
 export async function setupImmersiveMode(): Promise<void> {
+  playerActive = true;
   try {
     StatusBar.setHidden(true, "fade");
     NavigationBar.setHidden(true);
@@ -15,6 +24,7 @@ export async function setupImmersiveMode(): Promise<void> {
 }
 
 export async function cleanupImmersiveMode(): Promise<void> {
+  playerActive = false;
   try {
     StatusBar.setHidden(false, "fade");
     NavigationBar.setHidden(false);

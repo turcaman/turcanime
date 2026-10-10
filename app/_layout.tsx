@@ -11,7 +11,7 @@ import { useHistoryStore, HISTORY_KEY } from "@/stores/historyStore";
 import { useSearchHistoryStore, SEARCHES_KEY } from "@/stores/searchHistoryStore";
 import { useNetworkStatus, type ConnectionType } from "@/hooks/useNetworkStatus";
 import { sessionManager, refreshSession } from "@/services/session";
-import { resetToPortrait } from "@/services/playerUI";
+import { resetToPortrait, isPlayerActive } from "@/services/playerUI";
 import { storage } from "@/utils/storage";
 import { logger } from "@/utils/logger";
 import type { HistoryItem } from "@/types";
@@ -91,6 +91,10 @@ function RootInner() {
   useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
       if (state !== "active") return;
+      // Android may re-apply the orientation saved in the ActivityRecord during
+      // an activity recreation, after the one-shot boot reset already ran.
+      // Re-assert portrait on every foreground return unless playback owns it
+      if (!isPlayerActive()) void resetToPortrait();
       if (skipFirstActiveEvent.current) {
         skipFirstActiveEvent.current = false;
         logger.debug("lifecycle", "Initial active event, wash skipped");
