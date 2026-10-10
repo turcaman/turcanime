@@ -45,7 +45,7 @@ function RootInner() {
   const setSessionRefreshFailed = useUIStore((s) => s.setSessionRefreshFailed);
   const prevConnectionType = useRef<ConnectionType>(null);
   const prevReachable = useRef<boolean | null>(null);
-  const lastRefreshTime = useRef(Date.now());
+  const lastRefreshTime = useRef(0);
   const skipFirstActiveEvent = useRef(true);
 
   useEffect(() => {
@@ -144,11 +144,12 @@ function RootInner() {
   useEffect(() => {
     let cancelled = false;
     const init = async () => {
+      // The mount fires an initial active event; seed the cooldown so it
+      // doesn't trigger a redundant wash right after boot. Seeded before the
+      // first await: a connection flap during init must see the cooldown.
+      lastRefreshTime.current = Date.now();
       logger.setStorage(storage);
       await sessionManager.initialize();
-      // The mount fires an initial active event; seed the cooldown so it
-      // doesn't trigger a redundant wash right after boot.
-      lastRefreshTime.current = Date.now();
       const [history, searches, order, updateCheckEnabled] = await Promise.all([
         storage.get<HistoryItem[]>(HISTORY_KEY),
         storage.get<string[]>(SEARCHES_KEY),

@@ -8,12 +8,18 @@ export function useCrossfade(visible: boolean, duration = DEFAULT_DURATION) {
   const skeletonOpacity = useSharedValue(1);
   const contentOpacity = useSharedValue(visible ? 1 : 0);
   const wasHidden = useRef(!visible);
+  const [prevVisible, setPrevVisible] = useState(visible);
+  // Hide during render so the skeleton is up before paint; the fade-in
+  // completion callback is what clears it again
+  if (prevVisible !== visible) {
+    setPrevVisible(visible);
+    if (!visible) setKeepSkeleton(true);
+  }
 
   useEffect(() => {
     if (!visible) {
       skeletonOpacity.value = 1;
       contentOpacity.value = 0;
-      setKeepSkeleton(true);
       wasHidden.current = true;
       return;
     }

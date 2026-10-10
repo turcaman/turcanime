@@ -30,9 +30,9 @@ export function useSearchScreen() {
     term: lastSearchTerm,
     status: lastSearchTerm ? "searched" : "idle",
   });
-  // Latest state for async completions that must not clobber newer UI changes
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  // Bumped by every local transition; an async completion only lands if its
+  // token still matches, so a superseded search cannot resurrect "searched"
+  const searchTokenRef = useRef(0);
   const debouncedTerm = useDebounce(state.term, 300);
 
   const searchAnimes = useMemo(() => results.data ?? [], [results.data]);
@@ -60,6 +60,7 @@ export function useSearchScreen() {
       const trimmed = term.trim();
       if (trimmed.length < MIN_SEARCH_LENGTH) return;
       cancelSearch();
+      const token = ++searchTokenRef.current;
       setState({ term, status: "searching" });
       setStoreSearchTerm(trimmed);
       try {
@@ -67,8 +68,7 @@ export function useSearchScreen() {
       } finally {
         // The search was superseded (input cleared or replaced while in flight):
         // don't resurrect "searched", which would show empty results over idle
-        const current = stateRef.current;
-        if (current.status === "searching" && current.term === term) {
+        if (searchTokenRef.current === token) {
           void saveRecentSearch(trimmed);
           setState({ term, status: "searched" });
         }
@@ -90,6 +90,7 @@ export function useSearchScreen() {
   }, [executeSearch, state.term]);
 
   const handleTextChange = useCallback((text: string) => {
+    searchTokenRef.current += 1;
     const trimmed = text.trim();
     if (trimmed.length === 0) {
       // Clearing the input resets immediately; doing it here (not in the
@@ -102,6 +103,7 @@ export function useSearchScreen() {
   }, [resetStoreSearch]);
 
   const resetSearch = useCallback(() => {
+    searchTokenRef.current += 1;
     cancelSearch();
     setState({ term: "", status: "idle" });
     resetStoreSearch();

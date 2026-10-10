@@ -14,13 +14,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const isRefreshingSession = useUIStore((s) => s.isRefreshingSession);
-  const sessionRefreshFailed = useUIStore((s) => s.sessionRefreshFailed);
   const [refreshed, setRefreshed] = useState(false);
   const [refreshFailed, setRefreshFailed] = useState(false);
   const userInitiatedRefresh = useRef(false);
   const refreshedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const failedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevRefreshing = useRef(isRefreshingSession);
 
   const updateCheckEnabled = useUpdateStore((s) => s.updateCheckEnabled);
   const setUpdateCheckEnabled = useUpdateStore((s) => s.setUpdateCheckEnabled);
@@ -59,24 +57,30 @@ export default function SettingsScreen() {
     if (ft != null) clearTimeout(ft);
   }, []);
 
-  // Show the real refresh outcome only when the user initiated it
+  // Show the real refresh outcome only when the user initiated it.
+  // Event-driven via store subscription: setState in a subscription callback,
+  // not in the effect body.
   useEffect(() => {
-    const wasRefreshing = prevRefreshing.current;
-    prevRefreshing.current = isRefreshingSession;
-    if (!wasRefreshing || isRefreshingSession || !userInitiatedRefresh.current) return;
-    userInitiatedRefresh.current = false;
-    if (sessionRefreshFailed) {
-      setRefreshFailed(true);
-      if (failedTimer.current != null) clearTimeout(failedTimer.current);
-      failedTimer.current = setTimeout(() => setRefreshFailed(false), 3000);
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } else {
-      setRefreshed(true);
-      if (refreshedTimer.current != null) clearTimeout(refreshedTimer.current);
-      refreshedTimer.current = setTimeout(() => setRefreshed(false), 2000);
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-  }, [isRefreshingSession, sessionRefreshFailed]);
+    let wasRefreshing = useUIStore.getState().isRefreshingSession;
+    return useUIStore.subscribe((s) => {
+      const refreshing = s.isRefreshingSession;
+      const justFinished = wasRefreshing && !refreshing;
+      wasRefreshing = refreshing;
+      if (!justFinished || !userInitiatedRefresh.current) return;
+      userInitiatedRefresh.current = false;
+      if (s.sessionRefreshFailed) {
+        setRefreshFailed(true);
+        if (failedTimer.current != null) clearTimeout(failedTimer.current);
+        failedTimer.current = setTimeout(() => setRefreshFailed(false), 3000);
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } else {
+        setRefreshed(true);
+        if (refreshedTimer.current != null) clearTimeout(refreshedTimer.current);
+        refreshedTimer.current = setTimeout(() => setRefreshed(false), 2000);
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    });
+  }, []);
 
   const handleRefresh = useCallback(() => {
     if (useUIStore.getState().isRefreshingSession) {

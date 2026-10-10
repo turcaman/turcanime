@@ -7,11 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "turcanime",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
-    },
     "backgroundColor": "#000000",
     "android": {
       "adaptiveIcon": {
@@ -21,7 +16,9 @@
       "package": "com.turcanime.app",
       "softwareKeyboardLayoutMode": "pan",
       "versionCode": 11206,
-      "permissions": ["REQUEST_INSTALL_PACKAGES"]
+      "permissions": [
+        "REQUEST_INSTALL_PACKAGES"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -38,7 +35,16 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
+      ],
+      "expo-status-bar"
     ],
     "extra": {
       "eas": {

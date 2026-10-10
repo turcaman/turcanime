@@ -34,7 +34,9 @@ function PlayerContent() {
   const { anime } = useAnimeData(slug);
   const { isInternetReachable: networkOk } = useNetworkStatus();
   const networkOkRef = useRef<boolean | null>(null);
-  networkOkRef.current = networkOk;
+  useEffect(() => {
+    networkOkRef.current = networkOk;
+  }, [networkOk]);
   const prevNetworkOk = useRef<boolean | null>(null);
   const saveProgressRef = useRef<() => void>(() => {});
   const [playState, setPlayState] = useState({ currentTime: 0, duration: 0, isPlaying: false });
@@ -75,7 +77,8 @@ function PlayerContent() {
     };
   }, [clearStream]);
 
-  const episodes = useMemo(() => (anime?.episodes ? orderEpisodes(anime.episodes) : []), [anime?.episodes]);
+  const episodesData = anime?.episodes;
+  const episodes = useMemo(() => (episodesData ? orderEpisodes(episodesData) : []), [episodesData]);
   const currentIdx = useMemo(() => episodes.findIndex((e) => e.number === currentEpNumber), [episodes, currentEpNumber]);
   const prevEpisode = useMemo(() => (currentIdx < 1 ? null : episodes[currentIdx - 1]), [episodes, currentIdx]);
   const nextEpisode = useMemo(() => (currentIdx < 0 || currentIdx >= episodes.length - 1 ? null : episodes[currentIdx + 1]), [episodes, currentIdx]);
@@ -88,6 +91,7 @@ function PlayerContent() {
   }, [player]);
 
   const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState<number | null>(null);
+  const [countdownEp, setCountdownEp] = useState<string | null>(null);
   const nextEpisodeTimer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const nextEpisodeCountdownRef = useRef<number | null>(null);
 
@@ -116,6 +120,7 @@ function PlayerContent() {
     if (!nextEpisode) return;
     nextEpisodeCountdownRef.current = NEXT_EPISODE_COUNTDOWN_SECONDS;
     setNextEpisodeCountdown(NEXT_EPISODE_COUNTDOWN_SECONDS);
+    setCountdownEp(currentEpNumber);
     nextEpisodeTimer.current = setInterval(() => {
       const prev = nextEpisodeCountdownRef.current;
       if (prev === null || prev <= 0) {
@@ -127,7 +132,7 @@ function PlayerContent() {
       nextEpisodeCountdownRef.current = prev - 1;
       setNextEpisodeCountdown(prev - 1);
     }, 1000);
-  }, [nextEpisode, clearNextEpisodeTimer, slug, resolveAndPlay]);
+  }, [nextEpisode, clearNextEpisodeTimer, slug, resolveAndPlay, currentEpNumber]);
 
   const handlePrev = useCallback(() => { if (prevEpisode) void resolveAndPlay(slug, prevEpisode); }, [prevEpisode, slug, resolveAndPlay]);
   const handleNext = useCallback(() => { if (nextEpisode) void resolveAndPlay(slug, nextEpisode); }, [nextEpisode, slug, resolveAndPlay]);
@@ -135,10 +140,12 @@ function PlayerContent() {
 
   const lastSeekKey = useRef("");
 
+  // eslint-disable-next-line react-hooks/immutability -- expo-video player is a native imperative handle; media loading mutates it by design
   useEffect(() => {
     if (streamUrl == null) return;
     let cancelled = false;
     const run = async () => {
+      // eslint-disable-next-line react-hooks/immutability -- expo-video player is a native imperative handle; loading media mutates it by design
       await player.replaceAsync({ uri: streamUrl, headers: streamHeaders ?? undefined });
       if (cancelled) return;
 
@@ -161,7 +168,9 @@ function PlayerContent() {
   }, [streamUrl, streamHeaders, player, slug, currentEpNumber]);
 
   const historyCtx = useRef({ title, url: slug, image, number: currentEpNumber });
-  historyCtx.current = { title, url: slug, image, number: currentEpNumber };
+  useEffect(() => {
+    historyCtx.current = { title, url: slug, image, number: currentEpNumber };
+  }, [title, slug, image, currentEpNumber]);
 
   const saveProgress = useCallback(() => {
     try {
@@ -174,7 +183,9 @@ function PlayerContent() {
       }
     } catch {}
   }, [player, addToHistory]);
-  saveProgressRef.current = saveProgress;
+  useEffect(() => {
+    saveProgressRef.current = saveProgress;
+  }, [saveProgress]);
 
   useEffect(() => {
     if (streamUrl == null) return;
@@ -207,9 +218,15 @@ function PlayerContent() {
     return () => { sub.remove(); };
   }, [player, nextEpisode, startNextEpisodeCountdown]);
 
+  // Episode changed: kill any pending auto-next timer. The countdown state is
+  // gated on countdownEp when passed to PlayerControls, so no setState here.
   useEffect(() => {
-    clearNextEpisodeTimer();
-  }, [currentEpNumber, clearNextEpisodeTimer]);
+    if (nextEpisodeTimer.current) {
+      clearInterval(nextEpisodeTimer.current);
+      nextEpisodeTimer.current = undefined;
+    }
+    nextEpisodeCountdownRef.current = null;
+  }, [currentEpNumber]);
 
   // A failed stream resolution is a real failure: show it honestly with a
   // retry that re-runs the full servers + stream path
@@ -240,7 +257,7 @@ function PlayerContent() {
         hasNext={nextEpisode != null}
         loading={loading || streamUrl == null}
         insetTop={insets.top}
-        nextEpisodeCountdown={nextEpisodeCountdown}
+        nextEpisodeCountdown={countdownEp === currentEpNumber ? nextEpisodeCountdown : null}
         nextEpisodeNumber={nextEpisode?.number ?? null}
         onPrev={handlePrev}
         onNext={handleNext}

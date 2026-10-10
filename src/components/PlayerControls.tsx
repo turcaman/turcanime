@@ -4,7 +4,7 @@ import { useAutoHide } from "@/hooks/useAutoHide";
 import { Feather } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 import type { VideoPlayer } from "expo-video";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Animated, Pressable, Text, View } from "react-native";
 
 const NEXT_EPISODE_COUNTDOWN_SECONDS = 10;
@@ -48,7 +48,7 @@ export function PlayerControls({
   const [pendingSeek, setPendingSeek] = useState<number | null>(null);
   const { restartTimer, clearTimer } = useAutoHide(visible, isPlaying, 3000, () => { setVisible(false); });
 
-  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -61,11 +61,11 @@ export function PlayerControls({
   const displayTime = slidingValue ?? pendingSeek ?? currentTime;
   const isSliding = slidingValue != null;
 
-  useEffect(() => {
-    if (pendingSeek != null && Math.abs(currentTime - pendingSeek) < 1) {
-      setPendingSeek(null);
-    }
-  }, [currentTime, pendingSeek]);
+  // Render-phase latch: once playback catches up to a pending seek, hand
+  // control back to playback instead of pinning the slider.
+  if (pendingSeek != null && Math.abs(currentTime - pendingSeek) < 1) {
+    setPendingSeek(null);
+  }
 
   const toggle = useCallback(() => {
     if (nextEpisodeCountdown !== null) return;
@@ -186,11 +186,13 @@ export function PlayerControls({
                       clearTimer();
                       setSlidingValue(player.currentTime);
                       // Boosts codec rate and avoids decoder flush while dragging
+                      // eslint-disable-next-line react-hooks/immutability -- scrubbing flags live on the imperative player handle
                       player.scrubbingModeOptions = { scrubbingModeEnabled: true };
                     }}
                     onSlidingComplete={(v) => {
                       // Must run even if loading: leaving scrubbing enabled
                       // suppresses playback on Android indefinitely
+                      // eslint-disable-next-line react-hooks/immutability -- scrubbing flags live on the imperative player handle
                       player.scrubbingModeOptions = { scrubbingModeEnabled: false };
                       if (loading) return;
                       player.currentTime = v;

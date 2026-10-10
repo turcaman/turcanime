@@ -8,7 +8,9 @@ export function useAutoHide(
 ) {
   const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const onHideRef = useRef(onHide);
-  onHideRef.current = onHide;
+  useEffect(() => {
+    onHideRef.current = onHide;
+  }, [onHide]);
 
   const clearTimer = useCallback(() => {
     if (hideTimer.current) {

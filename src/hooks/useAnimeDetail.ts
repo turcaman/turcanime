@@ -1,25 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
 
 export function usePersistedRange(slug: string | undefined) {
   const [activeRangeIdx, setActiveRangeIdx] = useState(0);
-  const [isRestoring, setIsRestoring] = useState(true);
-  const currentSlugRef = useRef(slug);
+  const [isRestoring, setIsRestoring] = useState(slug != null);
+  // Reset during render on slug change so a stale range is never shown
+  const [prevSlug, setPrevSlug] = useState<string | undefined>(slug);
+
+  if (prevSlug !== slug) {
+    setPrevSlug(slug);
+    setActiveRangeIdx(0);
+    setIsRestoring(slug != null);
+  }
 
   useEffect(() => {
-    if (slug !== currentSlugRef.current) {
-      currentSlugRef.current = slug;
-      setActiveRangeIdx(0);
-      setIsRestoring(true);
-    }
-  }, [slug]);
-
-  useEffect(() => {
-    if (slug == null) {
-      setIsRestoring(false);
-      return;
-    }
+    if (slug == null) return;
     storage
       .get<number>(`range_${slug}`)
       .then((idx) => {

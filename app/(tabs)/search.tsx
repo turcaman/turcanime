@@ -10,7 +10,7 @@ import { useTabBarManager } from "@/hooks/useTabBarManager";
 import { TAB_BAR_OFFSET, calcCardWidth } from "@/utils/layout";
 import { ACCENT_COLOR, MUTED_ICON } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Animated, FlatList, RefreshControl, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,7 +26,7 @@ function SearchScreenContent() {
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = calcCardWidth(screenWidth);
   const { handleScroll, reset, showTabBar } = useTabBarManager({ threshold: 8 });
-  const resultsOpacity = useRef(new Animated.Value(0)).current;
+  const [resultsOpacity] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (!isSearched) { reset(); showTabBar(); }

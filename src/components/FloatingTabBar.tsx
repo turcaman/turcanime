@@ -1,6 +1,6 @@
 import { ACCENT_COLOR } from "@/config/source";
 import { Feather } from "@expo/vector-icons";
-import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import type { BottomTabBarProps } from "expo-router/js-tabs";
 import React from "react";
 import { View } from "react-native";
 import Animated, {

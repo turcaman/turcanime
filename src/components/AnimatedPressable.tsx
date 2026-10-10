@@ -68,6 +68,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     transform: [{ scale: scale.value }],
   }));
 
+  /* eslint-disable react-hooks/immutability -- Reanimated shared values are mutable boxes by design; the compiler cannot model them */
   const handlePressIn = useCallback((e: GestureResponderEvent) => {
     scale.value = withTiming(0.96, { duration: 80 });
     opacity.value = withTiming(0.8, { duration: 80 });
@@ -79,6 +80,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     opacity.value = withTiming(1, { duration: 120 });
     if (onPressOut) onPressOut(e);
   }, [onPressOut, scale, opacity]);
+  /* eslint-enable react-hooks/immutability */
 
   return (
     <AnimatedPressableComponent
