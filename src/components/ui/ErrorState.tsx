@@ -15,6 +15,8 @@ const SUBTITLES: Record<AppError["type"], string> = {
   NETWORK_ERROR: "No se pudo conectar con el sitio. Revisa tu conexión e inténtalo de nuevo.",
   AUTH_ERROR: "El sitio está verificando la conexión. Reintenta en unos segundos.",
   TIMEOUT: "El sitio tardó demasiado en responder. Inténtalo de nuevo en un momento.",
+  VIDEO_ERROR: "El servidor de video no respondió. Inténtalo de nuevo en unos minutos.",
+  PARSER_ERROR: "El sitio devolvió un contenido inesperado. Puede ser un cambio del sitio o un fallo temporal.",
   UNKNOWN: "El sitio está tardando más de lo normal en responder. Inténtalo de nuevo en un momento.",
 };
 

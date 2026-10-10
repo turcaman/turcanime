@@ -26,7 +26,14 @@ export function isCancelled(error: unknown): boolean {
   return typeof error === "object" && error !== null && (error as { name?: unknown }).name === "AbortError";
 }
 
-const APP_ERROR_TYPES: readonly AppErrorType[] = ["NETWORK_ERROR", "AUTH_ERROR", "TIMEOUT", "UNKNOWN"];
+const APP_ERROR_TYPES: readonly AppErrorType[] = [
+  "NETWORK_ERROR",
+  "AUTH_ERROR",
+  "TIMEOUT",
+  "VIDEO_ERROR",
+  "PARSER_ERROR",
+  "UNKNOWN",
+];
 
 /** Single mapping from any thrown value to the AppError the UI renders */
 export function toAppError(error: unknown): AppError {
