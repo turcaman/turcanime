@@ -95,6 +95,11 @@ export function setCachedStream(server: { url: string; id: string }, result: Str
   return storage.set(streamCacheKey(server), { payload: result, expiration: Date.now() + CACHE_TTL.STREAM });
 }
 
+/** A stream that failed at the video layer is dead: drop it so the next attempt resolves fresh */
+export function invalidateCachedStream(server: { url: string; id: string }): Promise<void> {
+  return storage.remove(streamCacheKey(server));
+}
+
 /**
  * Cache-aside stream resolution with a single owner. Returns null when the
  * bridge yields no stream.

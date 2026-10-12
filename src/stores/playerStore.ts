@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { source } from "../services/source";
 import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
-import { loadCached, resolveStreamCached } from "../utils/cache";
+import { loadCached, resolveStreamCached, invalidateCachedStream } from "../utils/cache";
+import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { withAuthRetry } from "../utils/retry";
@@ -38,6 +39,20 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     set: (stream) => set({ stream }),
   });
 
+  // Derived playback artifacts behind the episode in flight. Any playback
+  // failure drops them: servers are only as fresh as the bridge URLs they
+  // carry, so the next attempt regenerates the whole chain instead of
+  // replaying a dead one
+  let lastServersKey: string | null = null;
+  let lastStreamServer: { url: string; id: string } | null = null;
+
+  const dropPlaybackArtifacts = (): void => {
+    if (lastStreamServer != null) void invalidateCachedStream(lastStreamServer);
+    if (lastServersKey != null) void storage.remove(lastServersKey);
+    lastStreamServer = null;
+    lastServersKey = null;
+  };
+
   return {
     servers: resourceInitialState<VideoServer[]>(),
     stream: resourceInitialState<StreamUrlResult>(),
@@ -46,6 +61,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     fetchServers: async (slug: string, number: string, force = false) => {
       const key = `${slug}_${number}`;
       const cacheKey = `${CACHE_PREFIXES.SERVERS}_${key}`;
+      lastServersKey = cacheKey;
       return serversRunner.load(key, (signal) =>
         withAuthRetry(
           (attempt) =>
@@ -61,7 +77,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
 
     resolveStream: async (server: VideoServer) => {
       set({ lastLanguage: server.language });
-      return streamRunner.load(STREAM_KEY, (signal) =>
+      lastStreamServer = server;
+      const outcome = await streamRunner.load(STREAM_KEY, (signal) =>
         withAuthRetry(
           async (attempt) => {
             const fresh = await resolveStreamCached(server, { force: attempt > 0 });
@@ -71,16 +88,21 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
           { signal, maxRetries: 2, tag: "stream" },
         ),
       );
+      if (outcome.status === "error") dropPlaybackArtifacts();
+      return outcome;
     },
 
     failStream: (error: AppError) => {
       logger.warn("stream", `Stream failed upstream: ${error.type}: ${error.message}`);
+      dropPlaybackArtifacts();
       streamRunner.fail(STREAM_KEY, error);
     },
 
     reset: () => {
       serversRunner.reset();
       streamRunner.reset();
+      lastServersKey = null;
+      lastStreamServer = null;
       set({ lastLanguage: null });
     },
   };
