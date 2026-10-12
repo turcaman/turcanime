@@ -40,8 +40,6 @@ export const useHomeStore = create<HomeState>((set, get) => {
           {
             signal,
             maxRetries: 2,
-            // The fresh challenge may still land after a failed refresh
-            continueAfterRefreshFailure: true,
             tag: "home",
           },
         ),

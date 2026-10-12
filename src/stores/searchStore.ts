@@ -112,7 +112,6 @@ export const useSearchStore = create<SearchState>((set, get) => {
           {
             signal,
             maxRetries: 2,
-            continueAfterRefreshFailure: true,
             tag: "search",
           },
         );

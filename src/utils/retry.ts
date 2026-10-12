@@ -10,39 +10,21 @@ interface WithAuthRetryOptions {
   isAborted?: () => boolean;
   /** Total attempts including the first; 1 disables retry */
   maxRetries?: number;
-  /**
-   * homeStore keeps retrying even when the refresh itself fails (the fresh
-   * challenge may still land). Everywhere else a failed refresh stops the
-   * ladder with a SessionRefreshError.
-   */
-  continueAfterRefreshFailure?: boolean;
   /** Tag for logs; errors propagate to the caller regardless */
   tag: string;
 }
 
-/** Thrown when the session refresh itself fails and the ladder stops */
-export class SessionRefreshError extends Error {
-  // Lets toAppError classify it as AUTH_ERROR without importing this module
-  readonly type = "AUTH_ERROR" as const;
-  readonly refreshCause: unknown;
-  constructor(cause?: unknown) {
-    super("Error al renovar sesión");
-    this.name = "SessionRefreshError";
-    this.refreshCause = cause;
-  }
-}
-
 /**
- * Runs `operation`, and on AUTH_ERROR refreshes the session and retries with
- * backoff. Non-auth errors propagate immediately. Abort checks and cooldown
- * state stay with the caller — this only owns the refresh-and-retry ladder
- * shared by every store/hook.
+ * Single ladder for every store. On AUTH_ERROR refreshes the session and
+ * retries with backoff; a failed refresh never stops the ladder — the fresh
+ * challenge may still land, so the next attempt decides. Non-auth errors
+ * propagate immediately. Abort checks stay with the caller.
  */
 export async function withAuthRetry<T>(
   operation: (attempt: number) => Promise<T>,
   options: WithAuthRetryOptions,
 ): Promise<T> {
-  const { signal, isAborted, maxRetries = 1, continueAfterRefreshFailure = false, tag } = options;
+  const { signal, isAborted, maxRetries = 1, tag } = options;
 
   let lastError: unknown;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -70,12 +52,7 @@ export async function withAuthRetry<T>(
         // A wash with unchanged cookies preserves fetchedAt; stamp it so the next fetch skips the wash
         await sessionManager.touchSession();
       } catch (refreshError) {
-        if (continueAfterRefreshFailure) {
-          logger.warn(tag, "Session refresh threw, continuing retry anyway", refreshError);
-        } else {
-          logger.warn(tag, `Session refresh failed after ${Date.now() - startedAt}ms, stopping ladder`, refreshError);
-          throw new SessionRefreshError(refreshError);
-        }
+        logger.warn(tag, "Session refresh threw, next attempt decides", refreshError);
       }
       await new Promise((resolve) => setTimeout(resolve, backoffDelay(attempt)));
     }

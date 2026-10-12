@@ -21,10 +21,6 @@ const SUBTITLES: Record<AppError["type"], string> = {
 };
 
 export function ErrorState({ onRetry, error, title = "Error al cargar" }: ErrorStateProps) {
-  const subtitle =
-    error?.type === "AUTH_ERROR" && error.message === "Error al renovar sesión"
-      ? "No se pudo renovar la conexión. Reintenta en unos segundos."
-      : SUBTITLES[error?.type ?? "UNKNOWN"];
   return (
     <View className="flex-1 items-center justify-center bg-black px-5">
       <Feather name="alert-circle" size={48} color={MUTED_ICON} />
@@ -32,7 +28,7 @@ export function ErrorState({ onRetry, error, title = "Error al cargar" }: ErrorS
         {title}
       </Text>
       <Text className="mt-2 max-w-[300px] text-center text-sm text-neutral-600">
-        {subtitle}
+        {SUBTITLES[error?.type ?? "UNKNOWN"]}
       </Text>
       <AnimatedPressable className="mt-4 flex-row items-center px-6 py-3 rounded-xl bg-purple-500/15" onPress={onRetry}>
         <Feather name="refresh-cw" size={16} color={ACCENT_COLOR} />
