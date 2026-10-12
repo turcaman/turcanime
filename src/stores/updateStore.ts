@@ -292,9 +292,12 @@ export async function grantInstallPermissionAndDownload(): Promise<void> {
     // without the permission granted
     useUpdateStore.setState({ resumeAfterPermission: true });
     await openInstallPermissionSettings();
-    // Memory-only: persisted only after installApk succeeds, so denying
-    // in settings retries the permission screen next time
+    // The OS toggle persists per-app, so remember the grant the moment the
+    // user returns; a successful install replaces the process before any
+    // later persist could land. A denial surfaces when installApk fails and
+    // re-arms the ask.
     useUpdateStore.setState({ installPermissionGranted: true });
+    void storage.set(INSTALL_PERMISSION_KEY, true);
     await store.beginDownload();
   } catch (err) {
     logger.error("updateStore", "Permission flow failed", err);
