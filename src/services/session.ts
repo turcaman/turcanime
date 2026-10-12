@@ -6,15 +6,12 @@ import { storage } from "../utils/storage";
 import { unwrapCookies, mergeCookies } from "./cookies";
 import { isChallengeHtml } from "./parsers";
 import { webViewBridge } from "./webview";
-import NetInfo from "@react-native-community/netinfo";
 
 export const SESSION_KEY = "scraper_session";
 // Slow devices can take well over 15s to clear a Cloudflare challenge.
 // Matches the bootstrap poll window so both sides share one 40s timing.
 const SESSION_REFRESH_TIMEOUT = 40_000;
 const SESSION_MAX_AGE = 60 * 60 * 1000;
-const OFFLINE_CONFIRM_DELAY = 1_000;
-const OFFLINE_PROBE_TIMEOUT = 5_000;
 const SESSION_PROBE_TIMEOUT = 5_000;
 
 export function isValidSessionCookies(raw: string | undefined | null): boolean {
@@ -22,54 +19,6 @@ export function isValidSessionCookies(raw: string | undefined | null): boolean {
   const unwrapped = unwrapCookies(raw).trim();
   if (unwrapped.length === 0) return false;
   return unwrapped.includes("=");
-}
-
-/**
- * NetInfo reports `isInternetReachable: false` transiently right after boot,
- * so a single reading cannot back a load error. Offline only after the flag
- * persists past a delay AND a real probe to the site fails.
- */
-async function isOffline(): Promise<boolean> {
-  try {
-    if (!(await netinfoOffline())) return false;
-    await new Promise((resolve) => setTimeout(resolve, OFFLINE_CONFIRM_DELAY));
-    if (!(await netinfoOffline())) {
-      logger.debug("session", "Offline flag cleared on re-check, continuing");
-      return false;
-    }
-    const controller = new AbortController();
-    let probeTimedOut = false;
-    const timer = setTimeout(() => {
-      probeTimedOut = true;
-      controller.abort();
-    }, OFFLINE_PROBE_TIMEOUT);
-    try {
-      await fetch(`${SOURCE_CONFIG.baseUrl}/`, { method: "HEAD", signal: controller.signal });
-      logger.debug("session", "Offline flag set but probe reached the site, continuing");
-      return false;
-    } catch (error) {
-      // Slow-network abort is unknown, never offline. Only a hard failure
-      // with NetInfo still offline declares offline. Real fetch owns verdict.
-      if (probeTimedOut || (error instanceof Error && error.name === "AbortError")) {
-        logger.debug("session", "Offline probe timed out on slow network, continuing");
-        return false;
-      }
-      return true;
-    } finally {
-      clearTimeout(timer);
-    }
-  } catch {
-    return false;
-  }
-}
-
-async function netinfoOffline(): Promise<boolean> {
-  try {
-    const net = await NetInfo.fetch();
-    return net.isConnected === false || net.isInternetReachable === false;
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -127,6 +76,7 @@ class SessionManager {
   private sessionReadyResolver: (() => void) | null = null;
   private refreshPromise: Promise<void> | null = null;
   private settleTimer: ReturnType<typeof setTimeout> | null = null;
+  private stale = false;
   // Serializes cookie read-modify-write: concurrent fetches merging their own
   // Set-Cookie batches from the same base would drop each other's additions
   private cookieMergeChain: Promise<void> = Promise.resolve();
@@ -251,15 +201,21 @@ class SessionManager {
     }
   }
 
+  /** Foreground/reconnect only mark stale; the next real fetch decides */
+  async markStale(): Promise<void> {
+    this.stale = true;
+  }
+
+  isStaleSession(): boolean {
+    return this.stale;
+  }
+
+  clearStale(): void {
+    this.stale = false;
+  }
+
   async waitForCookies(): Promise<void> {
     try {
-      // Without network the WebView wash can never report; fail fast only
-      // after isOffline() confirms it — a transient NetInfo reading would
-      // otherwise turn a warm boot into a load error.
-      if (await isOffline()) {
-        logger.debug("session", "Offline confirmed, failing gate fast");
-        throw new SourceError("No connection", "NETWORK_ERROR");
-      }
       if (!this.sessionReadyPromise) {
         logger.debug("session", "No session promise, initializing");
         await this.initialize();
@@ -350,20 +306,19 @@ export async function refreshSession(): Promise<void> {
 }
 
 /**
- * Refresh when stored cookies are missing or older than SESSION_MAX_AGE.
- * Boot with no cookies relies on the initial WebView load.
+ * Marks aged sessions stale so the next real fetch decides. Never washes:
+ * washes happen on demand after a 403/challenge, never blind. Fetch real
+ * owns the verdict.
  */
 export async function ensureFreshSession(): Promise<void> {
   try {
-    if (await isOffline()) return;
     const session = await sessionManager.getSession();
     if (session != null && isValidSessionCookies(session.cookies)) {
       const ageMs = session.fetchedAt == null ? null : Date.now() - session.fetchedAt;
       if (ageMs == null || ageMs > SESSION_MAX_AGE) {
         const age = ageMs == null ? "unknown age" : `${Math.round(ageMs / 60000)}m`;
-        logger.info("session", `Session aged (${age}), refreshing`);
-        await refreshSession();
-        await sessionManager.touchSession();
+        logger.info("session", `Session aged (${age}), next fetch decides`);
+        await sessionManager.markStale();
       } else {
         logger.debug("session", `Session fresh (${Math.round(ageMs / 60000)}m old), skipping wash`);
       }
@@ -373,9 +328,9 @@ export async function ensureFreshSession(): Promise<void> {
       logger.debug("session", "No stored session, boot WebView load decides");
       return;
     }
-    logger.info("session", `Session cookies invalid (len=${session.cookies.length}), refreshing`);
-    await refreshSession();
+    logger.info("session", `Session cookies invalid (len=${session.cookies.length}), next fetch decides`);
+    await sessionManager.markStale();
   } catch (error) {
-    logger.warn("session", "Proactive session refresh failed", error);
+    logger.warn("session", "Stale check failed, fetch decides", error);
   }
 }
