@@ -4,7 +4,7 @@ import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { loadCached, resolveStreamCached, invalidateCachedStream } from "../utils/cache";
 import { storage } from "../utils/storage";
 import { logger } from "../utils/logger";
-import { SourceError } from "../utils/errors";
+import { SourceError, isAuthError, isCancelled, toAppError } from "../utils/errors";
 import { withAuthRetry } from "../utils/retry";
 import {
   ResourceRunner,
@@ -21,7 +21,7 @@ interface PlayerState {
   stream: ResourceState<StreamUrlResult>;
   lastLanguage: string | null;
   fetchServers: (slug: string, number: string, force?: boolean) => Promise<LoadOutcome<VideoServer[]>>;
-  resolveStream: (server: VideoServer) => Promise<LoadOutcome<StreamUrlResult>>;
+  resolveStream: (server: VideoServer, ctx: { slug: string; number: string }) => Promise<LoadOutcome<StreamUrlResult>>;
   /** Settles the stream from an orchestrator-level failure (e.g. servers fetch) */
   failStream: (error: AppError) => void;
   reset: () => void;
@@ -53,6 +53,27 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
     lastServersKey = null;
   };
 
+  // A dead video chain (expired bridge, dropped host) is a logical failure,
+  // not the user's: refresh the episode's servers and pick again before any
+  // error reaches the screen. Runs once per load; AUTH keeps its own ladder.
+  const regenerateChain = async (
+    ctx: { slug: string; number: string },
+    signal: AbortSignal,
+  ): Promise<VideoServer> => {
+    dropPlaybackArtifacts();
+    const cacheKey = `${CACHE_PREFIXES.SERVERS}_${ctx.slug}_${ctx.number}`;
+    lastServersKey = cacheKey;
+    const servers = await loadCached(
+      cacheKey,
+      (sig) => source.getEpisodeServers(ctx.slug, ctx.number, { signal: sig }),
+      { ttl: CACHE_TTL.SERVERS, signal, force: true },
+    );
+    const language = get().lastLanguage;
+    const server = (language != null ? servers.find((s) => s.language === language) : null) ?? servers[0];
+    if (server == null) throw new SourceError("No hay servidor disponible", "VIDEO_ERROR");
+    return server;
+  };
+
   return {
     servers: resourceInitialState<VideoServer[]>(),
     stream: resourceInitialState<StreamUrlResult>(),
@@ -75,15 +96,25 @@ export const usePlayerStore = create<PlayerState>((set, get) => {
       );
     },
 
-    resolveStream: async (server: VideoServer) => {
+    resolveStream: async (server: VideoServer, ctx: { slug: string; number: string }) => {
       set({ lastLanguage: server.language });
       lastStreamServer = server;
       const outcome = await streamRunner.load(STREAM_KEY, (signal) =>
         withAuthRetry(
           async (attempt) => {
-            const fresh = await resolveStreamCached(server, { force: attempt > 0 });
-            if (fresh == null) throw new SourceError("No se pudo resolver el stream", "VIDEO_ERROR");
-            return fresh;
+            try {
+              const fresh = await resolveStreamCached(server, { force: attempt > 0 });
+              if (fresh == null) throw new SourceError("No se pudo resolver el stream", "VIDEO_ERROR");
+              return fresh;
+            } catch (error) {
+              if (isAuthError(error) || isCancelled(error)) throw error;
+              logger.warn("stream", `Chain dead (${toAppError(error).type}), regenerating servers once`);
+              const regenerated = await regenerateChain(ctx, signal);
+              lastStreamServer = regenerated;
+              const fresh = await resolveStreamCached(regenerated);
+              if (fresh == null) throw new SourceError("No se pudo resolver el stream", "VIDEO_ERROR");
+              return fresh;
+            }
           },
           { signal, maxRetries: 2, tag: "stream" },
         ),

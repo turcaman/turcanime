@@ -51,7 +51,7 @@ export function useEpisodeNavigation(player: VideoPlayer, animeTitle: string, an
           return;
         }
 
-        const streamOutcome = await store.resolveStream(server);
+        const streamOutcome = await store.resolveStream(server, { slug: targetSlug, number: targetEp.number });
         if (streamOutcome.status !== "success") return;
 
         const existing = findHistoryEntry(useHistoryStore.getState().lastViewed, targetSlug, targetEp.number);
