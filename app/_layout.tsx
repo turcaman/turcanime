@@ -121,8 +121,6 @@ function RootInner() {
         // Serialize: refresh session first, then let cache invalidation drive
         // a single fetchHome. No UI wipe, no concurrent safety fetch.
         await refreshSession();
-        // A wash with unchanged cookies preserves fetchedAt; stamp it so the next boot skips the wash
-        await sessionManager.touchSession();
         // Cooldown counts only successful refreshes so failures can be retried soon
         lastRefreshTime.current = Date.now();
         setSessionRefreshFailed(false);

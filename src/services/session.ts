@@ -4,15 +4,19 @@ import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { storage } from "../utils/storage";
 import { unwrapCookies, mergeCookies } from "./cookies";
-import { isChallengeHtml } from "./parsers";
 import { webViewBridge } from "./webview";
 
 export const SESSION_KEY = "scraper_session";
 // Slow devices can take well over 15s to clear a Cloudflare challenge.
 // Matches the bootstrap poll window so both sides share one 40s timing.
 const SESSION_REFRESH_TIMEOUT = 40_000;
-const SESSION_MAX_AGE = 60 * 60 * 1000;
-const SESSION_PROBE_TIMEOUT = 5_000;
+// After a failed wash, retries skip washing briefly: stacked 40s waits would
+// hang the ladder while Cloudflare is down. The next fetch decides instead.
+const WASH_FAIL_FAST_WINDOW = 15_000;
+// WebView often reports twice in one wash (partial then full cookies).
+// Opening on the first report fires requests with an incomplete jar and
+// guarantees a 403. Settle: consume only after 1.5s without new updates.
+const REPORT_SETTLE_MS = 1_500;
 
 export function isValidSessionCookies(raw: string | undefined | null): boolean {
   if (!raw) return false;
@@ -21,118 +25,26 @@ export function isValidSessionCookies(raw: string | undefined | null): boolean {
   return unwrapped.includes("=");
 }
 
-/**
- * Washes can yield shape-valid cookies the site still rejects (e.g. a
- * Cloudflare clearance bound to the WebView stack never reaches fetch).
- * Fails only on definitive rejection: 401/403 or challenge HTML. Network
- * errors, timeouts and 5xx stay successful so flakiness never fails a wash.
- */
-async function probeSession(session: ISession | null): Promise<boolean> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), SESSION_PROBE_TIMEOUT);
-  try {
-    const baseUrl = SOURCE_CONFIG.baseUrl;
-    const res = await fetch(`${baseUrl}/`, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": session?.userAgent ?? "",
-        Cookie: unwrapCookies(session?.cookies ?? ""),
-        Referer: `${baseUrl}/`,
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "same-origin",
-        "Sec-Fetch-User": "?1",
-        "Upgrade-Insecure-Requests": "1",
-      },
-    });
-    if (res.status === 401 || res.status === 403) {
-      logger.warn("session", `Probe rejected with HTTP ${res.status}`);
-      return false;
-    }
-    // Challenge fingerprint only exists in HTML bodies; skip the full read
-    // otherwise — the home page can be hundreds of KB on a slow connection
-    const contentType = res.headers.get("content-type") ?? "";
-    if (!contentType.includes("html")) return true;
-    try {
-      if (isChallengeHtml(await res.text())) {
-        logger.warn("session", "Probe returned a challenge page");
-        return false;
-      }
-    } catch {
-      // Unreadable body is not proof of an unusable jar
-    }
-    return true;
-  } catch {
-    return true;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 class SessionManager {
-  private sessionReadyPromise: Promise<void> | null = null;
-  private sessionReadyResolver: (() => void) | null = null;
   private refreshPromise: Promise<void> | null = null;
-  private settleTimer: ReturnType<typeof setTimeout> | null = null;
-  private stale = false;
+  // One pending wash waiter; resolves true on a settled report, false on timeout
+  private reportWaiter: ((settled: boolean) => void) | null = null;
+  private reportSettleTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastWashFailedAt = 0;
   // Serializes cookie read-modify-write: concurrent fetches merging their own
   // Set-Cookie batches from the same base would drop each other's additions
   private cookieMergeChain: Promise<void> = Promise.resolve();
 
-  // The gate blocks request traffic until non-empty cookies exist: arming
-  // creates a fresh closed gate, and only a session with cookies opens it
-  private armGate(): void {
-    if (this.settleTimer) {
-      clearTimeout(this.settleTimer);
-      this.settleTimer = null;
-    }
-    this.sessionReadyPromise = new Promise((resolve) => {
-      this.sessionReadyResolver = resolve;
-    });
-  }
-
-  private resolveGate(): void {
-    if (this.settleTimer) {
-      clearTimeout(this.settleTimer);
-      this.settleTimer = null;
-    }
-    if (this.sessionReadyResolver) {
-      this.sessionReadyResolver();
-      this.sessionReadyResolver = null;
-    }
-  }
-
-  // WebView often reports twice in one wash (partial then full cookies).
-  // Opening on the first report fires requests with an incomplete jar and
-  // guarantees a 403. Settle: open only after 1.5s without new updates.
-  private resolveGateSettled(): void {
-    if (!this.sessionReadyResolver) return;
-    if (this.settleTimer) clearTimeout(this.settleTimer);
-    this.settleTimer = setTimeout(() => {
-      this.settleTimer = null;
-      this.resolveGate();
-    }, 1500);
-  }
-
   async initialize(): Promise<void> {
-    let hasCookies = false;
-
     try {
-      const existingSession = await this.getSession();
-      if (!existingSession) {
+      const existing = await this.getSession();
+      if (!existing) {
         logger.info("session", "No existing session, creating initial session");
-        await this.setSession({ userAgent: "", cookies: "" });
-      } else if (isValidSessionCookies(existingSession.cookies)) {
-        hasCookies = true;
+        await storage.set(SESSION_KEY, { userAgent: "", cookies: "" });
       }
     } catch (error) {
       logger.error("session", "Failed to load session", error);
     }
-
-    this.armGate();
-    if (hasCookies) this.resolveGate();
   }
 
   async getSession(): Promise<ISession | null> {
@@ -144,26 +56,20 @@ class SessionManager {
     }
   }
 
+  /** The only writer of the session; a valid report releases wash waiters */
   async setSession(session: ISession): Promise<void> {
     try {
       const valid = isValidSessionCookies(session.cookies);
-      const current = await this.getSession();
       if (!valid) {
+        // An empty report (challenge still running) never clobbers a good jar
+        const current = await this.getSession();
         if (current != null && isValidSessionCookies(current.cookies)) return;
-        await storage.set(SESSION_KEY, { ...session, fetchedAt: Date.now() });
+        await storage.set(SESSION_KEY, session);
         return;
       }
-      // Preserve the original capture time when cookies are unchanged: every
-      // response echoing the same Set-Cookie values would otherwise reset the
-      // age and perpetually defer the proactive refresh
-      let fetchedAt = Date.now();
-      if (current != null && current.cookies === session.cookies && current.fetchedAt != null) {
-        fetchedAt = current.fetchedAt;
-      }
-      const withMeta: ISession = { ...session, fetchedAt };
-      await storage.set(SESSION_KEY, withMeta);
+      await storage.set(SESSION_KEY, session);
       logger.info("session", `Session updated with ${session.cookies.length} cookies`);
-      this.resolveGateSettled();
+      this.signalReport();
     } catch (error) {
       logger.error("session", "Failed to set session", error);
       throw error;
@@ -188,75 +94,8 @@ class SessionManager {
     return this.cookieMergeChain;
   }
 
-  async touchSession(): Promise<void> {
-    const current = await this.getSession();
-    if (current == null) return;
-    try {
-      const latest = await this.getSession();
-      if (latest != null && latest.cookies !== current.cookies) return;
-      await storage.set(SESSION_KEY, { ...current, fetchedAt: Date.now() });
-      logger.debug("session", "Freshness stamped after wash");
-    } catch (error) {
-      logger.warn("session", "Freshness stamp failed", error);
-    }
-  }
-
-  /** Foreground/reconnect only mark stale; the next real fetch decides */
-  async markStale(): Promise<void> {
-    this.stale = true;
-  }
-
-  isStaleSession(): boolean {
-    return this.stale;
-  }
-
-  clearStale(): void {
-    this.stale = false;
-  }
-
-  async waitForCookies(): Promise<void> {
-    try {
-      if (!this.sessionReadyPromise) {
-        logger.debug("session", "No session promise, initializing");
-        await this.initialize();
-      }
-      const gate = this.sessionReadyPromise;
-      if (!gate) return;
-      const gateStart = Date.now();
-      logger.debug("session", "Waiting for cookies from WebView");
-      const raceResult = await Promise.race([
-        gate.then(() => "resolved" as const),
-        new Promise<"timeout">((resolve) =>
-          setTimeout(() => resolve("timeout"), SESSION_REFRESH_TIMEOUT),
-        ),
-      ]);
-      if (raceResult === "timeout") {
-        // Stale cookies still let the real fetch decide (403 → ladder)
-        // instead of parking every later request behind a closed gate.
-        const stored = await this.getSession();
-        if (isValidSessionCookies(stored?.cookies)) {
-          logger.warn("session", "Gate timeout with stored cookies, opening for real fetch verdict");
-          this.resolveGate();
-          return;
-        }
-        logger.warn("session", "Gate timeout after 40s, no valid cookies");
-        throw new SourceError("Session timeout - no valid cookies received", "AUTH_ERROR");
-      }
-      const session = await this.getSession();
-      if (!isValidSessionCookies(session?.cookies)) {
-        throw new SourceError("Session timeout - no valid cookies received", "AUTH_ERROR");
-      }
-      logger.debug(
-        "session",
-        `Gate opened after ${((Date.now() - gateStart) / 1000).toFixed(1)}s (${session?.cookies.length ?? 0} chars)`,
-      );
-    } catch (error) {
-      logger.error("session", "Failed to wait for cookies", error);
-      throw error;
-    }
-  }
-
-  async acquireFreshSession(): Promise<void> {
+  /** Singleflight wash: navigate the worker, wait out a settled cookie report */
+  async refresh(): Promise<void> {
     if (this.refreshPromise) return this.refreshPromise;
     this.refreshPromise = this.executeRefresh();
     try {
@@ -267,34 +106,56 @@ class SessionManager {
   }
 
   private async executeRefresh(): Promise<void> {
-    // Singleflight via acquireFreshSession: concurrent callers share this one
-    // execution. Gate is armed once, WebView navigates once, every waiter
-    // shares the same 40s wait. Valid session opens it, timeout throws.
     const startedAt = Date.now();
-    this.armGate();
+    if (Date.now() - this.lastWashFailedAt < WASH_FAIL_FAST_WINDOW) {
+      throw new SourceError("Session wash failed recently - fetch decides", "AUTH_ERROR");
+    }
     try {
+      if (!webViewBridge.canNavigate()) {
+        throw new SourceError("WebView worker unavailable", "AUTH_ERROR");
+      }
+      // Arm before navigating so the first report is never missed
+      const reported = this.waitForReport();
       webViewBridge.navigateTo(SOURCE_CONFIG.sessionWashUrl);
-      await this.waitForCookies();
+      const settled = await reported;
+      if (!settled) {
+        throw new SourceError("Session wash timed out - no cookie report", "AUTH_ERROR");
+      }
       const session = await this.getSession();
       if (!isValidSessionCookies(session?.cookies)) {
-        logger.warn("session", "Wash settled but cookies still invalid");
-        throw new SourceError("Session refresh failed - no valid cookies received", "AUTH_ERROR");
+        throw new SourceError("Session wash got no valid cookies", "AUTH_ERROR");
       }
-      if (!(await probeSession(session))) {
-        throw new SourceError("Session refresh failed - cookies rejected by site", "AUTH_ERROR");
-      }
+      this.lastWashFailedAt = 0;
+      logger.info("session", `Session refreshed successfully in ${((Date.now() - startedAt) / 1000).toFixed(1)}s`);
     } catch (error) {
-      // A failed wash must not leave every later request parked behind the
-      // closed gate for 40s; with shape-valid stored cookies, the next fetch
-      // decides instantly (403 → ladder) instead of idling into the same error
-      const stored = await this.getSession();
-      if (isValidSessionCookies(stored?.cookies)) {
-        logger.warn("session", "Wash failed, reopening gate for existing cookies");
-        this.resolveGate();
-      }
+      this.lastWashFailedAt = Date.now();
       throw error;
     }
-    logger.info("session", `Session refreshed successfully in ${((Date.now() - startedAt) / 1000).toFixed(1)}s`);
+  }
+
+  private signalReport(): void {
+    if (!this.reportWaiter) return;
+    if (this.reportSettleTimer) clearTimeout(this.reportSettleTimer);
+    this.reportSettleTimer = setTimeout(() => {
+      this.reportSettleTimer = null;
+      this.reportWaiter?.(true);
+    }, REPORT_SETTLE_MS);
+  }
+
+  private waitForReport(): Promise<boolean> {
+    return new Promise((resolve) => {
+      const waiter = (settled: boolean) => {
+        if (this.reportWaiter !== waiter) return;
+        this.reportWaiter = null;
+        if (this.reportSettleTimer) {
+          clearTimeout(this.reportSettleTimer);
+          this.reportSettleTimer = null;
+        }
+        resolve(settled);
+      };
+      this.reportWaiter = waiter;
+      setTimeout(() => waiter(false), SESSION_REFRESH_TIMEOUT);
+    });
   }
 }
 
@@ -302,35 +163,5 @@ export const sessionManager = new SessionManager();
 
 export async function refreshSession(): Promise<void> {
   logger.debug("session", "refreshSession called");
-  await sessionManager.acquireFreshSession();
-}
-
-/**
- * Marks aged sessions stale so the next real fetch decides. Never washes:
- * washes happen on demand after a 403/challenge, never blind. Fetch real
- * owns the verdict.
- */
-export async function ensureFreshSession(): Promise<void> {
-  try {
-    const session = await sessionManager.getSession();
-    if (session != null && isValidSessionCookies(session.cookies)) {
-      const ageMs = session.fetchedAt == null ? null : Date.now() - session.fetchedAt;
-      if (ageMs == null || ageMs > SESSION_MAX_AGE) {
-        const age = ageMs == null ? "unknown age" : `${Math.round(ageMs / 60000)}m`;
-        logger.info("session", `Session aged (${age}), next fetch decides`);
-        await sessionManager.markStale();
-      } else {
-        logger.debug("session", `Session fresh (${Math.round(ageMs / 60000)}m old), skipping wash`);
-      }
-      return;
-    }
-    if (!session?.cookies) {
-      logger.debug("session", "No stored session, boot WebView load decides");
-      return;
-    }
-    logger.info("session", `Session cookies invalid (len=${session.cookies.length}), next fetch decides`);
-    await sessionManager.markStale();
-  } catch (error) {
-    logger.warn("session", "Stale check failed, fetch decides", error);
-  }
+  await sessionManager.refresh();
 }

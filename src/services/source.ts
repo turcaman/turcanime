@@ -4,7 +4,7 @@ import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { backoffDelay } from "../utils/math";
 import { unwrapCookies } from "./cookies";
-import { sessionManager, ensureFreshSession } from "./session";
+import { sessionManager } from "./session";
 import { HtmlParser, cleanTitle, extractJson, isChallengeHtml } from "./parsers";
 import { extractBest } from "./extractors";
 import type {
@@ -16,10 +16,8 @@ import type {
 
 
 async function fetchWithSession(path: string, options: RequestInit = {}): Promise<Response> {
-  // Fetch first with whatever cookies exist: the real response owns the
-  // verdict. Stale marking never blocks; a 403/challenge triggers the wash.
-  await ensureFreshSession();
-
+  // The real response owns the verdict: stored cookies go out as-is, and a
+  // 403/challenge below enters the wash-and-retry ladder
   const session = await sessionManager.getSession();
   const rawCookies = unwrapCookies(session?.cookies ?? "");
   const baseUrl = SOURCE_CONFIG.baseUrl;

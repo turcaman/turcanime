@@ -9,6 +9,10 @@ class WebViewBridge {
     this.navigateFn = fn;
   }
 
+  canNavigate(): boolean {
+    return this.navigateFn != null;
+  }
+
   navigateTo(uri: string): void {
     if (this.navigateFn) {
       logger.info("session", `Navigating to ${uri.slice(0, 80)}...`);

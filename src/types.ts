@@ -73,8 +73,6 @@ export interface AutocompleteAnime {
 export interface ISession {
   cookies: string;
   userAgent: string;
-  /** Epoch ms when these cookies were captured; drives proactive refresh */
-  fetchedAt?: number;
 }
 
 export interface StreamUrlResult {
