@@ -1,9 +1,12 @@
 import { ACCENT_COLOR, MUTED_ICON } from "@/config/source";
+import { CACHE_PREFIXES } from "@/config/cache";
 import { SectionTitle } from "@/components/ui/SectionTitle";
 import { AnimatedPressable } from "@/components/AnimatedPressable";
-import { useUIStore } from "@/stores/uiStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { useUpdateStore, UPDATE_CHECK_RESOURCE_KEY } from "@/stores/updateStore";
+import { refreshSession } from "@/services/session";
 import { isLoadingFor } from "@/utils/resource";
+import { storage } from "@/utils/storage";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -13,10 +16,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const isRefreshingSession = useUIStore((s) => s.isRefreshingSession);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshingRef = useRef(false);
   const [refreshed, setRefreshed] = useState(false);
   const [refreshFailed, setRefreshFailed] = useState(false);
-  const userInitiatedRefresh = useRef(false);
   const refreshedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const failedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -39,12 +42,12 @@ export default function SettingsScreen() {
   const spin = useSharedValue(0);
 
   useEffect(() => {
-    if (isRefreshingSession) {
+    if (refreshing) {
       spin.value = withRepeat(withTiming(360, { duration: 1200, easing: Easing.linear }), -1);
     } else {
       spin.value = withTiming(0, { duration: 0 });
     }
-  }, [isRefreshingSession, spin]);
+  }, [refreshing, spin]);
 
   const spinStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${spin.value}deg` }],
@@ -57,33 +60,38 @@ export default function SettingsScreen() {
     if (ft != null) clearTimeout(ft);
   }, []);
 
-  // Show the real refresh outcome only when the user initiated it.
-  // Event-driven via store subscription: setState in a subscription callback,
-  // not in the effect body.
-  useEffect(() => {
-    let wasRefreshing = useUIStore.getState().isRefreshingSession;
-    return useUIStore.subscribe((s) => {
-      const refreshing = s.isRefreshingSession;
-      const justFinished = wasRefreshing && !refreshing;
-      wasRefreshing = refreshing;
-      if (!justFinished || !userInitiatedRefresh.current) return;
-      userInitiatedRefresh.current = false;
-      if (s.sessionRefreshFailed) {
-        setRefreshFailed(true);
-        if (failedTimer.current != null) clearTimeout(failedTimer.current);
-        failedTimer.current = setTimeout(() => setRefreshFailed(false), 3000);
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      } else {
-        setRefreshed(true);
-        if (refreshedTimer.current != null) clearTimeout(refreshedTimer.current);
-        refreshedTimer.current = setTimeout(() => setRefreshed(false), 2000);
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    });
+  const runRefresh = useCallback(async () => {
+    refreshingRef.current = true;
+    setRefreshing(true);
+    setRefreshFailed(false);
+    setRefreshed(false);
+    try {
+      await refreshSession();
+      // Only session-sensitive caches; anime/servers/stream data stays valid
+      const allKeys = await storage.getAllKeys();
+      const cacheKeys = allKeys.filter(
+        (k) => k.startsWith(CACHE_PREFIXES.HOME) || k.startsWith(CACHE_PREFIXES.SEARCH),
+      );
+      await Promise.all(cacheKeys.map((k) => storage.remove(k)));
+      // invalidateCache makes the home screen refetch after the cache wipe
+      useSettingsStore.getState().invalidateCache();
+      setRefreshed(true);
+      if (refreshedTimer.current != null) clearTimeout(refreshedTimer.current);
+      refreshedTimer.current = setTimeout(() => setRefreshed(false), 2000);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      setRefreshFailed(true);
+      if (failedTimer.current != null) clearTimeout(failedTimer.current);
+      failedTimer.current = setTimeout(() => setRefreshFailed(false), 3000);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      refreshingRef.current = false;
+      setRefreshing(false);
+    }
   }, []);
 
   const handleRefresh = useCallback(() => {
-    if (useUIStore.getState().isRefreshingSession) {
+    if (refreshingRef.current) {
       Alert.alert("Renovación en curso", "Ya hay una renovación de conexión en curso. Esperá a que termine.");
       return;
     }
@@ -97,14 +105,13 @@ export default function SettingsScreen() {
           style: "default",
           onPress: () => {
             // Re-check: a refresh may have started while the Alert was open
-            if (useUIStore.getState().isRefreshingSession) return;
-            userInitiatedRefresh.current = true;
-            useUIStore.getState().triggerSessionRefresh("manual");
+            if (refreshingRef.current) return;
+            void runRefresh();
           },
         },
       ],
     );
-  }, []);
+  }, [runRefresh]);
 
   const handleManualCheck = useCallback(() => {
     void checkForUpdates(true);
@@ -126,17 +133,17 @@ export default function SettingsScreen() {
         <View className="mb-3" />
         <AnimatedPressable
           onPress={handleRefresh}
-          disabled={isRefreshingSession}
+          disabled={refreshing}
           hapticFeedback={true}
           className="flex-row items-center w-full px-5 py-4 rounded-xl border border-neutral-800 bg-neutral-900"
-          style={{ opacity: isRefreshingSession ? 0.5 : 1 }}
+          style={{ opacity: refreshing ? 0.5 : 1 }}
         >
           <Animated.View style={[spinStyle, { marginRight: 12 }]}>
             <Feather name="refresh-cw" size={18} color={ACCENT_COLOR} />
           </Animated.View>
           <View className="flex-1">
             <Text className="text-base font-medium text-white">
-              {isRefreshingSession
+              {refreshing
                 ? "Renovando conexión..."
                 : refreshFailed
                   ? "Error al renovar"
@@ -145,7 +152,7 @@ export default function SettingsScreen() {
                     : "Renovar conexión"}
             </Text>
             <Text className="mt-1 text-xs font-semibold tracking-wide text-neutral-400">
-              {isRefreshingSession ? "Renovando sesión y caché..." : "Refresca sesión y caché"}
+              {refreshing ? "Renovando sesión y caché..." : "Refresca sesión y caché"}
             </Text>
           </View>
         </AnimatedPressable>
