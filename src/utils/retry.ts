@@ -1,5 +1,5 @@
 import { logger } from "./logger";
-import { isAuthError } from "./errors";
+import { isAuthError, toAppError } from "./errors";
 import { backoffDelay } from "./math";
 import { refreshSession, sessionManager } from "../services/session";
 
@@ -24,9 +24,11 @@ interface WithAuthRetryOptions {
 export class SessionRefreshError extends Error {
   // Lets toAppError classify it as AUTH_ERROR without importing this module
   readonly type = "AUTH_ERROR" as const;
-  constructor() {
+  readonly refreshCause: unknown;
+  constructor(cause?: unknown) {
     super("Error al renovar sesión");
     this.name = "SessionRefreshError";
+    this.refreshCause = cause;
   }
 }
 
@@ -50,13 +52,18 @@ export async function withAuthRetry<T>(
       abort.name = "AbortError";
       throw abort;
     }
+    const startedAt = Date.now();
     try {
       const result = await operation(attempt);
       if (attempt > 0) logger.info(tag, `Retry ${attempt} succeeded`);
       return result;
     } catch (error) {
       lastError = error;
-      if (!isAuthError(error) || attempt >= maxRetries) throw error;
+      const elapsedMs = Date.now() - startedAt;
+      if (!isAuthError(error) || attempt >= maxRetries) {
+        logger.warn(tag, `Settled ${toAppError(error).type} in ${elapsedMs}ms (attempt ${attempt})`, error);
+        throw error;
+      }
       logger.info(tag, `Auth error, refreshing session and retrying (${attempt + 1}/${maxRetries})...`);
       try {
         await refreshSession();
@@ -66,8 +73,8 @@ export async function withAuthRetry<T>(
         if (continueAfterRefreshFailure) {
           logger.warn(tag, "Session refresh threw, continuing retry anyway", refreshError);
         } else {
-          logger.warn(tag, "Session refresh failed, stopping ladder", refreshError);
-          throw new SessionRefreshError();
+          logger.warn(tag, `Session refresh failed after ${Date.now() - startedAt}ms, stopping ladder`, refreshError);
+          throw new SessionRefreshError(refreshError);
         }
       }
       await new Promise((resolve) => setTimeout(resolve, backoffDelay(attempt)));

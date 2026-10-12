@@ -7,8 +7,10 @@ export function calcProgress(progress?: number | null, duration?: number | null)
   return 0;
 }
 
-// Full-jitter exponential backoff (AWS-style): random within [0, min(max, base * 2^attempt))
+// Full-jitter exponential backoff (AWS-style): random within [floor, min(max, base * 2^attempt))
+// Floor keeps ladder retries off a closed gate on slow networks instead of hammering it instantly
 export function backoffDelay(attempt: number): number {
   const cap = Math.min(TIMEOUTS.RETRY_MAX_DELAY, TIMEOUTS.RETRY_BASE_DELAY * 2 ** attempt);
-  return Math.floor(Math.random() * cap);
+  const floor = Math.min(cap, 500);
+  return floor + Math.floor(Math.random() * (cap - floor + 1));
 }

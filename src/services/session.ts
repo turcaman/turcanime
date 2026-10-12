@@ -38,12 +38,22 @@ async function isOffline(): Promise<boolean> {
       return false;
     }
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), OFFLINE_PROBE_TIMEOUT);
+    let probeTimedOut = false;
+    const timer = setTimeout(() => {
+      probeTimedOut = true;
+      controller.abort();
+    }, OFFLINE_PROBE_TIMEOUT);
     try {
       await fetch(`${SOURCE_CONFIG.baseUrl}/`, { method: "HEAD", signal: controller.signal });
       logger.debug("session", "Offline flag set but probe reached the site, continuing");
       return false;
-    } catch {
+    } catch (error) {
+      // Slow-network abort is unknown, never offline. Only a hard failure
+      // with NetInfo still offline declares offline. Real fetch owns verdict.
+      if (probeTimedOut || (error instanceof Error && error.name === "AbortError")) {
+        logger.debug("session", "Offline probe timed out on slow network, continuing");
+        return false;
+      }
       return true;
     } finally {
       clearTimeout(timer);
@@ -265,6 +275,14 @@ class SessionManager {
         ),
       ]);
       if (raceResult === "timeout") {
+        // Stale cookies still let the real fetch decide (403 → ladder)
+        // instead of parking every later request behind a closed gate.
+        const stored = await this.getSession();
+        if (isValidSessionCookies(stored?.cookies)) {
+          logger.warn("session", "Gate timeout with stored cookies, opening for real fetch verdict");
+          this.resolveGate();
+          return;
+        }
         logger.warn("session", "Gate timeout after 40s, no valid cookies");
         throw new SourceError("Session timeout - no valid cookies received", "AUTH_ERROR");
       }
