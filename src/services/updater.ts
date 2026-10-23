@@ -30,17 +30,17 @@ export async function downloadApkWithProgress(
   // The platform task owns progress and cancellation; this controller only adds
   // the watchdogs on top of the caller's signal.
   const controller = new AbortController();
-  let abortReason: "user" | "stall" | "timeout" | null = null;
+  let abortReason: "user" | "stalled" | "timeout" | null = null;
   let stallTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const abort = (reason: "user" | "stall" | "timeout") => {
+  const abort = (reason: "user" | "stalled" | "timeout") => {
     if (abortReason != null) return;
     abortReason = reason;
     controller.abort();
   };
   const armStallTimer = () => {
     clearTimeout(stallTimer);
-    stallTimer = setTimeout(() => abort("stall"), PROGRESS_STALL_TIMEOUT_MS);
+    stallTimer = setTimeout(() => abort("stalled"), PROGRESS_STALL_TIMEOUT_MS);
   };
 
   const onExternalAbort = () => abort("user");
