@@ -66,7 +66,6 @@ function RootInner() {
   useEffect(() => {
     let cancelled = false;
     const init = async () => {
-      logger.setStorage(storage);
       await resetToPortrait();
       await sessionManager.initialize();
       const [history, searches, order, updateCheckEnabled] = await Promise.all([

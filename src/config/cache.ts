@@ -21,10 +21,6 @@ export const LIMITS = {
   CACHE_MAX_ENTRY_SIZE: 1024 * 1024, // 1MB
 } as const;
 
-export const LOG_LIMITS = {
-  MAX_ENTRIES: 1000,
-} as const;
-
 export const TIMEOUTS = {
   REQUEST_TIMEOUT: 30_000,
   UPDATE_CHECK: 10_000,
