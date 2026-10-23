@@ -338,15 +338,16 @@ export class HtmlParser {
 }
 
 /**
- * A Cloudflare challenge page is a full HTML document with no app content;
- * matching its fingerprint survives localized titles.
+ * Cloudflare challenge fingerprint, shared with the WebView worker so both sides
+ * recognize the same page. Titles survive localization, ids are stable.
  */
+export const CHALLENGE_TITLES = ["Just a moment", "Attention Required"] as const;
+export const CHALLENGE_IDS = ["challenge-form", "challenge-error-text", "cf-challenge-running"] as const;
+
+/** A challenge page is a full HTML document with no app content */
 export function isChallengeHtml(html: string): boolean {
   return (
-    html.includes("<title>Just a moment") ||
-    html.includes("<title>Attention Required") ||
-    html.includes('id="challenge-form"') ||
-    html.includes('id="challenge-error-text"') ||
-    html.includes('id="cf-challenge-running"')
+    CHALLENGE_TITLES.some((title) => html.includes(`<title>${title}`)) ||
+    CHALLENGE_IDS.some((id) => html.includes(`id="${id}"`))
   );
 }
