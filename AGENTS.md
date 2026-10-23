@@ -2,8 +2,6 @@
 
 Instructions for AI coding agents. Complement to README.md.
 
-> Before writing code, check the available skills and load the relevant one.
-
 ## Quick Commands
 
 ```bash
