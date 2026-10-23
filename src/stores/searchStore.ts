@@ -9,9 +9,11 @@ import { CACHE_PREFIXES, CACHE_TTL } from "../config/cache";
 import { TMDB_IMAGE_BASE } from "../config/source";
 import type { Anime, AutocompleteAnime } from "../types";
 
-// Search results and suggestions share one cache entry per query (same endpoint)
-function normalizeSearchKey(query: string): string {
-  return query.toLowerCase().replace(/[^a-z0-9]/g, "_");
+// Results and suggestions share one cache entry per query (same endpoint).
+// The query itself is the key: collapsing punctuation merged distinct queries
+// ("one piece" / "one-piece") into a single entry.
+function searchCacheKey(query: string): string {
+  return `${CACHE_PREFIXES.SEARCH}_${query.trim().toLowerCase()}`;
 }
 
 // Large result sets exceed the storage cache limit and get dropped, so repeat
@@ -93,7 +95,7 @@ export const useSearchStore = create<SearchState>((set, get) => {
       // running concurrently over one session makes each other time out
       suggestionsRunner.reset();
 
-      const cacheKey = `${CACHE_PREFIXES.SEARCH}_${normalizeSearchKey(trimmed)}`;
+      const cacheKey = searchCacheKey(trimmed);
       await resultsRunner.load(trimmed, async (signal) => {
         if (!force) {
           const memory = memoryGet(cacheKey);
@@ -121,7 +123,7 @@ export const useSearchStore = create<SearchState>((set, get) => {
     },
 
     fetchSuggestions: async (query: string) => {
-      const cacheKey = `${CACHE_PREFIXES.SEARCH}_${normalizeSearchKey(query)}`;
+      const cacheKey = searchCacheKey(query);
       await suggestionsRunner.load(query, async (signal) => {
         const raw = await loadCached(cacheKey, (sig) => source.searchRaw(query, { signal: sig }), {
           ttl: CACHE_TTL.SEARCH,
