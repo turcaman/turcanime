@@ -3,7 +3,6 @@ import { SOURCE_CONFIG, LANGUAGE_MAP } from "../config/source";
 import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { backoffDelay } from "../utils/math";
-import { unwrapCookies } from "./cookies";
 import { sessionManager } from "./session";
 import { HtmlParser, cleanTitle, extractJson, isChallengeHtml } from "./parsers";
 import { extractBest } from "./extractors";
@@ -19,7 +18,7 @@ async function fetchWithSession(path: string, options: RequestInit = {}): Promis
   // The real response owns the verdict: stored cookies go out as-is, and a
   // 403/challenge below enters the wash-and-retry ladder
   const session = await sessionManager.getSession();
-  const rawCookies = unwrapCookies(session?.cookies ?? "");
+  const rawCookies = session?.cookies ?? "";
   const baseUrl = SOURCE_CONFIG.baseUrl;
 
   const headers: Record<string, string> = {

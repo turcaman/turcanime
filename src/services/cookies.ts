@@ -1,12 +1,3 @@
-export function unwrapCookies(rawCookies: string): string {
-  try {
-    const parsed = JSON.parse(rawCookies);
-    return parsed.raw ?? "";
-  } catch {
-    return rawCookies;
-  }
-}
-
 export function mergeCookies(existing: string, setCookieHeaders: string[]): string {
   const map = new Map<string, string>();
 

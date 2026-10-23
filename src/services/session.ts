@@ -3,7 +3,7 @@ import type { ISession } from "../types";
 import { logger } from "../utils/logger";
 import { SourceError } from "../utils/errors";
 import { storage } from "../utils/storage";
-import { unwrapCookies, mergeCookies } from "./cookies";
+import { mergeCookies } from "./cookies";
 import { webViewBridge } from "./webview";
 
 export const SESSION_KEY = "scraper_session";
@@ -20,9 +20,9 @@ const REPORT_SETTLE_MS = 1_500;
 
 export function isValidSessionCookies(raw: string | undefined | null): boolean {
   if (!raw) return false;
-  const unwrapped = unwrapCookies(raw).trim();
-  if (unwrapped.length === 0) return false;
-  return unwrapped.includes("=");
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return false;
+  return trimmed.includes("=");
 }
 
 class SessionManager {
