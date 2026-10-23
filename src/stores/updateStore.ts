@@ -244,14 +244,20 @@ export const useUpdateStore = create<UpdateState>((set, get) => {
         return;
       }
       set({ phase: "installing" });
+      let install: "installed" | "cancelled";
       try {
-        await installApk(file);
+        install = await installApk(file);
       } catch (installErr) {
         // Permission may never have been granted: force the permission
         // screen again next time instead of failing silently forever
         set({ installPermissionGranted: false });
         void storage.set(INSTALL_PERMISSION_KEY, false);
         throw installErr;
+      }
+      // A dismissal is the user's call: keep the grant, don't show an error
+      if (install === "cancelled") {
+        set({ phase: "idle" });
+        return;
       }
       set({ installPermissionGranted: true });
       void storage.set(INSTALL_PERMISSION_KEY, true);

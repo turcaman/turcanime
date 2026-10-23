@@ -95,7 +95,7 @@ export async function openInstallPermissionSettings(): Promise<void> {
   }
 }
 
-export async function installApk(file: File): Promise<void> {
+export async function installApk(file: File): Promise<"installed" | "cancelled"> {
   if (Platform.OS !== "android") throw new Error("Solo Android");
   // FLAG_GRANT_READ_URI_PERMISSION: the installer needs read access to our content URI
   const result = await startActivityAsync("android.intent.action.INSTALL_PACKAGE", {
@@ -103,7 +103,8 @@ export async function installApk(file: File): Promise<void> {
     type: "application/vnd.android.package-archive",
     flags: 1,
   });
-  if (result.resultCode === -1) return;
-  logger.warn("updater", `Installer ended with resultCode ${result.resultCode}, size=${file.size}`);
-  throw new Error("La instalación se canceló. Podés reintentarlo cuando quieras.");
+  // RESULT_OK means the installer opened; anything else is a dismissal, not a failure
+  if (result.resultCode === -1) return "installed";
+  logger.info("updater", `Installer dismissed with resultCode ${result.resultCode}, size=${file.size}`);
+  return "cancelled";
 }
