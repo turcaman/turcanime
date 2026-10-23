@@ -63,16 +63,15 @@ export function useSearchScreen() {
       const token = ++searchTokenRef.current;
       setState({ term, status: "searching" });
       setStoreSearchTerm(trimmed);
-      try {
-        await fetchSearch(trimmed, force);
-      } finally {
-        // The search was superseded (input cleared or replaced while in flight):
-        // don't resurrect "searched", which would show empty results over idle
-        if (searchTokenRef.current === token) {
-          void saveRecentSearch(trimmed);
-          setState({ term, status: "searched" });
-        }
+      await fetchSearch(trimmed, force);
+      // Superseded (input cleared or replaced while in flight): don't resurrect
+      // "searched", which would show empty results over idle
+      if (searchTokenRef.current !== token) return;
+      // A failed search never reached the source: keep it out of recents
+      if (useSearchStore.getState().results.status !== "error") {
+        void saveRecentSearch(trimmed);
       }
+      setState({ term, status: "searched" });
     },
     [fetchSearch, setStoreSearchTerm, saveRecentSearch, cancelSearch],
   );
