@@ -31,6 +31,9 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
     ranges, visibleEpisodes, isAscending, handleEpisodePress, handleServerSelect, refresh,
   } = useAnimeDetailScreen(slug as string);
 
+  // Subscribed so returning from the player repaints the episode progress bars
+  const lastViewed = useHistoryStore((s) => s.lastViewed);
+
   const showContent = view === "content";
   const { keepSkeleton, skeletonStyle, contentStyle } = useCrossfade(showContent);
 
@@ -69,7 +72,7 @@ const AnimeDetailsContent = memo(function AnimeDetailsContent() {
                     </View>
                   )}
                   {visibleEpisodes.map((item) => {
-                    const historyEntry = findHistoryEntry(useHistoryStore.getState().lastViewed, slug as string, item.number);
+                    const historyEntry = findHistoryEntry(lastViewed, slug as string, item.number);
                     const hasProgress = historyEntry != null && (historyEntry.progress ?? 0) > 0 && (historyEntry.duration ?? 0) > 0;
                     const pct = hasProgress ? calcProgress(historyEntry.progress, historyEntry.duration) : 0;
                     const barProgress = hasProgress && pct >= 0.9 ? historyEntry!.duration : historyEntry?.progress;
