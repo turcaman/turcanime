@@ -11,10 +11,15 @@ expo-env.d.ts
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
 *.mobileprovision
+
+# signing
+key.properties
+credentials.json
 
 # Metro
 .metro-health-check*
@@ -38,15 +43,3 @@ app-example
 
 # generated native folders
 /android
-
-# test fixtures
-/animelatinohd/
-
-# signing
-release-key.jks
-key.properties
-credentials.json
-*.keystore
-
-# pre-indexed knowledge graph
-.codegraph
