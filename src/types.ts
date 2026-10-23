@@ -36,7 +36,6 @@ export interface AnimeRelations {
 export interface AnimeDetail extends Anime {
   synopsis: string;
   banner: string;
-  poster: string;
   genres: string[];
   episodes: Episode[];
   relations: AnimeRelations | null;

@@ -213,7 +213,6 @@ function parseAnimeDetail(html: string, slug: string): AnimeDetail {
     image,
     synopsis,
     banner: meta.banner ?? image,
-    poster: image,
     status,
     genres,
     episodes,

@@ -57,7 +57,7 @@ export const AnimeDetailsHeader = memo(
           style={{ height: windowHeight * 0.38, width: windowWidth }}
         >
           <ImageWithLoader
-            uri={anime?.banner ?? anime?.poster ?? ''}
+            uri={anime?.banner ?? anime?.image ?? ''}
             className="absolute inset-0 w-full h-full"
           />
           <LinearGradient
