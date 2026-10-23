@@ -80,6 +80,23 @@ export async function loadCached<T>(
   return data;
 }
 
+/**
+ * Boot sweep: expired entries are never read again but still count against the
+ * 6MB AsyncStorage cap, so drop them before live writes start failing.
+ */
+export async function pruneExpiredCache(): Promise<void> {
+  const keys = await storage.getAllKeys();
+  const now = Date.now();
+  await Promise.all(
+    keys.map(async (key) => {
+      const entry = await storage.get<{ expiration?: unknown }>(key);
+      if (typeof entry?.expiration === "number" && entry.expiration < now) {
+        await storage.remove(key);
+      }
+    }),
+  );
+}
+
 // Shared resolved-stream cache used by resolveStreamCached
 function streamCacheKey(server: { url: string; id: string }): string {
   return `${CACHE_PREFIXES.STREAM}_${server.url}_${server.id}`;

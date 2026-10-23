@@ -12,6 +12,7 @@ import { sessionManager } from "@/services/session";
 import { resetToPortrait, isPlayerActive } from "@/services/playerUI";
 import { storage } from "@/utils/storage";
 import { logger } from "@/utils/logger";
+import { pruneExpiredCache } from "@/utils/cache";
 import type { HistoryItem } from "@/types";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -67,6 +68,8 @@ function RootInner() {
     let cancelled = false;
     const init = async () => {
       await resetToPortrait();
+      // Fire and forget: the sweep is IO over every stored key, nothing waits on it
+      void pruneExpiredCache();
       await sessionManager.initialize();
       const [history, searches, order, updateCheckEnabled] = await Promise.all([
         storage.get<HistoryItem[]>(HISTORY_KEY),
