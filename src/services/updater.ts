@@ -17,8 +17,6 @@ export interface DownloadResult {
   cancelled: boolean;
 }
 
-// downloadFileAsync streams into the destination file without a progress callback,
-// so we sample the file size at a short interval to derive progress
 export async function downloadApkWithProgress(
   url: string,
   onProgress: (progress: DownloadProgress) => void,
@@ -29,81 +27,49 @@ export async function downloadApkWithProgress(
   const dest = new File(Paths.cache, APK_FILENAME);
   if (dest.exists) dest.delete();
 
-  const totalFromHeaders = await fetchTotalSize(url);
-  let cancelled = false;
+  // The platform task owns progress and cancellation; this controller only adds
+  // the watchdogs on top of the caller's signal.
+  const controller = new AbortController();
   let abortReason: "user" | "stall" | "timeout" | null = null;
-  let lastSize = 0;
-  let stalledSince: number | null = null;
-  const abortController = new AbortController();
+  let stallTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const poll = setInterval(() => {
-    try {
-      const size = dest.exists ? dest.size : 0;
-      if (size === lastSize) {
-        stalledSince ??= Date.now();
-        if (Date.now() - stalledSince > PROGRESS_STALL_TIMEOUT_MS) {
-          logger.warn("updater", "Download stalled, aborting download");
-          abortReason = "stall";
-          abortController.abort();
-        }
-        return;
-      }
-      stalledSince = null;
-      lastSize = size;
-      onProgress({ receivedBytes: size, totalBytes: totalFromHeaders });
-    } catch {
-      // file may be locked mid-write; next tick retries
-    }
-  }, 250);
+  const abort = (reason: "user" | "stall" | "timeout") => {
+    if (abortReason != null) return;
+    abortReason = reason;
+    controller.abort();
+  };
+  const armStallTimer = () => {
+    clearTimeout(stallTimer);
+    stallTimer = setTimeout(() => abort("stall"), PROGRESS_STALL_TIMEOUT_MS);
+  };
 
-  if (signal != null) {
-    if (signal.aborted) {
-      clearInterval(poll);
-      return { file: dest, cancelled: true };
-    }
-    signal.addEventListener("abort", () => {
-      cancelled = true;
-      abortReason = "user";
-      abortController.abort();
+  const onExternalAbort = () => abort("user");
+  if (signal?.aborted) abort("user");
+  else signal?.addEventListener("abort", onExternalAbort, { once: true });
+
+  const timeout = setTimeout(() => abort("timeout"), DOWNLOAD_TIMEOUT_MS);
+  armStallTimer();
+
+  try {
+    const file = await File.downloadFileAsync(url, dest, {
+      idempotent: true,
+      headers: { "User-Agent": "Turcanime-Android" },
+      signal: controller.signal,
+      onProgress: ({ bytesWritten, totalBytes }) => {
+        armStallTimer();
+        onProgress({ receivedBytes: bytesWritten, totalBytes: totalBytes > 0 ? totalBytes : null });
+      },
     });
-  }
-
-  try {
-    const download = File.downloadFileAsync(
-      url,
-      dest,
-      { idempotent: true, headers: { "User-Agent": "Turcanime-Android" } },
-    );
-
-    const timeout = setTimeout(() => {
-      abortReason ??= "timeout";
-      abortController.abort();
-    }, DOWNLOAD_TIMEOUT_MS);
-
-    const file = await Promise.race([
-      download,
-      new Promise<never>((_, reject) =>
-        abortController.signal.addEventListener("abort", () =>
-          reject(new Error(abortReason === "user" ? "cancelled" : (abortReason ?? "cancelled"))),
-        ),
-      ),
-    ]);
-    clearTimeout(timeout);
-    if (cancelled) return { file: dest, cancelled: true };
     return { file, cancelled: false };
+  } catch (error) {
+    if (abortReason === "user") return { file: dest, cancelled: true };
+    if (abortReason != null) throw new Error(abortReason);
+    throw error;
   } finally {
-    clearInterval(poll);
+    clearTimeout(timeout);
+    clearTimeout(stallTimer);
+    signal?.removeEventListener("abort", onExternalAbort);
   }
-}
-
-async function fetchTotalSize(url: string): Promise<number | null> {
-  try {
-    const res = await fetch(url, { method: "HEAD" });
-    const len = res.headers.get("content-length");
-    if (res.ok && len != null) return parseInt(len, 10) || null;
-  } catch {
-  }
-  return null;
 }
 
 export function cleanupOldApk(): void {
